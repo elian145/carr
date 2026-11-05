@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:car_listing_app/data/car_catalog.dart';
+import 'package:car_listing_app/shared/prefs/account_local_data.dart';
 
 Future<void> _loadCatalogForTests() async {
   try {
@@ -23,5 +24,8 @@ Future<void> _loadCatalogForTests() async {
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   TestWidgetsFlutterBinding.ensureInitialized();
   await _loadCatalogForTests();
+  // Account-scoping storage serializes its work in static state; never let a
+  // test that ended mid-operation block the next one.
+  setUp(AccountLocalData.debugReset);
   await testMain();
 }

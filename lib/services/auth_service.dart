@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'account_data_purge.dart';
 import 'api_service.dart';
 import 'connectivity_service.dart';
 import 'push_notification_service.dart';
@@ -192,6 +193,10 @@ class AuthService extends ChangeNotifier {
       await _clearAuthState();
       return;
     }
+    // Everything below belongs to the session that is signed in NOW; if it
+    // ends while the profile / socket / push work is awaited, nothing more
+    // may be applied.
+    final session = ApiService.captureSession();
     if (user != null) {
       _currentUser = Map<String, dynamic>.from(user);
       _isAuthenticated = true;
@@ -205,9 +210,11 @@ class AuthService extends ChangeNotifier {
     } else {
       await _loadUserProfile();
       if (!ApiService.isAuthenticated) return;
+      if (!ApiService.isSessionCurrent(session)) return;
     }
     await WebSocketService.connect();
     await PushNotificationService.syncTokenWithBackend();
+    if (!ApiService.isSessionCurrent(session)) return;
     notifyListeners();
   }
 
@@ -242,6 +249,11 @@ class AuthService extends ChangeNotifier {
   Future<void> _loadUserProfile({Duration? timeout}) async {
     final tokenAtStart = ApiService.accessToken;
     if (tokenAtStart == null || tokenAtStart.isEmpty) return;
+    // F-35/F-39: the profile (and the identity check below) only ever apply to
+    // the session that asked for them -- including "logout, then log in again
+    // as the same account", which keeps neither token nor id but changes the
+    // epoch.
+    final session = ApiService.captureSession();
 
     try {
       // Reuse a still-pending real request instead of starting a second,
@@ -249,17 +261,35 @@ class AuthService extends ChangeNotifier {
       // [timeout] is applied locally on top of the shared Future, so it
       // only bounds *this* caller's wait — it never cancels the shared
       // request or affects any other caller awaiting the same Future.
-      final sharedFetch = _fetchProfileSingleFlight(tokenAtStart);
+      final sharedFetch = _fetchProfileSingleFlight(
+        '${session.epoch}|$tokenAtStart',
+      );
       final response = timeout == null
           ? await sharedFetch
           : await sharedFetch.timeout(timeout);
       // A response that belongs to a session that has since ended (logout,
-      // rejection, switch to another account) must never be applied. Token
-      // rotation within the same account is NOT a different session.
-      if (!_isSameSessionAs(tokenAtStart)) {
+      // rejection, switch to another account, logout-then-login-again) must
+      // never be applied. Token rotation within the same account is NOT a
+      // different session (neither check below trips on it).
+      if (!_isSameSessionAs(tokenAtStart) ||
+          !ApiService.isSessionCurrent(session)) {
         return;
       }
-      _currentUser = profileFromResponse(response);
+      final profile = profileFromResponse(response);
+      // Decision 6: the JWT `sub` used to scope private on-device data must
+      // agree with the account the server says this session belongs to. If it
+      // does not (or the profile carries no id) fail closed: end the session
+      // rather than keep running with an unverifiable owner.
+      if (!ApiService.confirmAccountIdentity(profile['id'], session)) {
+        logNonFatal(
+          StateError('JWT subject does not match /auth/me id'),
+          StackTrace.current,
+          'AuthService._loadUserProfile.identity',
+        );
+        await _clearAuthState();
+        return;
+      }
+      _currentUser = profile;
       _isAuthenticated = true;
       _profileRetryAttempts = 0;
       notifyListeners();
@@ -269,7 +299,9 @@ class AuthService extends ChangeNotifier {
       unawaited(_maybeSyncLocaleAfterProfileLoad());
     } catch (e, st) {
       logNonFatal(e, st, 'AuthService._loadUserProfile');
-      if (!_isSameSessionAs(tokenAtStart)) {
+      if (e is ApiSessionChangedException ||
+          !_isSameSessionAs(tokenAtStart) ||
+          !ApiService.isSessionCurrent(session)) {
         return;
       }
       // 401s already clear tokens (and this session) via onApiTokensCleared,
@@ -380,6 +412,10 @@ class AuthService extends ChangeNotifier {
 
     try {
       final response = await ApiService.login(emailOrPhone, password);
+      // The credentials this login just installed define its session; if it
+      // ends (sign-out, another login) while the profile loads below, none of
+      // the rest may be applied to the app state.
+      final session = ApiService.captureSession();
       final userFromLogin = userMapFrom(response['user']);
       if (userFromLogin != null) {
         _currentUser = userFromLogin;
@@ -391,11 +427,13 @@ class AuthService extends ChangeNotifier {
           logNonFatal(e, st, 'AuthService.login.profileFetch');
         }
       }
+      ApiService.assertSessionCurrent(session);
       _isAuthenticated = true;
 
       // Connect to WebSocket
       await WebSocketService.connect();
       await PushNotificationService.syncTokenWithBackend();
+      ApiService.assertSessionCurrent(session);
 
       notifyListeners();
       return response;
@@ -573,8 +611,19 @@ class AuthService extends ChangeNotifier {
   Future<void> deleteAccount({String? password, String? code}) async {
     _setLoading(true);
     try {
+      // Decision 4: local private data is removed only after the server has
+      // CONFIRMED the deletion. `ApiService.deleteAccount` throws on any
+      // failure, so a failed request never reaches the purge below.
+      final ownerBeforeDelete = ApiService.currentAccountId;
       await ApiService.deleteAccount(password: password, code: code);
       WebSocketService.disconnect();
+      if (ownerBeforeDelete != null) {
+        try {
+          await AccountDataPurge.purgeOwner(ownerBeforeDelete);
+        } catch (e, st) {
+          logNonFatal(e, st, 'AuthService.deleteAccount.purge');
+        }
+      }
       await _clearAuthState();
     } catch (e) {
       rethrow;

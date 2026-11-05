@@ -13,6 +13,7 @@ import 'package:car_listing_app/services/auth_service.dart';
 import 'package:car_listing_app/shared/prefs/chat_pending_send_prefs.dart';
 
 import 'fake_api_server.dart';
+import 'support/test_jwt.dart';
 
 /// F-11 regression coverage: a REST chat text send that fails with a
 /// retryable (transient) error must not silently vanish once the
@@ -38,7 +39,7 @@ void main() {
       },
     );
     await ApiService.setTokens(
-      accessToken: 'test_access_token',
+      accessToken: testJwt('owner_test'),
       refreshToken: 'test_refresh_token',
     );
     FakeApiServer.chatSendOverride = null;
@@ -119,7 +120,7 @@ void main() {
         findsWidgets,
         reason: 'The failed-but-retryable send should show a pending bubble',
       );
-      var pending = await ChatPendingSendPrefs.loadForConversation(carId);
+      var pending = await ChatPendingSendPrefs.loadForConversation(carId, ownerUserId: 'owner_test');
       expect(pending, hasLength(1));
       expect(pending.single.content, 'hello offline world');
       final idempotencyKey = pending.single.idempotencyKey;
@@ -129,7 +130,7 @@ void main() {
       await pumpIgnoringUnrelatedErrors(tester, times: 5);
 
       // The durable record must have survived page disposal untouched.
-      pending = await ChatPendingSendPrefs.loadForConversation(carId);
+      pending = await ChatPendingSendPrefs.loadForConversation(carId, ownerUserId: 'owner_test');
       expect(
         pending,
         hasLength(1),

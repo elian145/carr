@@ -53,6 +53,7 @@ Future<void> _seedPendingSubmission(String draftId) async {
       draftId: draftId,
       status: SellSubmissionStatus.pending,
       carData: const {'brand': 'toyota', 'images': <dynamic>[]},
+      ownerUserId: 'owner_1',
       idempotencyKey: 'sell-create-$draftId',
       createdAt: now,
       updatedAt: now,

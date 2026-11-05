@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' as services;
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../app/widgets/global_listing_card.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
@@ -20,9 +19,11 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/trust_config.dart';
 import 'legal_document_page.dart';
+import '../shared/auth/account_scope.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/ui/app_haptics.dart';
+import '../shared/prefs/favorites_cache_prefs.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/ui/listing_feed_skeleton.dart';
 import '../shared/ui/empty_state_panel.dart';

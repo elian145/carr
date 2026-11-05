@@ -26,7 +26,7 @@ from ..fuel_types import (
     storage_fuel_value,
     stored_spellings,
 )
-from ..idempotency import remember_response, replay_response
+from ..idempotency import begin_request, in_progress_response, remember_response
 from ..view_history import remove_listing_from_all_view_history
 from ..listing_moderation import initial_listing_status
 from ..auto_moderation.triggers import request_moderation_for_car
@@ -1244,15 +1244,18 @@ def create_car():
             or request.headers.get("X-Idempotency-Key")
             or ""
         ).strip()
-        if idem_key:
-            replayed = replay_response(
-                scope="create_car",
-                actor_id=str(current_user.public_id),
-                idem_key=idem_key,
-            )
-            if replayed is not None:
-                status, body = replayed
-                return jsonify(body), status
+        # F-37: replay a COMPLETED create for this key, and refuse (retryable
+        # 503) a duplicate that arrives while the original is still running.
+        idem_state, idem_replay = begin_request(
+            scope="create_car",
+            actor_id=str(current_user.public_id),
+            idem_key=idem_key,
+        )
+        if idem_state == "replay":
+            status, body = idem_replay
+            return jsonify(body), status
+        if idem_state == "busy":
+            return in_progress_response()
 
         raw = request.get_json(silent=True) or {}
 
