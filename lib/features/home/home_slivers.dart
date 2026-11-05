@@ -104,6 +104,7 @@ mixin _HomePageSlivers on _HomePageSliversFeatured {
                       ListingLayoutPrefs.gridChildAspectRatioForWidth(
                     feedColumns,
                     screenWidth,
+                    textScale: appTextScaleOf(context),
                   ),
                   crossAxisSpacing: 8,
                   mainAxisSpacing: 8,

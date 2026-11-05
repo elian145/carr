@@ -89,6 +89,7 @@ import '../../shared/prefs/listing_layout_prefs.dart';
 import '../../shared/ui/filter_card_sections.dart';
 import '../../shared/ui/filter_icon_image.dart';
 import '../../shared/ui/listing_feed_skeleton.dart';
+import '../../shared/ui/app_text_scale.dart';
 import '../../shared/ui/responsive.dart';
 import '../../theme_provider.dart';
 import '../../shared/i18n/legacy_inline_text.dart';

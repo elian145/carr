@@ -18,6 +18,7 @@ import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/sell_submission_state_prefs.dart';
 import '../shared/prefs/legacy_sell_draft_list.dart';
+import '../shared/ui/app_text_scale.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/listings/owner_media_overlay.dart';
 import '../shared/listings/owner_pending_media_merge.dart';
@@ -738,6 +739,7 @@ class _MyListingsPageState extends State<MyListingsPage>
                                         ListingLayoutPrefs.gridChildAspectRatioForWidth(
                                           listingColumns,
                                           screenWidth,
+                                          textScale: appTextScaleOf(context),
                                         ),
                                     crossAxisSpacing: 8,
                                     mainAxisSpacing: 8,

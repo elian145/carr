@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_text_scale.dart';
+
 /// How a brand-picker caption is laid out inside a fixed-width tile.
 @immutable
 class BrandLabelPlan {
@@ -27,8 +29,11 @@ class BrandLabelPlan {
 ///  3. three lines at 10 sp (e.g. "Zyle Daewoo Commercial Vehicle", which used
 ///     to be scaled down to ~4.5 sp on a single line).
 ///
-/// Text never scales with the system font size (same as the label it replaces)
-/// so a large accessibility font cannot grow the tile and break the grid.
+/// The label follows the system text scale (F-10, 1.0..2.0). The tile stays
+/// 72 dp wide, so instead of growing sideways the label zone grows downwards:
+/// [maxHeightFor] / [rowHeightFor] give the taller label zone / grid row for a
+/// scale, and every size in the plan below is measured at that scale. At 1.0x
+/// everything is identical to the previous fixed layout.
 class BrandTileLabel extends StatelessWidget {
   const BrandTileLabel(
     this.text, {
@@ -45,13 +50,23 @@ class BrandTileLabel extends StatelessWidget {
   static const double minSingleLineFontSize = 10.5;
   static const double maxHeight = 30;
 
+  /// Height of the label zone at [textScale] (30 dp at 1.0x).
+  static double maxHeightFor(double textScale) => maxHeight * textScale;
+
+  /// Fixed grid-row height at [textScale] (92 dp at 1.0x = 52 coin + 2 ring
+  /// + 8 gap + 30 label).
+  static double rowHeightFor(double textScale) =>
+      92 + maxHeight * (textScale - 1.0);
+
   /// Chooses the layout for [text] in a tile [maxWidth] dp wide.
   @visibleForTesting
   static BrandLabelPlan plan({
     required String text,
     required TextStyle style,
     required double maxWidth,
+    double textScale = 1.0,
   }) {
+    final maxHeight = maxHeightFor(textScale);
     double measure(double size, {int lines = 1, double height = 1.0}) {
       final tp = TextPainter(
         text: TextSpan(
@@ -61,7 +76,7 @@ class BrandTileLabel extends StatelessWidget {
         textDirection: TextDirection.ltr,
         textAlign: TextAlign.center,
         maxLines: lines,
-        textScaler: TextScaler.noScaling,
+        textScaler: TextScaler.linear(textScale),
       )..layout(maxWidth: lines == 1 ? double.infinity : maxWidth);
       final exceeded = tp.didExceedMaxLines;
       final w = tp.width;
@@ -78,7 +93,7 @@ class BrandTileLabel extends StatelessWidget {
         final tp = TextPainter(
           text: TextSpan(text: word, style: style.copyWith(fontSize: size)),
           textDirection: TextDirection.ltr,
-          textScaler: TextScaler.noScaling,
+          textScaler: TextScaler.linear(textScale),
         )..layout();
         if (tp.width > longest) longest = tp.width;
         tp.dispose();
@@ -111,10 +126,16 @@ class BrandTileLabel extends StatelessWidget {
     // Measure with the font the Text will really use (theme / app font), not
     // the engine default, or wrapping decisions would be made for another font.
     final measureStyle = DefaultTextStyle.of(context).style.merge(base);
+    final textScale = appTextScaleOf(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.hasBoundedWidth ? constraints.maxWidth : 72.0;
-        final p = plan(text: text, style: measureStyle, maxWidth: width);
+        final p = plan(
+          text: text,
+          style: measureStyle,
+          maxWidth: width,
+          textScale: textScale,
+        );
         return SizedBox(
           width: double.infinity,
           child: Text(
@@ -123,7 +144,8 @@ class BrandTileLabel extends StatelessWidget {
             maxLines: p.maxLines,
             softWrap: p.maxLines > 1,
             overflow: TextOverflow.ellipsis,
-            textScaler: TextScaler.noScaling,
+            // Same scale the plan measured with (already clamped to 1.0..2.0).
+            textScaler: TextScaler.linear(textScale),
             style: base.copyWith(
               fontSize: p.fontSize,
               height: p.maxLines > 1 ? p.lineHeight : null,

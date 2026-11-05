@@ -27,15 +27,15 @@ void main() {
     SystemDisplayLock.debugStableDevicePixelRatio = null;
   });
 
-  test('lock clamps system text scale to 1.3', () {
+  test('lock honours system text scale up to 2.0 and clamps beyond (F-10)', () {
     final locked = SystemDisplayLock.lock(
       const MediaQueryData(
         size: Size(360, 800),
         devicePixelRatio: 2.625,
-        textScaler: TextScaler.linear(1.8),
+        textScaler: TextScaler.linear(3.0),
       ),
     );
-    expect(locked.textScaler.scale(100), closeTo(130, 0.01));
+    expect(locked.textScaler.scale(100), closeTo(200, 0.01));
     expect(locked.size, const Size(360, 800));
   });
 
@@ -84,7 +84,8 @@ void main() {
         viewPadding: EdgeInsets.only(top: 18, bottom: 36),
       ),
     );
-    expect(locked.textScaler.scale(100), closeTo(130, 0.01));
+    // F-10: the system font scale (2.0) is honoured, only density is locked.
+    expect(locked.textScaler.scale(100), closeTo(200, 0.01));
     expect(locked.devicePixelRatio, 3.0);
     expect(locked.size.width, closeTo(360, 0.01));
     expect(locked.size.height, closeTo(800, 0.01));
@@ -125,7 +126,7 @@ void main() {
       ),
     );
 
-    expect(innerScaler.scale(100), closeTo(130, 0.01));
+    expect(innerScaler.scale(100), closeTo(200, 0.01));
     expect(innerSize.width, closeTo(360, 0.5));
     expect(innerSize.height, closeTo(800, 0.5));
     expect(find.byType(FittedBox), findsOneWidget);

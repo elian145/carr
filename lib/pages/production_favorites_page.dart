@@ -375,6 +375,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                           ListingLayoutPrefs.gridChildAspectRatioForWidth(
                             listingColumns,
                             screenWidth,
+                            textScale: appTextScaleOf(context),
                           ),
                     ),
                     itemCount: _favorites.length + (_hasNext ? 1 : 0),

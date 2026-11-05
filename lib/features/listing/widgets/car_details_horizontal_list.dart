@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/widgets/global_listing_card.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
+import '../../../shared/ui/app_text_scale.dart';
 import '../../../shared/prefs/listing_layout_prefs.dart';
 
 /// Similar listings grid on the detail page (scrolls with the page).
@@ -37,6 +38,7 @@ class CarDetailsHorizontalList extends StatelessWidget {
         childAspectRatio: ListingLayoutPrefs.gridChildAspectRatioForWidth(
           listingColumns,
           screenWidth,
+          textScale: appTextScaleOf(context),
         ),
       ),
       itemCount: items.length,
