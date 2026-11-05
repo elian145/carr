@@ -7,6 +7,7 @@ against the real repo files (must pass) and against mutated temp copies
 from __future__ import annotations
 
 import shutil
+import os
 import subprocess
 import sys
 import zipfile
@@ -87,7 +88,12 @@ def test_codemagic_workflows_are_split_as_expected() -> None:
 
 
 def test_codemagic_yaml_parses_when_pyyaml_available() -> None:
-    yaml = pytest.importorskip("yaml")
+    if os.environ.get("CI"):
+        # CI installs PyYAML via kk/requirements-dev.txt: a missing module must
+        # FAIL here, never silently skip this check.
+        import yaml
+    else:
+        yaml = pytest.importorskip("yaml")
     data = yaml.safe_load((REPO_ROOT / "codemagic.yaml").read_text(encoding="utf-8"))
     unsigned = data["workflows"]["android_release_unsigned"]
     assert "ALLOW_DEBUG_RELEASE_SIGNING" not in unsigned["environment"]["vars"]
