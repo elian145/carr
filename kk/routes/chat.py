@@ -8,6 +8,7 @@ import secrets
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy import func, or_, text
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import joinedload, selectinload
 from werkzeug.exceptions import RequestEntityTooLarge
 
@@ -1619,6 +1620,60 @@ def _serialize_push_token_registration(token: str) -> None:
         )
 
 
+# F-06 deadlock hardening. Two accounts swapping tokens at the same instant
+# (A holds Y and registers X while B holds X and registers Y) lock each other's
+# rows in opposite order; PostgreSQL aborts one with SQLSTATE 40P01. The rows
+# are now locked in id order (no deadlock between registrations), and the
+# registration is also retried on exactly that condition as a safety net
+# (e.g. other writers touching ``user`` rows). Bounded: at most
+# ``_PUSH_TOKEN_MAX_ATTEMPTS`` attempts in total, pausing a jittered 5-25 ms
+# (times the attempt number) between them -- never more than ~50 ms in all.
+_PUSH_TOKEN_MAX_ATTEMPTS = 3
+_PUSH_TOKEN_RETRY_PAUSE_S = (0.005, 0.025)
+_PG_DEADLOCK_SQLSTATE = "40P01"
+
+
+def _is_pg_deadlock(exc: BaseException) -> bool:
+    """True only for a PostgreSQL ``deadlock_detected`` (SQLSTATE 40P01).
+
+    Works for psycopg 3 (``orig.sqlstate``) and psycopg2 (``orig.pgcode``) as
+    surfaced through SQLAlchemy's ``DBAPIError.orig``; anything else (unique
+    violations, serialization failures 40001, other dialects, plain errors) is
+    not retryable here.
+    """
+    if not isinstance(exc, DBAPIError):
+        return False
+    orig = getattr(exc, "orig", None)
+    code = getattr(orig, "sqlstate", None) or getattr(orig, "pgcode", None)
+    if code != _PG_DEADLOCK_SQLSTATE:
+        return False
+    bind = db.session.get_bind()
+    return bind is not None and bind.dialect.name == "postgresql"
+
+
+def _push_token_retry_pause(attempt: int) -> None:
+    import random
+    import time
+
+    time.sleep(random.uniform(*_PUSH_TOKEN_RETRY_PAUSE_S) * attempt)
+
+
+def _assign_push_token(me: User, token: str) -> None:
+    """One transaction: move ``token`` to ``me`` and clear it elsewhere."""
+    _serialize_push_token_registration(token)
+    # Lock the caller's row and every row holding the token in ascending id
+    # order *before* writing, so concurrent registrations always take row
+    # locks in the same order (SQLite ignores FOR UPDATE).
+    db.session.query(User.id).filter(
+        or_(User.id == me.id, User.firebase_token == token)
+    ).order_by(User.id).with_for_update().all()
+    db.session.query(User).filter(
+        User.firebase_token == token, User.id != me.id
+    ).update({User.firebase_token: None}, synchronize_session=False)
+    me.firebase_token = token
+    db.session.commit()
+
+
 @bp.route("/api/users/push_token", methods=["POST"])
 @jwt_required()
 def register_push_token():
@@ -1644,12 +1699,26 @@ def register_push_token():
         # logout, reinstall, ...), that account must stop receiving this
         # device's notifications -- clear it from every other user in the same
         # transaction that assigns it to the caller.
-        _serialize_push_token_registration(token)
-        db.session.query(User).filter(
-            User.firebase_token == token, User.id != me.id
-        ).update({User.firebase_token: None}, synchronize_session=False)
-        me.firebase_token = token
-        db.session.commit()
+        for attempt in range(1, _PUSH_TOKEN_MAX_ATTEMPTS + 1):
+            try:
+                _assign_push_token(me, token)
+                break
+            except DBAPIError as exc:
+                db.session.rollback()
+                if not _is_pg_deadlock(exc):
+                    raise
+                if attempt >= _PUSH_TOKEN_MAX_ATTEMPTS:
+                    current_app.logger.warning(
+                        "Push token registration hit a PostgreSQL deadlock on all %s attempts",
+                        attempt,
+                    )
+                    raise
+                _push_token_retry_pause(attempt)
+                # Fresh transaction: reload the caller instead of reusing the
+                # state the rolled-back transaction expired.
+                me = get_current_user()
+                if not me:
+                    return jsonify({"message": "Unauthorized"}), 401
         current_app.logger.info(
             "Push token registered for user %s (prefix %s…)",
             me.public_id,
