@@ -144,6 +144,7 @@ jobs:
           kk/tests/test_srch_random_postgres_overflow.py
           kk/tests/test_sec_f01_f03_phone_signup_ownership.py
           kk/tests/test_sec_f02_listing_status_moderation.py
+          kk/tests/test_f06_pg_deadlock.py
 
   migrations:
     name: Migration smoke (Postgres)
