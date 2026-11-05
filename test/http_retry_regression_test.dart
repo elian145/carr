@@ -87,9 +87,12 @@ void main() {
             if (callCount == 1) {
               // Simulates the "iOS reclaimed the keep-alive socket while
               // backgrounded" failure that `isStaleHttpClientError`
-              // classifies and `_withStaleClientRetry` retries.
+              // classifies and `_withStaleClientRetry` retries. F-37: an
+              // unkeyed write is only re-sent when the failure proves nothing
+              // was transmitted ("Bad file descriptor"); ambiguous resets are
+              // covered in `write_request_retry_safety_test.dart`.
               throw http.ClientException(
-                'Software caused connection abort',
+                'Bad file descriptor',
                 request.url,
               );
             }

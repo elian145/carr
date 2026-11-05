@@ -19,14 +19,44 @@ abstract final class _ApiServiceHttp {
     return entry.response;
   }
 
-  static Future<T> _withStaleClientRetry<T>(Future<T> Function() action) async {
+  /// Recycles a dead keep-alive socket and runs [action] once more.
+  ///
+  /// [resendSafe] (F-37) says whether re-running [action] can be harmless even
+  /// if the first attempt reached the server: true for reads and for writes
+  /// carrying an `Idempotency-Key`. When false (an unkeyed write) the client
+  /// is still recycled so the user's next attempt gets a fresh socket, but the
+  /// request is only re-sent when the failure proves nothing was transmitted
+  /// ([_neverSent]); a reset / closed / broken-pipe error can also happen after
+  /// the server already processed the write, so those are surfaced instead.
+  static Future<T> _withStaleClientRetry<T>(
+    Future<T> Function() action, {
+    bool resendSafe = true,
+  }) async {
     try {
       return await action();
     } catch (e) {
       if (!isStaleHttpClientError(e)) rethrow;
       ApiService.recycleProductionHttpClient();
+      if (!resendSafe && !_neverSent(e)) rethrow;
       return await action();
     }
+  }
+
+  /// A local "Bad file descriptor" (the OS closed our socket while the app was
+  /// suspended) fails before any bytes leave the device.
+  static bool _neverSent(Object e) =>
+      e.toString().toLowerCase().contains('bad file descriptor');
+
+  /// True when the server de-duplicates this request, making a re-send safe.
+  static bool _hasIdempotencyKey(Map<String, String>? headers) {
+    if (headers == null) return false;
+    for (final entry in headers.entries) {
+      if (entry.key.toLowerCase() == 'idempotency-key' &&
+          entry.value.trim().isNotEmpty) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /// Sends a single GET using `package:http`'s [http.Abortable] support
@@ -138,21 +168,33 @@ abstract final class _ApiServiceHttp {
     }
   }
 
+  /// Sends a WRITE (POST/PUT/PATCH/DELETE); reads go through
+  /// [_getWithAdaptiveTimeout].
+  ///
+  /// F-37: a timeout does not mean the server did nothing, so [send] is only
+  /// run a second time when [resendSafe] (the request carries an
+  /// `Idempotency-Key`, so the server de-duplicates it). Any other write gets
+  /// ONE attempt, given the long cold-start budget up front instead of a short
+  /// attempt followed by a duplicate; a genuine timeout still surfaces as the
+  /// same [TimeoutException].
   static Future<http.Response> _sendWithAdaptiveTimeout(
     Future<http.Response> Function() send, {
     Duration? timeout,
+    bool resendSafe = false,
   }) async {
-    final effectiveTimeout = timeout ?? ApiService.requestTimeout();
+    final effectiveTimeout = timeout ??
+        (resendSafe ? ApiService.requestTimeout() : ApiService._coldTimeout);
     try {
       final response = await _withStaleClientRetry(
         () => send().timeout(effectiveTimeout),
+        resendSafe: resendSafe,
       );
       if (response.statusCode >= 200 && response.statusCode < 300) {
         ApiService._markRequestSuccess();
       }
       return response;
     } on TimeoutException {
-      if (effectiveTimeout < ApiService._coldTimeout) {
+      if (resendSafe && effectiveTimeout < ApiService._coldTimeout) {
         final response = await _withStaleClientRetry(
           () => send().timeout(ApiService._coldTimeout),
         );
@@ -1003,6 +1045,9 @@ abstract final class _ApiServiceHttp {
       final session = await _beginAuthenticatedRequest();
       final url = Uri.parse('${ApiService.baseUrl}$endpoint');
       final requestHeaders = {..._getHeaders(), ...?headers};
+      // F-37: only a write the server de-duplicates may be re-sent after a
+      // timeout / ambiguous failure.
+      final resendSafe = _hasIdempotencyKey(requestHeaders);
 
       http.Response response;
 
@@ -1020,6 +1065,7 @@ abstract final class _ApiServiceHttp {
               headers: requestHeaders,
               body: body != null ? json.encode(body) : null,
             ),
+            resendSafe: resendSafe,
           );
           break;
         case 'PUT':
@@ -1029,6 +1075,7 @@ abstract final class _ApiServiceHttp {
               headers: requestHeaders,
               body: body != null ? json.encode(body) : null,
             ),
+            resendSafe: resendSafe,
           );
           break;
         case 'PATCH':
@@ -1038,11 +1085,13 @@ abstract final class _ApiServiceHttp {
               headers: requestHeaders,
               body: body != null ? json.encode(body) : null,
             ),
+            resendSafe: resendSafe,
           );
           break;
         case 'DELETE':
           response = await _sendWithAdaptiveTimeout(
             () => ApiService._httpClient.delete(url, headers: requestHeaders),
+            resendSafe: resendSafe,
           );
           break;
         default:
@@ -1072,6 +1121,7 @@ abstract final class _ApiServiceHttp {
                   headers: requestHeaders,
                   body: body != null ? json.encode(body) : null,
                 ),
+                resendSafe: resendSafe,
               );
               break;
             case 'PUT':
@@ -1081,6 +1131,7 @@ abstract final class _ApiServiceHttp {
                   headers: requestHeaders,
                   body: body != null ? json.encode(body) : null,
                 ),
+                resendSafe: resendSafe,
               );
               break;
             case 'PATCH':
@@ -1090,6 +1141,7 @@ abstract final class _ApiServiceHttp {
                   headers: requestHeaders,
                   body: body != null ? json.encode(body) : null,
                 ),
+                resendSafe: resendSafe,
               );
               break;
             case 'DELETE':
@@ -1098,6 +1150,7 @@ abstract final class _ApiServiceHttp {
                   url,
                   headers: requestHeaders,
                 ),
+                resendSafe: resendSafe,
               );
               break;
           }
