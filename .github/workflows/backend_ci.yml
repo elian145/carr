@@ -97,9 +97,14 @@ jobs:
           PY
 
       # "Production-head" template for test_auto_moderation_postgres.py: the
-      # schema one revision behind head (PREV_HEAD in that module). The tests
-      # clone it, let the app migrate it to head, and exercise downgrade /
-      # lock-timeout behaviour from there.
+      # schema one revision behind head. The revision is NOT repeated here: it
+      # is read from PREV_HEAD in that test module (single source of truth), so
+      # the template can never silently drift from what the tests expect. The
+      # step fails loudly if the constant cannot be read, if it is not an
+      # ancestor of the current Alembic head, or if the downgrade does not land
+      # exactly on it. (The module itself also asserts NEW_HEAD against the
+      # migrated database, so adding a migration fails the PG job until both
+      # constants are updated deliberately.)
       - name: Build previous-revision schema template
         env:
           APP_ENV: testing
@@ -108,8 +113,20 @@ jobs:
           FLASK_APP: kk.wsgi:app
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/carnet_prod_head
         run: |
+          set -euo pipefail
+          PREV_HEAD="$(sed -n 's/^PREV_HEAD = "\([^"]*\)".*/\1/p' kk/tests/test_auto_moderation_postgres.py | head -n 1)"
+          if [ -z "$PREV_HEAD" ]; then
+            echo "::error::Could not read PREV_HEAD from kk/tests/test_auto_moderation_postgres.py"
+            exit 1
+          fi
+          echo "Building template schema at $PREV_HEAD"
           flask db upgrade
-          flask db downgrade u9v0w1x2y3z4
+          flask db downgrade "$PREV_HEAD"
+          CURRENT="$(flask db current 2>/dev/null | grep -Eo '[0-9a-z]{12}' | head -n 1)"
+          if [ "$CURRENT" != "$PREV_HEAD" ]; then
+            echo "::error::Template DB is at '$CURRENT', expected PREV_HEAD '$PREV_HEAD'"
+            exit 1
+          fi
 
       # CARNET_REQUIRE_PG_TESTS=1 turns a "no PostgreSQL configured" skip into
       # a failure, so this job can never go green without running PG tests.
