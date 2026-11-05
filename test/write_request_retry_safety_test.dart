@@ -276,15 +276,16 @@ void main() {
   });
 
   group('stale keep-alive socket errors', () {
-    // An error that is raised AFTER the request may have reached the server
-    // (reset / closed / broken pipe / connection abort) is ambiguous, so an
-    // unkeyed write must not be replayed. Only an error raised locally
-    // before anything could be sent ("Bad file descriptor") may be retried.
+    // None of these errors proves the request never reached the server (for
+    // example `dart:io` raises "Bad file descriptor" when it fails to READ the
+    // response of a request the server already processed), so an unkeyed
+    // write must never be replayed -- including on "Bad file descriptor".
     for (final msg in [
       'Connection reset by peer',
       'Connection closed before full header was received',
       'Broken pipe',
       'Software caused connection abort',
+      'Bad file descriptor',
     ]) {
       testWidgets('unkeyed POST + "$msg" -> surfaced, not re-sent',
           (tester) async {
@@ -299,17 +300,35 @@ void main() {
       });
     }
 
-    testWidgets('unkeyed POST + "Bad file descriptor" (never sent) -> retried',
+    for (final method in ['PUT', 'PATCH', 'DELETE']) {
+      testWidgets('unkeyed $method + "Bad file descriptor" -> surfaced, not re-sent',
+          (tester) async {
+        final server = _Server((_, r) async {
+          throw http.ClientException('Bad file descriptor', r.url);
+        });
+        bind(server);
+        final outcome = _Outcome(send(method));
+        await elapse(tester, const Duration(seconds: 1));
+        expect(outcome.error, isA<http.ClientException>());
+        expect(server.received, hasLength(1));
+      });
+    }
+
+    testWidgets('keyed POST + "Bad file descriptor" -> retried with the SAME key',
         (tester) async {
       final server = _Server((attempt, r) async {
         if (attempt == 1) throw http.ClientException('Bad file descriptor', r.url);
-        return _ok();
+        return _ok(201);
       });
       bind(server);
-      final outcome = _Outcome(send('POST'));
+      final outcome = _Outcome(
+        ApiService.createCar({'brand': 'bmw'}, idempotencyKey: 'k-bfd'),
+      );
       await elapse(tester, const Duration(seconds: 1));
       expect(outcome.error, isNull);
       expect(server.received, hasLength(2));
+      expect(server.received.map((r) => r.headers['Idempotency-Key']),
+          ['k-bfd', 'k-bfd']);
     });
 
     testWidgets('keyed POST + ambiguous stale error -> retried (deduped)',
