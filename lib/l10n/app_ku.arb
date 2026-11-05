@@ -102,7 +102,7 @@
   "value_fuel_hybrid": "هایبرید",
   "value_fuel_lpg": "گاز",
   "value_fuel_plugin_hybrid": "پڵەگ-ئین هایبرید",
-  "value_title_clean": "پاك",
+  "value_title_clean": "پاک",
   "value_title_damaged": "زیانلێکەوتوو",
   "titleStatusDamagedWithParts": "زیان ({count} پارچە)",
   "@titleStatusDamagedWithParts": {
@@ -493,7 +493,7 @@
   "noListingsEmptyHint": "هێشتا هیچ ڕێکلامی ئۆتۆمبێلێکت دروست نەکردووە.\nدەست پێبکە بە زیادکردنی یەکەم ئۆتۆمبێلت!",
   "addYourFirstCar": "یەکەم ئۆتۆمبێلت زیاد بکە",
   "emailOrPhoneRequired": "ئیمەیل یان ژمارەی تەلەفۆن پێویستە",
-  "stepXOf5": "هەنگاوە {step} لە ٦",
+  "stepXOf5": "هەنگاوی {step} لە ٦",
   "basicInformationTitle": "زانیاری بنەڕەتی",
   "basicInformationSubtitle": "پێمان بڵێ دەربارەی وردەکاری بنەڕەتی ئۆتۆمبێلەکەت",
   "carDetailsTitle": "وردەکاری ئۆتۆمبێل",
