@@ -130,7 +130,7 @@ void main() {
     testWidgets('GET that times out in the cold window is NOT retried again',
         (tester) async {
       // Cold (no recent success): the first attempt already uses 55s.
-      final server = _Server((_, __) => Completer<http.Response>().future);
+      final server = _Server((_, _) => Completer<http.Response>().future);
       bind(server);
 
       final outcome = _Outcome(send('GET'));
@@ -145,7 +145,7 @@ void main() {
       testWidgets('$method: no response -> exactly one request, timeout error',
           (tester) async {
         markWarm(); // warm => old code used a 20s first attempt then resent
-        final server = _Server((_, __) => Completer<http.Response>().future);
+        final server = _Server((_, _) => Completer<http.Response>().future);
         bind(server);
 
         final outcome = _Outcome(send(method));
@@ -166,7 +166,7 @@ void main() {
           (tester) async {
         markWarm();
         var applied = 0;
-        final server = _Server((_, __) {
+        final server = _Server((_, _) {
           applied++; // the write happens when the request arrives
           return Future<http.Response>.delayed(
             const Duration(seconds: 30),
@@ -186,7 +186,7 @@ void main() {
 
     testWidgets('cold POST: single attempt, times out at the cold timeout',
         (tester) async {
-      final server = _Server((_, __) => Completer<http.Response>().future);
+      final server = _Server((_, _) => Completer<http.Response>().future);
       bind(server);
       final outcome = _Outcome(send('POST'));
       await elapse(tester, _cold - const Duration(seconds: 1));
@@ -199,7 +199,7 @@ void main() {
     testWidgets('a non-2xx answer to a write is not retried either',
         (tester) async {
       markWarm();
-      final server = _Server((_, __) async => http.Response('{}', 500));
+      final server = _Server((_, _) async => http.Response('{}', 500));
       bind(server);
       final outcome = _Outcome(send('POST'));
       await elapse(tester, const Duration(seconds: 1));
@@ -259,7 +259,7 @@ void main() {
     testWidgets('a blank Idempotency-Key does not make a write retryable',
         (tester) async {
       markWarm();
-      final server = _Server((_, __) => Completer<http.Response>().future);
+      final server = _Server((_, _) => Completer<http.Response>().future);
       bind(server);
       final outcome = _Outcome(
         ApiService.makeAuthenticatedRequest(
@@ -357,7 +357,7 @@ void main() {
         'a write answered after the session ended is dropped; still ONE send',
         (tester) async {
       markWarm();
-      final server = _Server((_, __) => Future<http.Response>.delayed(
+      final server = _Server((_, _) => Future<http.Response>.delayed(
             const Duration(seconds: 30),
             _ok,
           ));
@@ -374,7 +374,7 @@ void main() {
     testWidgets('a GET answered after the session ended is dropped',
         (tester) async {
       markWarm();
-      final server = _Server((_, __) => Future<http.Response>.delayed(
+      final server = _Server((_, _) => Future<http.Response>.delayed(
             const Duration(seconds: 5),
             _ok,
           ));
