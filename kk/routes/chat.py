@@ -7,7 +7,7 @@ import secrets
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, text
 from sqlalchemy.orm import joinedload, selectinload
 from werkzeug.exceptions import RequestEntityTooLarge
 
@@ -1600,6 +1600,25 @@ def report_user(user_id: str):
         return jsonify({"message": "Failed to submit report"}), 500
 
 
+def _serialize_push_token_registration(token: str) -> None:
+    """Make concurrent registrations of the SAME token queue up (F-06).
+
+    There is no unique constraint on ``user.firebase_token`` (single-token-per-
+    user model, no migrations), so two accounts registering one device token at
+    the same moment could each clear the other's not-yet-visible row and both
+    end up owning it. On PostgreSQL a transaction-scoped advisory lock keyed by
+    the token makes the second registration wait for the first to commit and
+    then clear it. Other dialects (SQLite in tests/dev) serialize writers
+    already.
+    """
+    bind = db.session.get_bind()
+    if bind is not None and bind.dialect.name == "postgresql":
+        db.session.execute(
+            text("SELECT pg_advisory_xact_lock(hashtext(:tok))"),
+            {"tok": token},
+        )
+
+
 @bp.route("/api/users/push_token", methods=["POST"])
 @jwt_required()
 def register_push_token():
@@ -1620,6 +1639,15 @@ def register_push_token():
         if not token:
             return jsonify({"message": "token is required"}), 400
 
+        # F-06: an FCM token identifies one physical device. If another
+        # account previously registered it (session ended without a server
+        # logout, reinstall, ...), that account must stop receiving this
+        # device's notifications -- clear it from every other user in the same
+        # transaction that assigns it to the caller.
+        _serialize_push_token_registration(token)
+        db.session.query(User).filter(
+            User.firebase_token == token, User.id != me.id
+        ).update({User.firebase_token: None}, synchronize_session=False)
         me.firebase_token = token
         db.session.commit()
         current_app.logger.info(
