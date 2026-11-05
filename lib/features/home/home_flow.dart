@@ -59,6 +59,7 @@ import '../../models/online_spec_variant.dart';
 import '../../models/search_spec_reconcile.dart';
 import '../../models/sell_spec_reconcile.dart';
 import '../../services/api_service.dart';
+import '../../shared/auth/account_scope.dart';
 import '../../services/analytics_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/car_spec_index.dart';

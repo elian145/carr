@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../shared/auth/account_scope.dart';
 import '../../../shared/debug/app_log.dart';
 import '../../../shared/listings/listing_identity.dart';
 
@@ -11,6 +12,30 @@ class CarComparisonStore extends ChangeNotifier {
 
   CarComparisonStore() {
     _loadFromPrefs();
+    AccountScope.addSessionChangedListener(_onSessionChanged);
+    AccountScope.addActivatedListener(_onAccountActivated);
+  }
+
+  /// F-34: the list belongs to the signed-in account. On any authentication
+  /// transition drop it from memory immediately (without saving -- the saved
+  /// copy stays with its owner), then reload once the new owner's storage is
+  /// active.
+  void _onSessionChanged() {
+    if (_comparisonCars.isEmpty) return;
+    _comparisonCars.clear();
+    notifyListeners();
+  }
+
+  void _onAccountActivated(String? owner) {
+    _comparisonCars.clear();
+    _loadFromPrefs();
+  }
+
+  @override
+  void dispose() {
+    AccountScope.removeSessionChangedListener(_onSessionChanged);
+    AccountScope.removeActivatedListener(_onAccountActivated);
+    super.dispose();
   }
 
   List<Map<String, dynamic>> get comparisonCars =>
@@ -76,8 +101,10 @@ class CarComparisonStore extends ChangeNotifier {
   }
 
   Future<void> _saveToPrefs() async {
+    final generation = AccountScope.generation;
     try {
       final sp = await SharedPreferences.getInstance();
+      if (generation != AccountScope.generation) return;
       final List<String> encoded = _comparisonCars
           .map((e) => json.encode(e))
           .toList();
@@ -90,8 +117,10 @@ class CarComparisonStore extends ChangeNotifier {
   }
 
   Future<void> _loadFromPrefs() async {
+    final generation = AccountScope.generation;
     try {
       final sp = await SharedPreferences.getInstance();
+      if (generation != AccountScope.generation) return;
       final encoded = sp.getStringList('comparison_cars') ?? [];
       final List<Map<String, dynamic>> loaded = encoded
           .map<Map<String, dynamic>>(

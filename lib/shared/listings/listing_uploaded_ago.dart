@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../services/websocket_service.dart' show tryParseApiDateTime;
 
 /// Human-readable "time since listing was created" for card and detail UI.
 String listingUploadedAgo(BuildContext context, Map car) {
@@ -11,7 +12,8 @@ String listingUploadedAgo(BuildContext context, Map car) {
     raw = car['posted_at'] ?? car['listed_at'];
   }
   if (raw == null) return '';
-  final dt = DateTime.tryParse(raw.toString().trim());
+  // API timestamps are UTC; parse yields the matching local instant.
+  final dt = tryParseApiDateTime(raw);
   if (dt == null) return '';
   final now = DateTime.now();
   var diff = now.difference(dt);

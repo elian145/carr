@@ -24,6 +24,11 @@ fun loadSigningProperties(root: org.gradle.api.Project): Pair<Properties, java.i
     return props to loaded
 }
 
+fun hasCompleteSigningProps(props: Properties): Boolean =
+    listOf("STORE_FILE", "STORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD").all {
+        props.getProperty(it)?.trim().orEmpty().isNotEmpty()
+    }
+
 fun resolveKeystoreFile(root: org.gradle.api.Project, storeFilePath: String): File {
     val fromRoot = root.file(storeFilePath)
     if (fromRoot.exists()) return fromRoot
@@ -45,6 +50,15 @@ val appLinkHost = (
         ?: System.getenv("APP_LINK_HOST")?.trim()
         ?: "carr-5hrm.onrender.com"
 )
+
+// F-13: explicit, narrowly-scoped opt-in for an intentionally UNSIGNED release
+// artifact (CI test APK only; see codemagic.yaml `android_release_unsigned`).
+// It never selects the debug key: the release build is simply left unsigned.
+val unsignedReleaseRequested =
+    (
+        (project.findProperty("CARNET_UNSIGNED_RELEASE") as String?)
+            ?: System.getenv("CARNET_UNSIGNED_RELEASE")
+        )?.trim().equals("true", ignoreCase = true)
 
 android {
     namespace = "com.carzo.app"
@@ -96,9 +110,13 @@ android {
         manifestPlaceholders["airbridgeHostAirbridgeIo"] = hostAbrio.ifEmpty { "phony-io.invalid" }
     }
 
-    // Signing setup:
-    // - Store prod release builds require signing.properties (repo root or android/).
-    // - Local/dev release builds can still use debug signing for smoke testing.
+    // Signing setup (F-13):
+    // - EVERY release build (any flavor, any assemble/bundle/package/publish task)
+    //   requires signing.properties (repo root or android/); otherwise the build
+    //   fails (see the taskGraph guard below). Release builds NEVER use the debug key.
+    // - Debug/profile builds keep the default debug key.
+    // - CARNET_UNSIGNED_RELEASE=true is the only way to build release without
+    //   signing; it produces an explicitly UNSIGNED artifact (no signing config).
     //
     // signing.properties format:
     //   STORE_FILE=/path/to/keystore.jks
@@ -106,11 +124,7 @@ android {
     //   KEY_ALIAS=...
     //   KEY_PASSWORD=...
     val (signingProps, _) = loadSigningProperties(rootProject)
-    val hasReleaseSigning =
-        (signingProps.getProperty("STORE_FILE")?.trim().orEmpty().isNotEmpty()) &&
-        (signingProps.getProperty("STORE_PASSWORD")?.trim().orEmpty().isNotEmpty()) &&
-        (signingProps.getProperty("KEY_ALIAS")?.trim().orEmpty().isNotEmpty()) &&
-        (signingProps.getProperty("KEY_PASSWORD")?.trim().orEmpty().isNotEmpty())
+    val hasReleaseSigning = hasCompleteSigningProps(signingProps)
 
     signingConfigs {
         create("releaseConfig") {
@@ -141,11 +155,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig = if (hasReleaseSigning) {
+            // Never falls back to the debug key. Without real signing the
+            // variant is unsigned and the taskGraph guard below fails the build
+            // (unless CARNET_UNSIGNED_RELEASE=true explicitly asks for unsigned).
+            signingConfig = if (hasReleaseSigning && !unsignedReleaseRequested) {
                 signingConfigs.getByName("releaseConfig")
             } else {
-                // Allows `flutter run --release` without any signing setup.
-                signingConfigs.getByName("debug")
+                null
             }
         }
     }
@@ -170,23 +186,21 @@ android {
     }
 }
 
+// F-13: fail-closed guard. Keyed on the task graph (not on a flavor name): any
+// :app task whose name mentions "release" (assemble*/bundle*/package*/sign*/
+// publish*/validateSigning*Release, any flavor) needs real signing properties.
 gradle.taskGraph.whenReady {
-    val allowDebugReleaseSigning =
-        System.getenv("ALLOW_DEBUG_RELEASE_SIGNING")?.equals("true", ignoreCase = true) == true
-    val isProdReleaseBuild = allTasks.any { task ->
-        task.name.contains("ProdRelease", ignoreCase = true)
+    val releaseTasks = allTasks.filter {
+        it.path.startsWith("${project.path}:") && it.name.contains("release", ignoreCase = true)
     }
-    if (isProdReleaseBuild && !allowDebugReleaseSigning) {
-        val (props, propsFile) = loadSigningProperties(rootProject)
-        val hasStoreSigning =
-            (props.getProperty("STORE_FILE")?.trim().orEmpty().isNotEmpty()) &&
-            (props.getProperty("STORE_PASSWORD")?.trim().orEmpty().isNotEmpty()) &&
-            (props.getProperty("KEY_ALIAS")?.trim().orEmpty().isNotEmpty()) &&
-            (props.getProperty("KEY_PASSWORD")?.trim().orEmpty().isNotEmpty())
-        if (!hasStoreSigning) {
+    if (releaseTasks.isNotEmpty() && !unsignedReleaseRequested) {
+        val (props, _) = loadSigningProperties(rootProject)
+        if (!hasCompleteSigningProps(props)) {
             throw GradleException(
-                "Prod release builds require signing.properties (repo root or android/). " +
-                    "Set ALLOW_DEBUG_RELEASE_SIGNING=true only for local smoke-test builds."
+                "Release build refused: no release signing configured. Release builds are " +
+                    "never signed with the debug key. Provide signing.properties (repo root or " +
+                    "android/) with STORE_FILE, STORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD. " +
+                    "For an intentionally UNSIGNED CI-only APK set CARNET_UNSIGNED_RELEASE=true."
             )
         }
     }

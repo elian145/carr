@@ -47,7 +47,7 @@ import os
 import re
 from typing import Any
 
-from ..time_utils import utcnow
+from ..time_utils import iso_utc, utcnow
 
 SETTINGS_KEY = "auto_moderation"
 
@@ -453,7 +453,7 @@ def set_kill_switch(enabled: bool, *, actor: str | None, reason: str | None) -> 
             "kill_switch": bool(enabled),
             "kill_switch_reason": (reason or "").strip()[:300] or None,
             "kill_switch_by": actor,
-            "kill_switch_at": utcnow().isoformat(),
+            "kill_switch_at": iso_utc(utcnow()),
         }
     )
 
