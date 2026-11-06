@@ -62,6 +62,9 @@ class MyApp extends StatelessWidget {
                 builder: (context, child) {
                   final shellColor = Theme.of(context).scaffoldBackgroundColor;
                   return ForceUpdateGate(
+                    // The gate sits above the Navigator: the soft-update
+                    // dialog must go through the root navigator's context.
+                    navigatorKey: productionNavigatorKey,
                     child: FirstRunOnboardingGate(
                       child: ConnectivityBanner(
                         child: SellSubmissionStatusBanner(
