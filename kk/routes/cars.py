@@ -81,7 +81,12 @@ from ..retention_dispatch import (
 from ..saved_search_alert_jobs import MODE_OFF, durability_mode, record_alert_job
 from ..time_utils import iso_utc, utcnow
 from .media import _normalize_car_image_kind, _pick_primary_listing_url, _r2_public_base
-from .user import assert_listing_phones_verified, parse_listing_contact_phones
+from .user import (
+    INVALID_CONTACT_PHONE_MESSAGE,
+    assert_listing_phones_verified,
+    invalid_listing_contact_phones,
+    parse_listing_contact_phones,
+)
 
 bp = Blueprint("cars", __name__)
 
@@ -1407,6 +1412,8 @@ def create_car():
         plate_type_val = plate_type_raw if plate_type_raw in _ALLOWED_PLATE_TYPES else None
         plate_city_val = _s(raw.get("plate_city") or raw.get("plateCity"), None) or None
 
+        if invalid_listing_contact_phones(raw):
+            return jsonify({"message": INVALID_CONTACT_PHONE_MESSAGE}), 400
         contact_phones = parse_listing_contact_phones(raw)
         if contact_phones:
             phone_err = assert_listing_phones_verified(current_user, contact_phones)
@@ -1698,6 +1705,11 @@ def update_car(car_id: str):
             return err
 
         raw = request.get_json(silent=True) or {}
+
+        # A submitted contact phone that is not an Iraqi mobile is an error, not
+        # "no phone" (checked before any revision/working copy is created).
+        if ("contact_phones" in raw or "contact_phone" in raw) and invalid_listing_contact_phones(raw):
+            return jsonify({"message": INVALID_CONTACT_PHONE_MESSAGE}), 400
 
         # F-04 / publication-bypass fix: an admin-privileged PUT may flip a
         # not-yet-public listing (pending/hidden/draft) to a public status.
