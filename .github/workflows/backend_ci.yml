@@ -146,6 +146,7 @@ jobs:
           kk/tests/test_sec_f02_listing_status_moderation.py
           kk/tests/test_f06_pg_deadlock.py
           kk/tests/test_f04_pg_durable_alerts.py
+          kk/tests/test_f04_pg_job_recovery.py
 
   migrations:
     name: Migration smoke (Postgres)
