@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import secrets
 import re
 
-from sqlalchemy import String as _SAString, type_coerce as _sa_type_coerce
+from sqlalchemy import String as _SAString, type_coerce as _sa_type_coerce, update
 
 from .reset_token_crypto import (
     HASH_PREFIX as _RESET_HASH_PREFIX,
@@ -250,7 +250,7 @@ def _find_legacy_plaintext_row(token):
 def _scrub_legacy_row(row, token):
     """Rewrite a legacy plaintext row to its hashed form so the plaintext is gone from the DB
     (and so ``PasswordReset.query.filter_by(token=<raw>)`` in the reset route now finds it)."""
-    from sqlalchemy import literal, update
+    from sqlalchemy import literal
 
     db.session.execute(
         update(PasswordReset)
@@ -295,12 +295,36 @@ def verify_password_reset_token(token):
 def invalidate_password_reset_tokens(user_id):
     """Mark every still-unused reset token of ``user_id`` as used (e.g. after a password change).
 
-    Not yet wired into ``kk/routes/auth.py`` (owned by another agent); see
-    ``_agent_logs/batch6/f27_f29/auth_py_hunk.patch``. Caller commits.
+    Keyed by ``user_id`` only, so it also covers legacy plaintext rows (pre-F-29, still in the
+    table until they expire) and rows that were never presented to ``verify_password_reset_token``.
+    Call it in the SAME transaction as the password write; the caller commits. A reset token
+    created afterwards (``create_password_reset_token``) is unaffected and works normally.
     """
     PasswordReset.query.filter_by(user_id=user_id, is_used=False).update(
         {"is_used": True}, synchronize_session=False
     )
+
+
+def consume_password_reset_token(token, user_id):
+    """Atomically claim ``token`` (single use): ``UPDATE ... SET is_used = true WHERE is_used = false``.
+
+    Returns True only for the one caller whose UPDATE flips the row. Concurrent redeemers (or a
+    password change that already invalidated the row) get rowcount 0 -> False, because the
+    database re-evaluates the ``is_used`` predicate after the competing transaction commits
+    (PostgreSQL READ COMMITTED row lock; SQLite serialises writers). Does not commit: call it in
+    the same transaction as the password write so a failed claim can be rolled back with it.
+    """
+    result = db.session.execute(
+        update(PasswordReset)
+        .where(
+            PasswordReset.token == token,  # HashedResetToken hashes the bound raw value
+            PasswordReset.user_id == user_id,
+            PasswordReset.is_used.is_(False),
+        )
+        .values(is_used=True)
+        .execution_options(synchronize_session=False)
+    )
+    return result.rowcount == 1
 
 def verify_email_verification_token(token):
     """Verify email verification token"""
