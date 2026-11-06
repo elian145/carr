@@ -46,4 +46,56 @@ abstract class _ChatConversationFields extends State<ChatConversationPage> {
   Timer? _voiceRecordTimer;
   String? _voiceRecordPath;
 
+  /// Verified account this conversation screen was opened for (F-34/F-35).
+  /// Captured once; every send, pending-record lookup and send event is checked
+  /// against it so a screen can never act for -- or show data of -- a
+  /// different account than the one it belongs to.
+  String? _ownerUserId;
+
+  bool get _pageOwnerIsCurrent => ApiService.currentAccountId == _ownerUserId;
+
+  /// The live counterpart (public id), or `null` when there is none (a buyer
+  /// opening a listing: the counterpart is the seller; or a deleted account).
+  String? get _livePeerId {
+    final r = widget.receiverId?.trim();
+    return (r == null || r.isEmpty) ? null : r;
+  }
+
+  /// What history requests send as `peer_id` (F-05): the live counterpart, or
+  /// the `deleted-user:<n>` key of a deleted one.
+  String? get _historyPeerRef {
+    final live = _livePeerId;
+    if (live != null) return live;
+    final k = widget.peerKey?.trim();
+    return (k == null || k.isEmpty) ? null : k;
+  }
+
+  /// Which realtime events belong to THIS conversation (listing + counterpart).
+  ChatConversationScope get _conversationScope => ChatConversationScope(
+        carId: widget.carId,
+        myId: _ownerUserId ?? ApiService.currentAccountId,
+        peerId: _livePeerId,
+      );
+
+  /// Immediately-before-send ownership check. Returns false (and tells the
+  /// user) when the signed-in account is no longer the one this screen was
+  /// opened for; the composer content is left untouched.
+  bool _ensurePageOwnerStillSignedIn() {
+    if (_ownerUserId != null && _pageOwnerIsCurrent) return true;
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              ApiSessionChangedException(),
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+    return false;
+  }
 }

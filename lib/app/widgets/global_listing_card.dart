@@ -16,6 +16,7 @@ import '../../shared/i18n/locale_formatting.dart';
 import '../../shared/listings/listing_card_data.dart' as listing_card_data;
 import '../../shared/listings/listing_card_media.dart';
 import '../../shared/listings/listing_featured_badge.dart';
+import '../../shared/ui/app_text_scale.dart';
 import '../../shared/ui/responsive.dart';
 import '../../shared/ui/app_haptics.dart';
 import '../../shared/listings/listing_status.dart';

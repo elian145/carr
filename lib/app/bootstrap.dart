@@ -20,8 +20,12 @@ import '../features/saved_searches/saved_search_home_bridge.dart';
 import '../features/sell/pending_sell_submission_service.dart';
 import '../features/sell/sell_pending_media_resume.dart';
 import '../services/outgoing_chat_send_service.dart';
+import '../services/saved_search_service.dart';
+import '../shared/auth/account_scope.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/debug/expected_client_noise.dart';
+import '../shared/prefs/chat_pending_send_prefs.dart';
+import '../shared/prefs/favorites_cache_prefs.dart';
 import '../shared/ui/device_performance.dart';
 import '../shared/ui/system_display_lock.dart';
 
@@ -147,6 +151,22 @@ void _runZonedApp(Widget app) {
       try {
         await ApiService.initializeTokens();
       } catch (e, st) { logNonFatal(e, st); }
+
+      // F-34/F-35: discard pre-isolation, ownerless private data (global saved
+      // searches, pending chat sends, favorites snapshot). It is never adopted
+      // by whichever account signs in; per-account stores replace it.
+      try {
+        await SavedSearchService.purgeLegacyUnowned();
+        await ChatPendingSendPrefs.purgeLegacyUnowned();
+        await FavoritesCachePrefs.purgeLegacyUnowned();
+      } catch (e, st) { logNonFatal(e, st); }
+      // A pending chat send is only ever resumed by its owner: whenever an
+      // account becomes active, give that account's own queue a retry.
+      AccountScope.addActivatedListener((owner) {
+        if (owner != null && owner.isNotEmpty) {
+          unawaited(OutgoingChatSendService.instance.recoverPendingSends());
+        }
+      });
 
       // Drop orphaned one-time saved-search keys if the app was killed before Home mounted.
       try {

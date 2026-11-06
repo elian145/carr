@@ -56,7 +56,7 @@ from kk.tests.test_auto_moderation_engine import (  # noqa: E402
 )
 
 PG_URL = (os.environ.get("CARNET_PG_TEST_URL") or "").strip()
-NEW_HEAD = "v0w1x2y3z4a5"
+NEW_HEAD = "f04a1b2c3d4e"
 PREV_HEAD = "u9v0w1x2y3z4"
 
 pytestmark = pytest.mark.skipif(not PG_URL, reason="CARNET_PG_TEST_URL not set (PostgreSQL rehearsal only)")

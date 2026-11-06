@@ -2057,6 +2057,15 @@ class BackendFactorySmokeTest(unittest.TestCase):
         client.disconnect()
 
     def test_join_chat_allowed_for_seller(self):
+        """F-05/F-25: a conversation is (listing, seller, buyer). The seller
+        joins ONLY the room of the buyer they name; with no buyer, or several
+        and none named, the join is refused (never a shared listing room)."""
+        from kk.chat_realtime import room_for_conversation
+        from kk.models import User
+
+        with self.app.app_context():
+            dealer_public = User.query.filter_by(username="dealer").first().public_id
+
         client = self.socketio.test_client(
             self.app,
             flask_test_client=self.client,
@@ -2064,14 +2073,58 @@ class BackendFactorySmokeTest(unittest.TestCase):
         )
         self.assertTrue(client.is_connected(), client.get_received())
         client.get_received()
-        client.emit("join_chat", {"car_id": self.car_public})
-        received = client.get_received()
-        joined = [evt for evt in received if evt.get("name") == "joined_chat"]
-        self.assertTrue(joined, received)
-        payload = joined[-1]["args"][0]
-        self.assertEqual(payload.get("ok"), True)
+
+        def join(payload):
+            client.emit("join_chat", payload)
+            received = client.get_received()
+            joined = [evt for evt in received if evt.get("name") == "joined_chat"]
+            self.assertTrue(joined, received)
+            return joined[-1]["args"][0]
+
+        # No buyer has written yet: nobody to name, nothing to join.
+        refused = join({"car_id": self.car_public})
+        self.assertEqual(refused.get("ok"), False, refused)
+        self.assertEqual(refused.get("code"), "peer_required", refused)
+        self.assertIsNone(refused.get("room"))
+
+        # A buyer writes to the seller: that buyer becomes a legitimate
+        # counterpart and the seller joins exactly that buyer's room.
+        sent = self.client.post(
+            f"/api/chat/{self.car_public}/send",
+            headers=self._auth(self.viewer_token),
+            json={"content": "hi seller", "receiver_id": self.seller_public},
+        )
+        self.assertEqual(sent.status_code, 201, sent.data)
+        viewer_room = room_for_conversation(
+            self.car_public, self.seller_public, self.viewer_public
+        )
+        payload = join({"car_id": self.car_public, "peer_id": self.viewer_public})
+        self.assertEqual(payload.get("ok"), True, payload)
         self.assertEqual(payload.get("car_id"), self.car_public)
-        self.assertEqual(payload.get("room"), f"chat:{self.car_public}")
+        self.assertEqual(payload.get("peer_id"), self.viewer_public)
+        self.assertEqual(payload.get("room"), viewer_room)
+        self.assertNotEqual(viewer_room, f"chat:{self.car_public}")
+
+        # A second buyer writes: the seller must now name one; an unnamed
+        # join is ambiguous and refused, a named one gets that buyer's room.
+        sent = self.client.post(
+            f"/api/chat/{self.car_public}/send",
+            headers=self._auth(self.dealer_token),
+            json={"content": "hello too", "receiver_id": self.seller_public},
+        )
+        self.assertEqual(sent.status_code, 201, sent.data)
+        ambiguous = join({"car_id": self.car_public})
+        self.assertEqual(ambiguous.get("ok"), False, ambiguous)
+        self.assertEqual(ambiguous.get("code"), "peer_required", ambiguous)
+        self.assertIsNone(ambiguous.get("room"))
+
+        dealer_room = room_for_conversation(
+            self.car_public, self.seller_public, dealer_public
+        )
+        payload = join({"car_id": self.car_public, "peer_id": dealer_public})
+        self.assertEqual(payload.get("ok"), True, payload)
+        self.assertEqual(payload.get("room"), dealer_room)
+        self.assertNotEqual(dealer_room, viewer_room)
         client.disconnect()
 
     def test_join_chat_allowed_after_becoming_participant(self):
@@ -2104,7 +2157,12 @@ class BackendFactorySmokeTest(unittest.TestCase):
         client.disconnect()
 
     def test_socket_query_token_rejected_in_production_env(self):
-        """S-06: query-string JWTs must not authenticate outside dev/test."""
+        """S-06: query-string JWTs must not authenticate outside dev/test.
+
+        F-36 contract: a connection that PRESENTS a token through a forbidden
+        source is refused (not silently downgraded to an anonymous guest);
+        credential-free connections stay guests and the Authorization header
+        still authenticates."""
         previous = os.environ.get("APP_ENV")
         allow = os.environ.pop("ALLOW_SOCKET_QUERY_TOKEN", None)
         try:
@@ -2114,14 +2172,40 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 flask_test_client=self.client,
                 query_string=f"token={self.viewer_token}",
             )
-            self.assertTrue(client.is_connected())
-            received = client.get_received()
-            connected = [evt for evt in received if evt.get("name") == "connected"]
-            self.assertTrue(connected, received)
+            self.assertFalse(
+                client.is_connected(),
+                "a token in the query string must be refused in production",
+            )
+
+            # No credentials at all: still an intentional anonymous guest.
+            guest = self.socketio.test_client(
+                self.app, flask_test_client=self.client
+            )
+            self.assertTrue(guest.is_connected())
+            connected = [
+                evt for evt in guest.get_received() if evt.get("name") == "connected"
+            ]
+            self.assertTrue(connected)
             payload = connected[-1]["args"][0]
             self.assertFalse(payload.get("authenticated"), payload)
             self.assertIsNone(payload.get("user_id"))
-            client.disconnect()
+            guest.disconnect()
+
+            # The same token in the Authorization header authenticates.
+            authed = self.socketio.test_client(
+                self.app,
+                flask_test_client=self.client,
+                headers={"Authorization": f"Bearer {self.viewer_token}"},
+            )
+            self.assertTrue(authed.is_connected())
+            connected = [
+                evt for evt in authed.get_received() if evt.get("name") == "connected"
+            ]
+            self.assertTrue(connected)
+            payload = connected[-1]["args"][0]
+            self.assertTrue(payload.get("authenticated"), payload)
+            self.assertEqual(payload.get("user_id"), self.viewer_public)
+            authed.disconnect()
         finally:
             if previous is None:
                 os.environ.pop("APP_ENV", None)

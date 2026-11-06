@@ -72,22 +72,28 @@ void main() {
 
   group('A: normal (JSON) request retry -- push_token symptom', () {
     test(
-      'a stale-client error on the first attempt is retried with a brand '
-      'new request that carries the FULL body (regression for "0 bytes '
-      'written but expected 154")',
+      'a stale-client error on the first attempt of a retry-safe request '
+      '(it carries an Idempotency-Key) is retried with a brand new request '
+      'that carries the FULL body (regression for "0 bytes written but '
+      'expected 154")',
       () async {
         var callCount = 0;
         final receivedBodyLengths = <int>[];
+        final receivedKeys = <String?>[];
         String? secondAttemptBody;
 
         useClient(
           MockClient((request) async {
             callCount++;
             receivedBodyLengths.add(request.bodyBytes.length);
+            receivedKeys.add(request.headers['Idempotency-Key']);
             if (callCount == 1) {
               // Simulates the "iOS reclaimed the keep-alive socket while
               // backgrounded" failure that `isStaleHttpClientError`
-              // classifies and `_withStaleClientRetry` retries.
+              // classifies and `_withStaleClientRetry` retries. F-37: this
+              // retry is now limited to requests the server de-duplicates
+              // (a write with an Idempotency-Key) and reads; the same
+              // original error text is used on purpose.
               throw http.ClientException(
                 'Software caused connection abort',
                 request.url,
@@ -95,15 +101,19 @@ void main() {
             }
             secondAttemptBody = utf8.decode(request.bodyBytes);
             return http.Response(
-              '{}',
-              200,
+              json.encode({
+                'car': {'id': 'car-regr-1'},
+              }),
+              201,
               headers: {'content-type': 'application/json'},
             );
           }),
         );
 
-        const pushToken = 'fcm-test-token-1234567890abcdef';
-        await ApiService.registerPushToken(pushToken);
+        await ApiService.createCar(
+          {'brand': 'toyota', 'model': 'corolla'},
+          idempotencyKey: 'regr-key-1',
+        );
 
         expect(
           callCount,
@@ -129,16 +139,52 @@ void main() {
               'first attempt -- proving a fresh request/body was built, not '
               'a reused, already-drained one',
         );
+        expect(
+          receivedKeys,
+          ['regr-key-1', 'regr-key-1'],
+          reason: 'the retry must reuse the SAME idempotency key',
+        );
         expect(secondAttemptBody, isNotNull);
         final decoded = json.decode(secondAttemptBody!) as Map;
         expect(
-          decoded['token'],
-          pushToken,
-          reason: 'the retried request must carry the real push token, not '
-              'an empty/stale body',
+          decoded['brand'],
+          'toyota',
+          reason: 'the retried request must carry the real body, not an '
+              'empty/stale one',
         );
       },
     );
+
+    for (final msg in [
+      'Software caused connection abort',
+      'Bad file descriptor',
+    ]) {
+      test(
+        'F-37: an unkeyed write (push token) is NOT replayed after a '
+        'stale-client error "$msg" -- it is surfaced after ONE attempt',
+        () async {
+          var callCount = 0;
+          useClient(
+            MockClient((request) async {
+              callCount++;
+              throw http.ClientException(msg, request.url);
+            }),
+          );
+
+          await expectLater(
+            ApiService.registerPushToken('fcm-test-token-1234567890abcdef'),
+            throwsA(isA<http.ClientException>()),
+          );
+          expect(
+            callCount,
+            1,
+            reason:
+                'the failure cannot prove the server did not process the '
+                'write, so it must not be sent a second time',
+          );
+        },
+      );
+    }
 
     test(
       '401 followed by a successful refresh retries a POST with a fresh, '

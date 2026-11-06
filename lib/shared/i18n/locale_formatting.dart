@@ -7,7 +7,9 @@ import '../../shared/debug/app_log.dart';
 
 NumberFormat decimalFormatterForLocale(BuildContext context) {
   String tag = Localizations.localeOf(context).toLanguageTag();
-  if (tag.startsWith('ku')) tag = 'ar';
+  // `intl` ships no `ku`/`ckb` number data: Kurdish uses Arabic's grouping
+  // pattern (Western digits, see `localizeDigits`).
+  if (tag.startsWith('ku') || tag.startsWith('ckb')) tag = 'ar';
   try {
     return NumberFormat.decimalPattern(tag);
   } catch (e, st) { logNonFatal(e, st); 

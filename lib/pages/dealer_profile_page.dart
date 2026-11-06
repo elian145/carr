@@ -22,6 +22,7 @@ import '../shared/i18n/opening_hours_time_parse.dart';
 import '../shared/media/media_url.dart';
 import '../app/widgets/listing_network_image.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
+import '../shared/ui/app_text_scale.dart';
 import '../shared/ui/responsive.dart';
 import '../features/listing/listing_mappers.dart';
 import '../features/home/home_feed_client_sort.dart';
@@ -477,6 +478,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                             ListingLayoutPrefs.gridChildAspectRatioForWidth(
                                               listingColumns,
                                               screenWidth,
+                                              textScale: appTextScaleOf(context),
                                             ),
                                         crossAxisSpacing: 8,
                                         mainAxisSpacing: 16,

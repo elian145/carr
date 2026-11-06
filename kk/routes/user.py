@@ -29,7 +29,7 @@ from ..models import (
 from ..security import atomic_increment_attempts, generate_secure_filename, validate_file_upload
 from ..security import validate_input_sanitization
 from ..localization import get_background_locale, normalize_locale, translate
-from ..time_utils import utcnow
+from ..time_utils import iso_utc, utcnow
 from ..dealer_socials import clean_dealership_socials, public_dealership_socials
 from .media import _r2_configured, _r2_public_base
 
@@ -597,7 +597,7 @@ def recently_viewed():
             d = _with_media_compat(car)
             if viewed_at is not None:
                 try:
-                    d["viewed_at"] = viewed_at.isoformat()
+                    d["viewed_at"] = iso_utc(viewed_at)
                 except Exception:
                     d["viewed_at"] = str(viewed_at)
             if not d.get("city") and d.get("location"):

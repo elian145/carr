@@ -33,6 +33,9 @@ const int _specsValueFlex = 3;
 const int _specsContentFlexTotal =
     _specsIconFlex + _specsLabelFlex + _specsValueFlex;
 
+/// Text scale the fixed design tile accommodates without growing.
+const double _specsTextScaleHeadroom = 1.5;
+
 double _specsDim(double designPixels, double scale) => designPixels * scale;
 
 double _specsPackedWidth(int crossCount) =>
@@ -62,6 +65,7 @@ final class _SpecsGridMetrics {
 /// design stays the same when system font or display size changes.
 _SpecsGridMetrics _specsGridMetrics({
   required double availableWidth,
+  double textScale = 1.0,
 }) {
   const crossCount = 3;
   final width = availableWidth <= 0 ? _specsPackedWidth(crossCount) : availableWidth;
@@ -70,7 +74,12 @@ _SpecsGridMetrics _specsGridMetrics({
     crossCount: crossCount,
     scale: scale,
     gap: _specsDim(_specsDesignGap, scale),
-    rowH: _specsDim(_specsDesignTileHeight, scale),
+    // The design tile (label/value zones) already holds text up to ~1.5x;
+    // beyond that the row grows so 2.0x text is not scaled back down.
+    rowH: _specsDim(_specsDesignTileHeight, scale) *
+        (textScale > _specsTextScaleHeadroom
+            ? textScale / _specsTextScaleHeadroom
+            : 1.0),
   );
 }
 
@@ -131,9 +140,8 @@ Widget carListingSpecsDetailRow(
               Expanded(
                 child: Text(
                   label,
-                  maxLines: 1,
+                  maxLines: appTextScaleOf(context) > 1.3 ? 2 : 1,
                   overflow: TextOverflow.ellipsis,
-                  textScaler: TextScaler.noScaling,
                   style: TextStyle(
                     color: labelGrey,
                     fontSize: fontSize,
@@ -147,17 +155,23 @@ Widget carListingSpecsDetailRow(
                 valueWidget,
               ] else if (value != null) ...[
                 SizedBox(width: _specsDim(_specsDetailValueGap, scale)),
-                Text(
-                  value,
-                  textAlign: TextAlign.right,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textScaler: TextScaler.noScaling,
-                  style: TextStyle(
-                    color: onTap != null ? brandOrange : valueColor,
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w800,
-                    height: 1.15,
+                // Cap the value so a scaled (up to 2x) value can never push
+                // the label to zero width / overflow the row.
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.sizeOf(context).width * 0.55,
+                  ),
+                  child: Text(
+                    value,
+                    textAlign: TextAlign.right,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: onTap != null ? brandOrange : valueColor,
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w800,
+                      height: 1.15,
+                    ),
                   ),
                 ),
                 if (onTap != null) ...[
@@ -357,7 +371,6 @@ Widget carListingSpecsCard(ListingSpecItem item, {required double scale}) {
                                   item.label,
                                   maxLines: 1,
                                   textAlign: TextAlign.center,
-                                  textScaler: TextScaler.noScaling,
                                   style: TextStyle(
                                     fontSize: labelFontSize,
                                     height: 1.05,
@@ -376,7 +389,6 @@ Widget carListingSpecsCard(ListingSpecItem item, {required double scale}) {
                                   item.value!,
                                   maxLines: 1,
                                   textAlign: TextAlign.center,
-                                  textScaler: TextScaler.noScaling,
                                   style: TextStyle(
                                     fontSize: valueFontSize,
                                     height: 1.05,

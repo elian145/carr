@@ -31,6 +31,7 @@ abstract class _HomePageFields extends State<HomePage> {
   static int _homeFeedCachePage = 1;
   static bool _homeFeedCacheHasNext = true;
   static bool _homeDeleteHandlerRegistered = false;
+  static bool _homeFeedSessionListenerRegistered = false;
   /// Last default feed mode used for the in-memory cache (`random` / `recommended`).
   static String? _homeFeedCacheDefaultSort;
   /// When the in-memory feed snapshot was last refreshed from the network.
@@ -119,7 +120,6 @@ abstract class _HomePageFields extends State<HomePage> {
   bool isEngineSizeDropdown = true;
   static const String _filtersKey = 'home_filters_v1';
   static const String _sellFiltersKey = 'sell_filters_v1';
-  static const String _savedSearchesKey = 'saved_searches_v1';
 
   // Listings layout
   int listingColumns = 2;
@@ -514,6 +514,10 @@ class _HomePageState extends _HomePageFields
       _HomePageFields._homeDeleteHandlerRegistered = true;
       ListingEvents.addDeleteHandler(_purgeDeletedFromHomeFeedCache);
     }
+    if (!_HomePageFields._homeFeedSessionListenerRegistered) {
+      _HomePageFields._homeFeedSessionListenerRegistered = true;
+      AccountScope.addSessionChangedListener(_dropHomeFeedSnapshot);
+    }
     ListingEvents.deletedListingId.addListener(_onHomeListingDeleted);
     unawaited(ConnectivityService.instance.start());
     ConnectivityService.instance.isOnline.addListener(_onConnectivityChanged);
@@ -590,6 +594,16 @@ class _HomePageState extends _HomePageFields
         }
       } catch (e, st) { logNonFatal(e, st); }
     });
+  }
+
+  /// F-39: the cached feed can carry per-account state (favorite flags, ...);
+  /// never let it outlive the session that fetched it.
+  static void _dropHomeFeedSnapshot() {
+    _HomePageFields._homeFeedCache = <Map<String, dynamic>>[];
+    _HomePageFields._homeFeedCachePage = 1;
+    _HomePageFields._homeFeedCacheHasNext = true;
+    _HomePageFields._homeFeedCacheDefaultSort = null;
+    _HomePageFields._homeFeedCacheFetchedAt = null;
   }
 
   /// Runs on delete even when [HomePage] is disposed (tab uses route replacement).

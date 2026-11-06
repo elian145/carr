@@ -1,3 +1,5 @@
+import '../../services/websocket_service.dart' show tryParseApiDateTime;
+
 /// Sort home feed listing maps client-side when the API sort fails.
 List<Map<String, dynamic>> homeFeedClientSortedListings(
   List<Map<String, dynamic>> input,
@@ -45,10 +47,10 @@ List<Map<String, dynamic>> homeFeedClientSortedListings(
     case 'newest':
       sorted.sort((a, b) {
         final dateA =
-            DateTime.tryParse(a['created_at']?.toString() ?? '') ??
+            tryParseApiDateTime(a['created_at']?.toString() ?? '') ??
             DateTime(1970);
         final dateB =
-            DateTime.tryParse(b['created_at']?.toString() ?? '') ??
+            tryParseApiDateTime(b['created_at']?.toString() ?? '') ??
             DateTime(1970);
         return dateB.compareTo(dateA);
       });

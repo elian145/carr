@@ -51,7 +51,12 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                           SizedBox(height: 6),
                           SizedBox(
                             width: double.infinity,
-                            height: 46,
+                            // 46dp at 1.0x; grows with the (13sp) label so a
+                            // scaled label is never clipped.
+                            height: math.max(
+                              46.0,
+                              13 * appTextScaleOf(context) * 1.2 + 16,
+                            ),
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.brandOrange,

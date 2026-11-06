@@ -209,6 +209,15 @@ Duration Function(int attempts)? debugSellSubmissionRetryBackoffOverride;
 String _currentAccountId() =>
     (AuthService().currentUser?['id'] ?? '').toString().trim();
 
+/// Owner to stamp on a NEW submission: the loaded profile's id, else the id
+/// the session's own token names ([ApiService.currentAccountId], already
+/// cross-checked against `/auth/me`). Empty when neither is known yet.
+String _ownerForNewSubmission() {
+  final profile = _currentAccountId();
+  if (profile.isNotEmpty) return profile;
+  return (ApiService.currentAccountId ?? '').trim();
+}
+
 /// F-11-style classification (mirrors `isRetryableChatSendError` /
 /// `SellListingMediaUpload._isTransientUploadError`): transient
 /// network/transport/server-hiccup errors are safe to retry automatically;
@@ -575,7 +584,20 @@ class PendingSellSubmissionService {
     required Map<String, dynamic> carData,
     String? editListingId,
   }) async {
-    final existing = await SellSubmissionStatePrefs.load(id);
+    var existing = await SellSubmissionStatePrefs.load(id);
+    // F-34: a persisted record with NO owner that this process did not create
+    // in the current session is quarantined -- its original owner cannot be
+    // established, so none of its state (listing id, frozen media mapping,
+    // progress) may be inherited by the account pressing Submit now. (The
+    // create idempotency key is derived from the draft id, so a genuine
+    // resubmission by the same account is still replayed, not duplicated.)
+    if (existing != null &&
+        (existing.ownerUserId ?? '').trim().isEmpty &&
+        !_mayStampOwnerless(id)) {
+      appLog('[SELL RESUME] quarantined ownerless record ignored on submit '
+          'record=$id');
+      existing = null;
+    }
     // A worker for this draft is already running: its record is the live
     // source of truth. Re-preparing would overwrite its progress with a
     // stale `pending` snapshot -- just join it.
@@ -594,7 +616,16 @@ class PendingSellSubmissionService {
     // in (see the guard in [_runSubmission]) could re-stamp ownership
     // instead of correctly refusing to run.
     final ownerUserId = existing?.ownerUserId ??
-        (_currentAccountId().isEmpty ? null : _currentAccountId());
+        (_ownerForNewSubmission().isEmpty ? null : _ownerForNewSubmission());
+    if (ownerUserId == null) {
+      // Owner genuinely unknown right now (profile not loaded, opaque token).
+      // Only THIS process, in THIS authentication session, may stamp it once
+      // the account becomes known; after a restart such a record is
+      // quarantined (see [_mayStampOwnerless]).
+      _ownerlessCreatedInEpoch[id] = ApiService.sessionEpoch;
+    } else {
+      _ownerlessCreatedInEpoch.remove(id);
+    }
 
     // iOS kill-during-prepare fix: persist submission INTENT before the
     // (potentially multi-second) durable media copy. Force-quit mid-copy
@@ -695,6 +726,31 @@ class PendingSellSubmissionService {
   final Map<String, int> _preparingDrafts = <String, int>{};
 
   bool isPreparing(String draftId) => _preparingDrafts.containsKey(draftId);
+
+  /// draftId -> authentication-session epoch in which THIS process created a
+  /// submission whose owner was not yet known. Such a record may be stamped
+  /// with the account once it becomes known, but only inside that same
+  /// session (the user who pressed Submit is still the one signed in).
+  final Map<String, int> _ownerlessCreatedInEpoch = <String, int>{};
+
+  /// Whether an ownerless record for [draftId] may still be claimed by the
+  /// signed-in account. Every other ownerless record (written by an earlier
+  /// build or an earlier run of the app) is QUARANTINED: nobody can show who
+  /// it belongs to, so it is never resumed, shown or inherited -- otherwise
+  /// the first account to sign in on a shared device would silently take over
+  /// (and publish) another person's pending listing.
+  bool _mayStampOwnerless(String draftId) =>
+      debugAllowOwnerlessResume ||
+      _ownerlessCreatedInEpoch[draftId] == ApiService.sessionEpoch;
+
+  /// Test-only: resume-mechanics tests seed ownerless records directly to
+  /// model "the app was killed"; they are about media/progress recovery, not
+  /// ownership, so they opt out of the quarantine. Production never sets it.
+  @visibleForTesting
+  bool debugAllowOwnerlessResume = false;
+
+  @visibleForTesting
+  void debugResetOwnerlessTracking() => _ownerlessCreatedInEpoch.clear();
 
   /// User-initiated retry of a `needsAttention`/`retryable` submission
   /// (My Listings "Retry"). Keeps the record, its idempotency key, its
@@ -1068,6 +1124,11 @@ class PendingSellSubmissionService {
           appLog('[SELL RESUME] skipped reason=owner-mismatch record=${r.draftId}');
           continue;
         }
+        if (owner.isEmpty && !_mayStampOwnerless(r.draftId)) {
+          appLog('[SELL RESUME] skipped reason=ownerless-quarantined '
+              'record=${r.draftId}');
+          continue;
+        }
         appLog('[SELL RESUME] starting record=${r.draftId}');
         // `_ensureRunning` dedupes per-draftId via `_activeRuns` and is
         // synchronous up to that registration -- a record whose runner is
@@ -1111,6 +1172,15 @@ class PendingSellSubmissionService {
     try {
       final legacy = await SellPendingMediaPrefs.load();
       if (legacy == null) return;
+      // The legacy record carries no owner. Only turn it into a resumable
+      // submission once the signed-in account is known, and stamp that
+      // account on it: an unowned record must never be claimed later by
+      // whichever account happens to sign in next on a shared device. (The
+      // key is also account-scoped by `AccountLocalData`, so a value left by
+      // another owner or by a pre-isolation build is quarantined before it
+      // can get here.)
+      final legacyOwner = _currentAccountId();
+      if (legacyOwner.isEmpty) return;
       final carId = (legacy['carId'] ?? '').toString().trim();
       if (carId.isEmpty) {
         await SellPendingMediaPrefs.clear();
@@ -1129,6 +1199,7 @@ class PendingSellSubmissionService {
           draftId: id,
           status: SellSubmissionStatus.inProgress,
           carId: carId,
+          ownerUserId: legacyOwner,
           pendingReview: legacy['pendingReview'] == true,
           carData: carData,
           idempotencyKey: SellPendingMediaPrefs.createIdempotencyKey(id),
@@ -1249,11 +1320,16 @@ class PendingSellSubmissionService {
         return null;
       }
     } else {
-      // The profile had not loaded when Submit was pressed, so the record
-      // has no owner. Stamp it now that the account is known -- otherwise a
-      // different account signing in on this device could later resume
-      // (and publish) this submission.
-      final currentOwner = _currentAccountId();
+      // No owner recorded. Only a record this process created in the CURRENT
+      // session (profile had not loaded when Submit was pressed) may be
+      // stamped now; any other ownerless record is quarantined and never run
+      // under whichever account happens to be signed in.
+      if (!_mayStampOwnerless(draftId)) {
+        appLog('[SELL RESUME] skipped reason=ownerless-quarantined '
+            'record=$draftId');
+        return null;
+      }
+      final currentOwner = _ownerForNewSubmission();
       if (currentOwner.isNotEmpty) {
         record = record.copyWith(ownerUserId: currentOwner);
         await SellSubmissionStatePrefs.upsert(record);
