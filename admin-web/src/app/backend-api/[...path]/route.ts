@@ -5,6 +5,8 @@ import {
   resolveAdminAccessToken,
   setAdminSessionCookies,
 } from "@/lib/admin-session-auth";
+import { rejectCrossSiteRequest } from "@/lib/origin-guard";
+import { applyApiSecurityHeaders } from "@/lib/security-headers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,6 +22,11 @@ function apiBase(): string {
 type Ctx = { params: Promise<{ path: string[] }> };
 
 async function proxy(request: Request, context: Ctx): Promise<Response> {
+  // F-19: CSRF defence-in-depth. State-changing methods must come from the
+  // admin app's own origin (SameSite=Lax alone is not relied upon).
+  const blocked = rejectCrossSiteRequest(request);
+  if (blocked) return blocked;
+
   const { path } = await context.params;
   const joined = (path || []).map(encodeURIComponent).join("/");
   const incoming = new URL(request.url);
@@ -82,6 +89,16 @@ async function proxy(request: Request, context: Ctx): Promise<Response> {
   }
 
   // Prefer NextResponse so we can rotate httpOnly cookies after refresh.
+  // Only the headers above are forwarded: hop-by-hop headers and upstream
+  // Set-Cookie never reach the browser. Authenticated responses must not be
+  // stored by shared caches unless the API said otherwise.
+  if (!outHeaders.has("cache-control")) {
+    outHeaders.set("Cache-Control", "private, no-store");
+  }
+  // F-19: the proxy used to drop X-Content-Type-Options (and middleware skipped
+  // /backend-api), so e.g. an upstream text/plain body could be MIME-sniffed.
+  applyApiSecurityHeaders(outHeaders, process.env);
+
   const res = new NextResponse(upstream.body, {
     status: upstream.status,
     statusText: upstream.statusText,

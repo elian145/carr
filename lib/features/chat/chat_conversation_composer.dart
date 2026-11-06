@@ -78,6 +78,9 @@ mixin _ChatConversationComposer on _ChatConversationMessageActions {
       return;
     }
     if (!await ensurePhoneVerifiedForAction(context)) return;
+    // F-35: ownership is re-checked after the last await and immediately
+    // before anything is sent.
+    if (!_ensurePageOwnerStillSignedIn()) return;
     unawaited(AppHaptics.light());
     setState(() => _isSending = true);
     _messageController.clear();
@@ -181,6 +184,7 @@ mixin _ChatConversationComposer on _ChatConversationMessageActions {
         listingPreview: listingPreviewForMessage,
         replyToMessageId: replyingToMessageId,
         tempMessageId: pendingMessage.id,
+        expectedOwnerUserId: _ownerUserId,
       );
       deferIsSendingReset = true;
       return;

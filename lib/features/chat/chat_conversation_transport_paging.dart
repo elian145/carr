@@ -24,6 +24,7 @@ mixin _ChatConversationTransportPaging on _ChatConversationTransportMedia {
         widget.carId,
         perPage: _ChatConversationFields._perPage,
         before: oldestLoaded.toUtc().toIso8601String(),
+        peerId: _historyPeerRef,
       );
       if (!mounted) return;
       final rows = (result['messages'] as List<Map<String, dynamic>>?) ?? [];
@@ -98,8 +99,9 @@ mixin _ChatConversationTransportPaging on _ChatConversationTransportMedia {
       final result = await ApiService.getChatMessagesByConversation(
         widget.carId,
         perPage: _ChatConversationFields._perPage,
+        peerId: _historyPeerRef,
       );
-      if (!mounted) return;
+      if (!mounted || !_pageOwnerIsCurrent) return;
       final rows = (result['messages'] as List<Map<String, dynamic>>?) ?? [];
       final loaded = rows.map(ChatMessage.fromJson).toList();
       loaded.sort((a, b) => a.createdAt.compareTo(b.createdAt));
@@ -110,7 +112,11 @@ mixin _ChatConversationTransportPaging on _ChatConversationTransportMedia {
         }
         _mergeInFlightMediaPending();
         if (OutgoingChatSendService.instance
-            .inFlightMediaForConversation(widget.carId)
+            .inFlightMediaForConversation(
+                  widget.carId,
+                  ownerUserId: _ownerUserId,
+                  peerId: _historyPeerRef,
+                )
             .isNotEmpty) {
           _isSending = true;
         }

@@ -1,6 +1,12 @@
 import fs from "node:fs";
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 
+// F-19: state-changing requests to admin-web must carry a same-origin `Origin`
+// (browsers always send it; Playwright's APIRequestContext does not).
+const ADMIN_ORIGIN =
+  process.env.ADMIN_WEB_BASE_URL ||
+  `http://127.0.0.1:${process.env.ADMIN_WEB_PORT || 3000}`;
+
 /**
  * Auto Moderation page in the real admin UI, against a real backend:
  *   - behind the admin authentication (signed-out -> /login);
@@ -31,7 +37,7 @@ async function signIn(context: BrowserContext, role: keyof Seed["admins"]) {
   const s = seed();
   const res = await context.request.post("/api/admin-session", {
     data: { username: s.admins[role], password: s.password },
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Origin: ADMIN_ORIGIN },
   });
   expect(res.status(), `real ${role} login`).toBe(200);
 }
@@ -130,6 +136,7 @@ test.describe("auto moderation - authenticated", () => {
     // the server refuses to accept 'false' even if the dashboard were bypassed
     const bypass = await context.request.patch("/backend-api/api/admin/auto-moderation/settings", {
       data: { require_ai_for_auto_approve: false },
+      headers: { Origin: ADMIN_ORIGIN },
     });
     expect(bypass.status()).toBe(400);
 
@@ -192,6 +199,7 @@ test.describe("auto moderation - authenticated", () => {
     expect((await (await settingsApi(context)).json()).kill_switch_active).toBe(true);
     const direct = await context.request.post("/backend-api/api/admin/auto-moderation/kill-switch", {
       data: { enabled: false },
+      headers: { Origin: ADMIN_ORIGIN },
     });
     expect(direct.status()).toBe(403);
 
@@ -201,6 +209,7 @@ test.describe("auto moderation - authenticated", () => {
     await expect(page.getByRole("button", { name: "Save settings" })).toHaveCount(0);
     const write = await context.request.patch("/backend-api/api/admin/auto-moderation/settings", {
       data: { min_photos: 1 },
+      headers: { Origin: ADMIN_ORIGIN },
     });
     expect(write.status()).toBe(403);
 
@@ -213,6 +222,7 @@ test.describe("auto moderation - authenticated", () => {
     await signIn(context, "super_admin");
     const r = await context.request.post("/backend-api/api/admin/auto-moderation/kill-switch", {
       data: { enabled: false },
+      headers: { Origin: ADMIN_ORIGIN },
     });
     expect(r.status()).toBe(200);
     expect((await (await settingsApi(context)).json()).kill_switch_active).toBe(false);

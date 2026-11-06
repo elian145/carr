@@ -1,6 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/ui/app_text_scale.dart';
 import '../../../shared/ui/responsive.dart';
 
 /// WhatsApp + call actions on the listing detail page.
@@ -14,32 +17,44 @@ class CarDetailsContactBar extends StatelessWidget {
   final VoidCallback onWhatsApp;
   final VoidCallback onCall;
 
+  /// Above this system text scale the two buttons stack vertically.
+  static const double stackAboveTextScale = 1.3;
+
   @override
   Widget build(BuildContext context) {
     final compact = AppResponsive.isCompactPhone(context);
     final loc = AppLocalizations.of(context)!;
 
+    final whatsApp = _ContactActionButton(
+      compact: compact,
+      backgroundColor: const Color(0xFF25D366),
+      icon: Icons.chat,
+      label: loc.chatOnWhatsApp,
+      onPressed: onWhatsApp,
+    );
+    final call = _ContactActionButton(
+      compact: compact,
+      backgroundColor: const Color(0xFF007AFF),
+      icon: Icons.phone,
+      label: loc.callSeller,
+      onPressed: onCall,
+    );
+    final gap = compact ? 6.0 : 8.0;
+
+    // Large system text: two half-width buttons cannot hold the labels, so
+    // stack them full width (each stays a full-size, reachable target).
+    if (appTextScaleOf(context) > stackAboveTextScale) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [whatsApp, SizedBox(height: gap), call],
+      );
+    }
+
     return Row(
       children: [
-        Expanded(
-          child: _ContactActionButton(
-            compact: compact,
-            backgroundColor: const Color(0xFF25D366),
-            icon: Icons.chat,
-            label: loc.chatOnWhatsApp,
-            onPressed: onWhatsApp,
-          ),
-        ),
-        SizedBox(width: compact ? 6 : 8),
-        Expanded(
-          child: _ContactActionButton(
-            compact: compact,
-            backgroundColor: const Color(0xFF007AFF),
-            icon: Icons.phone,
-            label: loc.callSeller,
-            onPressed: onCall,
-          ),
-        ),
+        Expanded(child: whatsApp),
+        SizedBox(width: gap),
+        Expanded(child: call),
       ],
     );
   }
@@ -67,8 +82,14 @@ class _ContactActionButton extends StatelessWidget {
     final double fontSize = compact ? 14 : 16;
     final double gap = compact ? 5 : 6;
 
+    // Button grows with the text (46dp at 1.0x) so scaled labels are not clipped.
+    final double height = math.max(
+      46.0,
+      fontSize * appTextScaleOf(context) + 20,
+    );
+
     return SizedBox(
-      height: 46,
+      height: height,
       child: Semantics(
         button: true,
         label: label,
@@ -96,7 +117,6 @@ class _ContactActionButton extends StatelessWidget {
                   fit: BoxFit.scaleDown,
                   child: Text(
                     label,
-                    textScaler: const TextScaler.linear(1.0),
                     maxLines: 1,
                     softWrap: false,
                     style: TextStyle(

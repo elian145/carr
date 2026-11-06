@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'recently_viewed_service.dart';
 import '../shared/debug/app_log.dart';
+import 'websocket_service.dart' show tryParseApiDateTime;
 
 /// Soft preferences inferred from what the user browses in the app.
 class HomeInterestProfile {
@@ -173,9 +174,9 @@ class HomeInterestService {
       final cmp = scoreListing(b, profile).compareTo(scoreListing(a, profile));
       if (cmp != 0) return cmp;
       final dateA =
-          DateTime.tryParse(a['created_at']?.toString() ?? '') ?? DateTime(1970);
+          tryParseApiDateTime(a['created_at']?.toString() ?? '') ?? DateTime(1970);
       final dateB =
-          DateTime.tryParse(b['created_at']?.toString() ?? '') ?? DateTime(1970);
+          tryParseApiDateTime(b['created_at']?.toString() ?? '') ?? DateTime(1970);
       return dateB.compareTo(dateA);
     });
     return scored;

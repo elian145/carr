@@ -240,6 +240,22 @@ def make_celery() -> Celery:
                 "task": "kk.sweep_listing_moderation",
                 "schedule": 120.0,
             },
+            # F-04 durable saved-search alerts (see
+            # kk/saved_search_alert_jobs.py). A no-op (returns immediately,
+            # no DB access) unless SAVED_SEARCH_ALERT_DURABILITY is
+            # "record" (count/log only) or "on" (redrive). Each tick is
+            # bounded (<= SAVED_SEARCH_ALERT_SWEEP_BATCH enqueues of short
+            # per-job tasks, never inline alert loops), so it cannot
+            # monopolise the single-concurrency worker. ``expires`` (< the
+            # 300 s tick) drops a tick that queued up behind a long task
+            # (e.g. an ffmpeg transcode) or while the worker was down,
+            # instead of stampeding when the worker returns.
+            # Registered name == Beat 'task' string.
+            "reconcile-saved-search-alerts": {
+                "task": "kk.reconcile_saved_search_alerts",
+                "schedule": 300.0,
+                "options": {"expires": 290},
+            },
         },
     )
     return c

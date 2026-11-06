@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/car_name_translations.dart';
+import '../shared/i18n/app_locale_resolution.dart';
 
 class LocaleController {
   /// MI-03/U-01: locales the app currently ships translations for. Kept in
@@ -24,12 +25,16 @@ class LocaleController {
   /// backend can localize responses even before this value is persisted to
   /// `User.locale`.
   static String resolveCode() {
-    final explicit = currentLocale.value?.languageCode;
+    // F-09: `ckb` (Sorani, what devices report) is the app's `ku`.
+    final explicit = canonicalAppLanguageCode(
+      currentLocale.value?.languageCode,
+    );
     if (explicit != null && supportedCodes.contains(explicit)) {
       return explicit;
     }
-    final device =
-        WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+    final device = canonicalAppLanguageCode(
+      WidgetsBinding.instance.platformDispatcher.locale.languageCode,
+    )!;
     if (supportedCodes.contains(device)) return device;
     return 'en';
   }
@@ -53,8 +58,10 @@ class LocaleController {
   static Future<void> loadSavedLocale() async {
     final sp = await SharedPreferences.getInstance();
     applyFromPrefs(sp);
-    final code = currentLocale.value?.languageCode ??
-        WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+    final code = canonicalAppLanguageCode(
+      currentLocale.value?.languageCode ??
+          WidgetsBinding.instance.platformDispatcher.locale.languageCode,
+    );
     await CarNameTranslations.ensureLoadedForLocale(code);
   }
 
@@ -65,8 +72,9 @@ class LocaleController {
     final sp = await SharedPreferences.getInstance();
     if (locale == null) {
       await sp.remove('app_locale');
-      final deviceCode =
-          WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+      final deviceCode = canonicalAppLanguageCode(
+        WidgetsBinding.instance.platformDispatcher.locale.languageCode,
+      );
       await CarNameTranslations.ensureLoadedForLocale(deviceCode);
     } else {
       await sp.setString('app_locale', locale.languageCode);

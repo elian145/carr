@@ -114,6 +114,7 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
         child: carzo_chat.ChatConversationPage(
           carId: rawId,
           receiverId: args?['receiverId']?.toString(),
+          peerKey: args?['peerKey']?.toString(),
           initialDraft: args?['initialDraft']?.toString(),
           initialListingPreview: args?['listingPreview'] is Map
               ? Map<String, dynamic>.from(

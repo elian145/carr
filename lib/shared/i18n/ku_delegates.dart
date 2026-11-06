@@ -57,6 +57,18 @@ import 'package:intl/intl.dart' as intl;
 /// using the Arabic script, which is RTL.
 /// [KuWidgetsLocalizationsDelegate]/[_KuWidgetsLocalizations] supplies that
 /// `textDirection` directly (not proxied from Arabic or English).
+///
+/// F-09: these are the ONLY Kurdish delegates and the production app
+/// (`lib/app/production_app.dart`) registers them. Device `ckb`/`ckb_IQ`/...
+/// locales are mapped to `ku` before delegate lookup (see
+/// `app_locale_resolution.dart`), so [isSupported] only needs `ku`.
+///
+/// Date/number formatting: the `intl` package (0.20.x) ships NO `ku` or `ckb`
+/// date/number symbols, so month/weekday names and digit grouping reuse the
+/// English patterns with Western digits (0-9). That matches the app's existing
+/// choice for ar/ku (`localizeDigits`, `decimalFormatterForLocale`,
+/// `AnalyticsPage`'s `en_US` formatter) and is not reachable today anyway: the
+/// app has no `showDatePicker`/`DateFormat` call sites.
 class KuMaterialLocalizationsDelegate
     extends LocalizationsDelegate<MaterialLocalizations> {
   const KuMaterialLocalizationsDelegate();

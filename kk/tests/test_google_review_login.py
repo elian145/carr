@@ -56,6 +56,22 @@ _TEST_REVIEW_PHONE = "07799990000"
 _TEST_REVIEW_OTP = "913579"
 
 
+def _canonical(phone):
+    """SEC-003: every phone is stored (and echoed by the API) in ONE canonical
+    form -- 10 digits, no leading 0, no country code -- whichever spelling the
+    client typed. These tests keep TYPING the 11-digit national "07..." spelling
+    (the form the reviewer reads off a SIM); only the expectation about what is
+    stored/echoed is canonical. Deliberately independent of the code under test.
+    """
+    d = "".join(ch for ch in str(phone) if ch.isdigit())
+    if len(d) == 11 and d.startswith("0"):
+        d = d[1:]
+    return d
+
+
+_REVIEW_PHONE_CANONICAL = _canonical(_TEST_REVIEW_PHONE)
+
+
 @pytest.fixture(scope="module")
 def app_ctx():
     tmp = tempfile.TemporaryDirectory(
@@ -156,7 +172,7 @@ def test_reviewer_phone_and_reviewer_otp_succeeds(app_ctx, client):
     assert body.get("access_token")
     assert body.get("refresh_token")
     user = body.get("user") or {}
-    assert user.get("phone_number") == _TEST_REVIEW_PHONE
+    assert user.get("phone_number") == _REVIEW_PHONE_CANONICAL
     # No field anywhere in the response signals this is a review account.
     assert "review" not in str(body).lower()
 
@@ -173,7 +189,7 @@ def test_reviewer_account_has_full_ordinary_access(app_ctx, client):
     )
     assert me.status_code == 200, me.data
     profile = me.get_json()
-    assert profile.get("phone_number") == _TEST_REVIEW_PHONE
+    assert profile.get("phone_number") == _REVIEW_PHONE_CANONICAL
     assert profile.get("is_verified") is True
 
 
@@ -185,8 +201,13 @@ def test_reviewer_login_never_creates_a_duplicate_account(app_ctx, client):
         assert r.status_code == 200, r.data
 
     with app.app_context():
-        count = User.query.filter_by(phone_number=_TEST_REVIEW_PHONE).count()
+        # one row for the SIM in ANY stored spelling, and it is the canonical one
+        count = User.query.filter(
+            User.phone_number.in_([_REVIEW_PHONE_CANONICAL, "0" + _REVIEW_PHONE_CANONICAL])
+        ).count()
+        canonical_count = User.query.filter_by(phone_number=_REVIEW_PHONE_CANONICAL).count()
     assert count == 1
+    assert canonical_count == 1
 
 
 def test_reviewer_login_is_never_permanently_locked_out(app_ctx, client):
@@ -305,7 +326,7 @@ def test_normal_otp_signup_and_login_flow_is_unchanged(app_ctx, client):
     body = good.get_json()
     assert body.get("access_token")
     assert body.get("refresh_token")
-    assert body["user"]["phone_number"] == phone
+    assert body["user"]["phone_number"] == _canonical(phone)
 
 
 def test_normal_otp_lockout_after_five_wrong_attempts_is_unchanged(app_ctx, client):

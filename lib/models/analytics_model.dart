@@ -1,3 +1,5 @@
+import '../services/websocket_service.dart' show parseApiDateTime;
+
 class ListingAnalytics {
   final String listingId;
   final String title;
@@ -62,12 +64,8 @@ class ListingAnalytics {
       calls: json['calls'] ?? 0,
       shares: json['shares'] ?? 0,
       favorites: json['favorites'] ?? 0,
-      createdAt: DateTime.parse(
-        json['created_at'] ?? DateTime.now().toIso8601String(),
-      ),
-      lastUpdated: DateTime.parse(
-        json['last_updated'] ?? DateTime.now().toIso8601String(),
-      ),
+      createdAt: parseApiDateTime(json['created_at']),
+      lastUpdated: parseApiDateTime(json['last_updated']),
     );
   }
 
@@ -87,8 +85,8 @@ class ListingAnalytics {
       'calls': calls,
       'shares': shares,
       'favorites': favorites,
-      'created_at': createdAt.toIso8601String(),
-      'last_updated': lastUpdated.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'last_updated': lastUpdated.toUtc().toIso8601String(),
     };
   }
 

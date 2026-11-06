@@ -6,6 +6,15 @@ from datetime import datetime, timedelta
 import secrets
 import re
 
+from sqlalchemy import String as _SAString, type_coerce as _sa_type_coerce
+
+from .reset_token_crypto import (
+    HASH_PREFIX as _RESET_HASH_PREFIX,
+    hash_reset_token,
+    legacy_plaintext_enabled,
+    tokens_equal,
+)
+
 def validate_email(email):
     """Validate email format"""
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -163,6 +172,10 @@ def create_password_reset_token(user, *, channel: str = "sms"):
 
     SMS: 12-digit numeric (harder online guessing than 8-digit).
     Email / other: high-entropy URL-safe opaque token.
+
+    F-29: the RAW token is returned to the caller (to be sent to the user) but is never
+    persisted: ``PasswordReset.token`` is a ``HashedResetToken`` column, so the row holds
+    only ``h1$`` + HMAC-SHA256(pepper, token). Returned value/format/expiry are unchanged.
     """
     # Delete any existing tokens for this user
     PasswordReset.query.filter_by(user_id=user.id, is_used=False).delete()
@@ -218,24 +231,76 @@ def create_email_verification_token(user):
     
     return token
 
+def _find_legacy_plaintext_row(token):
+    """Pre-F-29 rows stored the raw token. REMOVABLE once no such row can still be valid
+    (tokens live 1 hour): delete this function, its call below and ``legacy_plaintext_enabled``.
+    """
+    if not isinstance(token, str) or not token or token.startswith(_RESET_HASH_PREFIX):
+        return None
+    # type_coerce bypasses HashedResetToken so the raw value is compared as-is.
+    row = PasswordReset.query.filter(
+        _sa_type_coerce(PasswordReset.token, _SAString()) == token,
+        PasswordReset.is_used.is_(False),
+    ).first()
+    if row is None or not isinstance(row.token, str) or not tokens_equal(row.token, token):
+        return None
+    return row
+
+
+def _scrub_legacy_row(row, token):
+    """Rewrite a legacy plaintext row to its hashed form so the plaintext is gone from the DB
+    (and so ``PasswordReset.query.filter_by(token=<raw>)`` in the reset route now finds it)."""
+    from sqlalchemy import literal, update
+
+    db.session.execute(
+        update(PasswordReset)
+        .where(PasswordReset.id == row.id)
+        .values(token=literal(hash_reset_token(token), _SAString()))
+    )
+    db.session.commit()
+    # Reload the instance so it no longer carries the stale plaintext attribute.
+    db.session.refresh(row)
+
+
 def verify_password_reset_token(token):
-    """Verify password reset token"""
+    """Verify password reset token (raw token in, user out; lookup is by hash)."""
+    expected = hash_reset_token(token)
+    # ``filter_by(token=token)`` binds hash_reset_token(token) via HashedResetToken.
     reset_token = PasswordReset.query.filter_by(token=token, is_used=False).first()
-    
+    if reset_token is not None and not tokens_equal(str(reset_token.token), expected):
+        reset_token = None  # defence in depth: constant-time confirmation of the DB match
+
+    if reset_token is None and legacy_plaintext_enabled():
+        legacy = _find_legacy_plaintext_row(token)
+        if legacy is not None:
+            _scrub_legacy_row(legacy, token)
+            reset_token = legacy
+
     if not reset_token:
         return None, "Invalid or expired token"
-    
+
     if reset_token.is_expired():
         reset_token.is_used = True
         db.session.commit()
         return None, "Token has expired"
-    
+
     # Models.PasswordReset does not define a relationship attribute; resolve the
     # user explicitly via user_id so this works across all DBs.
     user = User.query.get(reset_token.user_id)
     if not user:
         return None, "Invalid or expired token"
     return user, None
+
+
+def invalidate_password_reset_tokens(user_id):
+    """Mark every still-unused reset token of ``user_id`` as used (e.g. after a password change).
+
+    Not yet wired into ``kk/routes/auth.py`` (owned by another agent); see
+    ``_agent_logs/batch6/f27_f29/auth_py_hunk.patch``. Caller commits.
+    """
+    PasswordReset.query.filter_by(user_id=user_id, is_used=False).update(
+        {"is_used": True}, synchronize_session=False
+    )
 
 def verify_email_verification_token(token):
     """Verify email verification token"""

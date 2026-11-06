@@ -1,17 +1,9 @@
 import { getPublicApiBase } from "./auth";
+import { buildCsv } from "./csv";
 
 export function downloadCsv(filename: string, headers: string[], rows: string[][]): void {
-  const escape = (cell: string) => {
-    const s = String(cell ?? "");
-    if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-    return s;
-  };
-  const lines = [
-    headers.map(escape).join(","),
-    ...rows.map((row) => row.map(escape).join(",")),
-    "",
-  ];
-  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  // F-19: cells are formula-neutralised (CSV injection) and RFC 4180 quoted.
+  const blob = new Blob([buildCsv(headers, rows)], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

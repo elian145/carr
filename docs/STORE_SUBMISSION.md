@@ -62,6 +62,6 @@ Use this document when completing Google Play Data Safety, Apple App Privacy, an
 - `https://<your-host>/.well-known/apple-app-site-association` must return 200 (`APPLE_TEAM_ID` on Render).
 - Privacy policy URL and support contact must be real and reachable.
 - Final screenshots and app icon/splash assets must be approved.
-- Account deletion requires password; iOS Privacy Manifest filled; background `fetch` removed.
+- Account deletion requires an SMS code to the account phone (or the account password); iOS Privacy Manifest filled; background `fetch` removed.
 - New listings auto-publish as `active` by default (override with `LISTING_REQUIRE_APPROVAL=1` for a full moderation queue).
 - Force-update gates available via admin Settings / `/api/config/app`.

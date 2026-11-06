@@ -315,7 +315,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get value_fuel_plugin_hybrid => 'پڵەگ-ئین هایبرید';
 
   @override
-  String get value_title_clean => 'پاك';
+  String get value_title_clean => 'پاک';
 
   @override
   String get value_title_damaged => 'زیانلێکەوتوو';
@@ -1425,7 +1425,7 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String stepXOf5(Object step) {
-    return 'هەنگاوە $step لە ٦';
+    return 'هەنگاوی $step لە ٦';
   }
 
   @override

@@ -35,9 +35,14 @@ from ..models import (
     db,
 )
 from ..response_cache import invalidate_filter_facets_cache
+from ..retention_dispatch import (
+    dispatch_saved_search_alerts_for_activated,
+    is_new_publication_transition,
+)
+from ..saved_search_alert_jobs import record_alert_job
 from ..listing_search import apply_listing_text_search
 from ..localization import get_background_locale, translate
-from ..time_utils import utcnow
+from ..time_utils import iso_utc, utcnow
 
 bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 logger = logging.getLogger(__name__)
@@ -300,7 +305,7 @@ def _find_user(public_id: str) -> User | None:
 
 def _image_admin_dict(img: CarImage) -> dict:
     data = img.to_dict()
-    data["created_at"] = img.created_at.isoformat() if img.created_at else None
+    data["created_at"] = iso_utc(img.created_at)
     car = img.car
     if car:
         data["car"] = {
@@ -1633,6 +1638,7 @@ def update_car_status(car_id: str):
         # e.g. an is_featured-only update must never notify the seller).
         old_moderation_state = _car_moderation_state(car.is_active, car.status)
         was_pending = (car.status or "").strip().lower() == "pending"
+        old_status_for_alerts = car.status
         if "is_active" in data:
             car.is_active = bool(data["is_active"])
         if "status" in data and str(data["status"]).strip():
@@ -1695,6 +1701,16 @@ def update_car_status(car_id: str):
                 car, new_moderation_state, reason=moderation_reason
             )
         moderation_seller = car.seller
+        # F-04: decided pre-commit (under the row lock), dispatched post-commit.
+        alert_car_id = (
+            car.id
+            if is_new_publication_transition(old_status_for_alerts, car.is_active, car.status)
+            else None
+        )
+        if alert_car_id is not None:
+            # F-04 durability: the "alerts owed" marker commits (or rolls
+            # back) together with this activation. No-op while the flag is off.
+            record_alert_job(alert_car_id)
 
         db.session.commit()
         invalidate_filter_facets_cache()
@@ -1706,6 +1722,8 @@ def update_car_status(car_id: str):
         )
         if moderation_notification is not None and moderation_seller is not None:
             _deliver_listing_moderation_notification(moderation_notification, moderation_seller)
+        if alert_car_id is not None:
+            dispatch_saved_search_alerts_for_activated([alert_car_id])
         if admin_user:
             log_user_action(
                 admin_user,
@@ -1775,6 +1793,7 @@ def bulk_update_car_status():
         missing = []
         blocked = []
         bulk_outcomes: list[tuple[int, str | None]] = []
+        bulk_alert_car_ids: list[int] = []  # F-04: rows that became newly active
         for raw_id in ids:
             car = _find_car_locked(str(raw_id))
             if not car:
@@ -1796,6 +1815,7 @@ def bulk_update_car_status():
 
             old_moderation_state = _car_moderation_state(car.is_active, car.status)
             bulk_was_pending = (car.status or "").strip().lower() == "pending"
+            bulk_old_status = car.status
             if "is_active" in patch:
                 car.is_active = patch["is_active"]
             if "status" in patch:
@@ -1817,6 +1837,12 @@ def bulk_update_car_status():
                         car.featured_until = parsed_featured_until
 
             car.updated_at = utcnow()
+
+            if is_new_publication_transition(bulk_old_status, car.is_active, car.status):
+                bulk_alert_car_ids.append(car.id)
+                # F-04 durability: same transaction as the activation
+                # (single commit below; the row is under this loop's car lock).
+                record_alert_job(car.id)
 
             new_moderation_state = _car_moderation_state(car.is_active, car.status)
             bulk_outcomes.append(
@@ -1857,6 +1883,7 @@ def bulk_update_car_status():
             _record_auto_moderation_outcome("listing", outcome_car_id, outcome, admin_user)
         for notif, seller in pending_moderation_notifications:
             _deliver_listing_moderation_notification(notif, seller)
+        dispatch_saved_search_alerts_for_activated(bulk_alert_car_ids)
         if admin_user:
             log_user_action(
                 admin_user,
@@ -3127,13 +3154,19 @@ def update_settings():
         denied = _deny("settings")
         if denied:
             return denied
-        from ..app_settings import update_platform_settings
+        from ..app_settings import SettingsValidationError, update_platform_settings
 
         admin_user = get_current_user()
         data = request.get_json(silent=True) or {}
         if not isinstance(data, dict):
             return jsonify({"message": "JSON object required"}), 400
-        payload = update_platform_settings(data)
+        try:
+            payload = update_platform_settings(data)
+        except SettingsValidationError as exc:
+            # Force-update hardening: a malformed version floor / build /
+            # store URL is rejected before anything is stored.
+            db.session.rollback()
+            return jsonify({"message": exc.message, "field": exc.field}), 400
         if admin_user:
             log_user_action(
                 admin_user,

@@ -3,6 +3,12 @@ import os from "node:os";
 import path from "node:path";
 import { expect, request as playwrightRequest, test, type Page } from "@playwright/test";
 
+// F-19: state-changing requests to admin-web must carry a same-origin `Origin`
+// (browsers always send it; Playwright's APIRequestContext does not).
+const ADMIN_ORIGIN =
+  process.env.ADMIN_WEB_BASE_URL ||
+  `http://127.0.0.1:${process.env.ADMIN_WEB_PORT || 3000}`;
+
 /**
  * L-02 (style-src half): proves that removing 'unsafe-inline' from the
  * production style-src CSP directive (admin-web/src/middleware.ts) does not
@@ -131,7 +137,7 @@ test.describe("L-02 style-src CSP — authenticated", () => {
     try {
       const res = await apiContext.post("/api/admin-session", {
         data: { username: E2E_ADMIN_USERNAME, password: E2E_ADMIN_PASSWORD },
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Origin: ADMIN_ORIGIN },
       });
       if (res.status() !== 200) {
         loginFailureReason = `real /api/admin-session login returned ${res.status()}: ${await res.text()}`;
