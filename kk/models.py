@@ -13,6 +13,7 @@ bcrypt = Bcrypt()
 # Use a single UTC helper (avoids deprecated datetime.utcnow()).
 from .time_utils import iso_utc, utcnow
 from .dealer_socials import public_dealership_socials as _public_dealership_socials
+from .reset_token_crypto import HashedResetToken
 
 
 def _mask_phone_number(raw) -> str | None:
@@ -1648,7 +1649,9 @@ class PasswordReset(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
-    token = db.Column(db.String(100), unique=True, nullable=False)
+    # F-29: stored as "h1$" + HMAC-SHA256 hex (67 chars) -- never the raw token. Values bound to
+    # this column (inserts and filter_by(token=<raw>)) are hashed by HashedResetToken.
+    token = db.Column(HashedResetToken(), unique=True, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=utcnow)
@@ -1657,7 +1660,7 @@ class PasswordReset(db.Model):
         return utcnow() > self.expires_at
     
     def __repr__(self):
-        return f'<PasswordReset {self.token}>'
+        return f'<PasswordReset id={self.id} user_id={self.user_id}>'
 
 class EmailVerification(db.Model):
     __tablename__ = 'email_verification'
