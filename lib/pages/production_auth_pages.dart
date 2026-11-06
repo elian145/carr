@@ -28,6 +28,7 @@ import '../shared/prefs/favorites_cache_prefs.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/ui/listing_feed_skeleton.dart';
 import '../shared/ui/empty_state_panel.dart';
+import '../shared/ui/app_text_scale.dart';
 import '../shared/ui/responsive.dart';
 import '../shared/ui/keyboard.dart';
 import '../theme_provider.dart';

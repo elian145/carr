@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/listings/listing_identity.dart';
 import '../../../shared/ui/app_haptics.dart';
+import '../../../shared/ui/app_text_scale.dart';
 import '../state/car_comparison_store.dart';
 
 /// Reusable comparison toggle for listing detail and compact toolbars.
@@ -78,7 +80,8 @@ class ComparisonButton extends StatelessWidget {
 
     return SizedBox(
       width: double.infinity,
-      height: 46,
+      // 46dp at 1.0x; grows with the (13sp) label so it is never clipped.
+      height: math.max(46.0, 13 * appTextScaleOf(context) * 1.2 + 16),
       child: OutlinedButton.icon(
         onPressed: () => _toggle(context, store, inComparison),
         style: OutlinedButton.styleFrom(

@@ -12,6 +12,7 @@ import '../shared/auth/token_store.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
+import '../shared/ui/app_text_scale.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/ui/listing_feed_skeleton.dart';
@@ -271,6 +272,7 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
             childAspectRatio: ListingLayoutPrefs.gridChildAspectRatioForWidth(
               listingColumns,
               screenWidth,
+              textScale: appTextScaleOf(context),
             ),
           ),
           itemCount: _cars.length,

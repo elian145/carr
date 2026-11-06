@@ -299,6 +299,7 @@ Widget buildCarListingSpecsGrid(
     builder: (context, constraints) {
       final metrics = _specsGridMetrics(
         availableWidth: constraints.maxWidth,
+        textScale: appTextScaleOf(context),
       );
       return SizedBox(
         width: constraints.maxWidth,

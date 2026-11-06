@@ -99,7 +99,9 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                                   Flexible(
                                     child: Text(
                                       loc.homeSearchHeading,
-                                      maxLines: 1,
+                                      // F-10: wrap to two lines at large system text
+                                      // scale instead of ellipsizing the entry label.
+                                      maxLines: appTextScaleOf(context) > 1.3 ? 2 : 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: AppFonts.orbitronForLocale(
                                         Localizations.localeOf(context),
