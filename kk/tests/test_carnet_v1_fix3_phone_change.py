@@ -154,8 +154,11 @@ def test_send_code_then_profile_update_verifies_and_changes_phone(app_ctx, clien
         headers=_auth(token),
     )
     assert r_update.status_code == 200, r_update.data
-    assert r_update.get_json()["user"]["phone_number"] == new_phone
-    assert _get_phone(app_ctx, uid) == new_phone
+    # Stored/echoed in the canonical form (10 digits, no leading 0), the same
+    # one the auth routes write -- see test_phone_identity_consistency.py.
+    canonical_new_phone = new_phone[1:]
+    assert r_update.get_json()["user"]["phone_number"] == canonical_new_phone
+    assert _get_phone(app_ctx, uid) == canonical_new_phone
 
 
 def test_wrong_code_is_rejected_and_phone_unchanged(app_ctx, client):
