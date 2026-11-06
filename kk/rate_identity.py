@@ -72,6 +72,45 @@ verify (phone/verify, verify-phone share ONE budget per identity):
   OTP_VERIFY_PHONE_DAILY_MAX 30 / 300   per 24 h
   OTP_VERIFY_DEVICE_MAX      20 / 200   per OTP_VERIFY_WINDOW_MINUTES
   OTP_VERIFY_IP_MAX          200 / 2000 per OTP_VERIFY_WINDOW_MINUTES
+
+Part 2 - the remaining unauthenticated auth endpoints (same machinery)
+---------------------------------------------------------------------
+Threat model per endpoint (decision table: ``_agent_logs/batch5/f12``). The
+per-IP limit alone punishes every subscriber behind one carrier NAT and is no
+real control against a distributed attacker, so the primary control moves to
+the identity being attacked and the IP becomes a higher ceiling:
+
+* ``login``  (``/api/auth/login``)  identifier ``AUTH_LOGIN_IDENT_MAX`` 10 / 100
+  per ``AUTH_LOGIN_WINDOW_MINUTES`` (15) - counts ALL attempts at the submitted
+  username/phone whether or not it exists (no enumeration), and is >= the
+  M-09 per-account failure throttle (5 failures -> 15 min) which is UNCHANGED
+  and remains the stronger control; device ``AUTH_LOGIN_DEVICE_MAX`` 30 / 300;
+  IP ceiling ``AUTH_LOGIN_IP_MAX`` 100 / 1000 (was 10 per IP): credential
+  stuffing from one IP across many accounts is capped at 100 attempts / 15 min.
+* ``forgot`` (``/api/auth/forgot-password``) phone ``AUTH_FORGOT_PHONE_MAX``
+  3 / 30 per 15 min + ``AUTH_FORGOT_PHONE_DAILY_MAX`` 10 / 100 per 24 h (SMS-bomb
+  guard; counted for unknown numbers too, response stays the generic 200);
+  device 10 / 100; IP ``AUTH_FORGOT_IP_MAX`` 30 / 300 per 15 min and
+  ``AUTH_FORGOT_IP_DAILY_MAX`` 300 / 3000 per 24 h (was 5 per 15 min per IP).
+* ``signup`` (``/api/auth/signup``; needs a verified OTP, its own lockout stays)
+  phone ``AUTH_SIGNUP_PHONE_MAX`` 10 / 100, device 10 / 100, IP
+  ``AUTH_SIGNUP_IP_MAX`` 60 / 600 per ``AUTH_SIGNUP_WINDOW_MINUTES`` (60).
+  Legacy ``RATE_LIMIT_SIGNUP`` is honoured as the default of the IP ceiling.
+* ``email_send`` (``/api/auth/send-email-verification``, authenticated)
+  per account ``AUTH_EMAIL_SEND_ACCOUNT_MAX`` 5 / 50 + daily 10 / 100, per
+  destination e-mail ``AUTH_EMAIL_SEND_EMAIL_MAX`` 5 / 50 + daily 10 / 100 (an
+  e-mail address is user supplied: many accounts must not bomb one inbox),
+  IP ``AUTH_EMAIL_SEND_IP_MAX`` 60 / 600 per 15 min (was 5 per IP).
+  Window env: ``AUTH_EMAIL_SEND_WINDOW_MINUTES``.
+Kept as they are (legacy ``@rate_limit`` per IP): ``/api/auth/reset-password``
+(the only secret is a guessable-in-theory 12-digit SMS code with NO identity in
+the request, so any higher IP ceiling would weaken brute-force resistance),
+``/api/auth/verify-email`` (256-bit token), retired ``register*`` stubs (410).
+
+X-Device-Id is CLIENT ASSERTED. It is never an authentication factor and never
+trusted to prove identity; because it can be rotated or omitted every scope
+also applies the identity (phone / identifier / account / e-mail) and the IP
+ceiling, so rotating device ids bypasses nothing that matters.
 """
 
 from __future__ import annotations
@@ -94,6 +133,13 @@ _log = logging.getLogger(__name__)
 
 _DAY_S = 24 * 60 * 60
 
+# Format validation of the client-asserted ``X-Device-Id``. The Flutter app
+# (``lib/services/device_id_service.dart``) sends a lower-case UUIDv4 (36 chars);
+# the backend deliberately accepts a wider alphabet/length so other clients
+# (web/admin, tests) can send their own opaque id. Anything that does not match
+# is IGNORED (never a shared bucket, never an error): the request is then
+# limited by the identity and IP dimensions only. KEEP IN SYNC with
+# ``DeviceIdService.isValidDeviceId`` (a UUID satisfies this pattern).
 _DEVICE_ID_RE = re.compile(r"^[A-Za-z0-9._:\-]{8,128}$")
 
 # Production default / non-production default, per (scope, dimension, window).
@@ -112,10 +158,53 @@ _VERIFY_DEFAULTS = {
     "DEVICE_MAX": (20, 200),
     "IP_MAX": (200, 2000),
 }
+# --- Part 2: remaining unauthenticated auth endpoints (see module docstring) ---
+# login: identifier = the submitted username/phone (ALL attempts, known or
+# unknown account, so it is not an account-existence oracle). Deliberately
+# >= the M-09 per-account FAILURE throttle (5) so it never shadows it.
+_LOGIN_DEFAULTS = {
+    "IDENT_MAX": (10, 100),
+    "DEVICE_MAX": (30, 300),
+    "IP_MAX": (100, 1000),
+}
+# forgot-password (SMS reset code): the per-phone limit is the SMS-bomb guard.
+_FORGOT_DEFAULTS = {
+    "PHONE_MAX": (3, 30),
+    "PHONE_DAILY_MAX": (10, 100),
+    "DEVICE_MAX": (10, 100),
+    "IP_MAX": (30, 300),
+    "IP_DAILY_MAX": (300, 3000),
+}
+# signup (needs a previously verified phone OTP; the OTP lockout still applies)
+_SIGNUP_DEFAULTS = {
+    "PHONE_MAX": (10, 100),
+    "DEVICE_MAX": (10, 100),
+    "IP_MAX": (60, 600),
+}
+# send-email-verification (authenticated): per account + per destination email.
+_EMAIL_SEND_DEFAULTS = {
+    "ACCOUNT_MAX": (5, 50),
+    "ACCOUNT_DAILY_MAX": (10, 100),
+    "EMAIL_MAX": (5, 50),
+    "EMAIL_DAILY_MAX": (10, 100),
+    "IP_MAX": (60, 600),
+}
+
+# scope -> (env prefix, defaults, default window minutes)
 _SCOPES = {
     "send": ("OTP_SEND", _SEND_DEFAULTS, 10),
     "verify": ("OTP_VERIFY", _VERIFY_DEFAULTS, 15),
+    "login": ("AUTH_LOGIN", _LOGIN_DEFAULTS, 15),
+    "forgot": ("AUTH_FORGOT", _FORGOT_DEFAULTS, 15),
+    "signup": ("AUTH_SIGNUP", _SIGNUP_DEFAULTS, 60),
+    "email_send": ("AUTH_EMAIL_SEND", _EMAIL_SEND_DEFAULTS, 15),
 }
+
+# Evaluation order of dimensions: most specific (cheapest to be hit by one
+# victim) first, shared IP ceiling last.
+_DIM_ORDER = ("IDENT", "PHONE", "ACCOUNT", "EMAIL", "DEVICE", "IP")
+
+_OTP_SCOPES = frozenset({"send", "verify"})
 
 
 class _LimiterUnavailable(Exception):
@@ -154,12 +243,15 @@ def _limits_for(scope: str):
         if scope == "send" and suffix == "PHONE_MAX":
             # Legacy knob (was the per-IP send limit) now seeds the per-phone limit.
             default = _env_int("RATE_LIMIT_SEND_OTP", default)
+        if scope == "signup" and suffix == "IP_MAX":
+            # Legacy knob: RATE_LIMIT_SIGNUP was (and stays) the per-IP signup limit.
+            default = _env_int("RATE_LIMIT_SIGNUP", default)
         return _env_int(f"{prefix}_{suffix}", default)
 
     window_s = _env_int(f"{prefix}_WINDOW_MINUTES", window_min_default) * 60
 
     out = []
-    for dim in ("PHONE", "DEVICE", "IP"):
+    for dim in _DIM_ORDER:
         windows = []
         if f"{dim}_MAX" in defaults:
             windows.append((val(f"{dim}_MAX"), window_s))
@@ -214,7 +306,10 @@ def _request_payload() -> dict:
         return data
 
 
-def _identity_keys(data: dict) -> list[str]:
+_PHONE_FIELDS_DEFAULT = ("phone_number", "phone")
+
+
+def _identity_keys(data: dict, fields: tuple[str, ...] = _PHONE_FIELDS_DEFAULT) -> list[str]:
     """Hashed phone identity keys for this request (0, 1 or 2 entries).
 
     The handlers read ``phone_number`` first, then ``phone``; mirror that and
@@ -222,7 +317,15 @@ def _identity_keys(data: dict) -> list[str]:
     missing/unusable no phone key is produced and the request is limited by the
     device and IP dimensions only (the handler rejects it with 400 before any
     SMS is sent or any OTP state is touched, so there is no cost to protect)."""
-    raw = data.get("phone_number") or data.get("phone") or ""
+    # ``fields`` is the handler's own precedence (``/auth/signup`` reads
+    # ``phone`` before ``phone_number``): the key MUST be derived from the value
+    # the handler will actually act on, otherwise a decoy value in the other
+    # field would dodge the per-phone limit.
+    raw = ""
+    for name in fields:
+        raw = data.get(name) or raw
+        if raw:
+            break
     if not isinstance(raw, str):
         return []
     raw = raw.strip()
@@ -250,6 +353,74 @@ def _device_key(data: dict) -> str | None:
     if not _DEVICE_ID_RE.match(candidate):
         return None
     return _hash("device", candidate)
+
+
+_PHONE_LOOKING_RE = re.compile(r"^\+?[\d\s\-().]{7,24}$")
+_IDENT_MAX_CHARS = 4096
+
+
+def _login_identifier_keys(raw) -> list[str]:
+    """Hashed keys for the login identifier (username or phone), 0, 1 or 2.
+
+    Mirrors what ``login`` does with ``data["username"]`` but is deliberately
+    COARSER than the account lookup so that no spelling the handler could map
+    to one account escapes the bucket: NFKC, zero-width/control characters
+    removed, case-folded, and phone-looking values additionally collapse to
+    the Iraq-aware canonical number (``0770...``/``+964770...``/``00964770...``).
+
+    Non-string garbage (lists, dicts, null, bool) yields NO key: the handler
+    cannot authenticate such a value anyway, and the request is still bounded
+    by the device and IP dimensions (an attacker gains nothing from it)."""
+    if isinstance(raw, bool):
+        return []
+    if isinstance(raw, (int, float)):
+        raw = str(raw)
+    if not isinstance(raw, str):
+        return []
+    text = unicodedata.normalize("NFKC", raw[:_IDENT_MAX_CHARS])
+    text = "".join(ch for ch in text if unicodedata.category(ch) not in ("Cc", "Cf"))
+    text = text.strip().casefold()
+    if not text:
+        return []
+    keys = [_hash("ident", text)]
+    if _PHONE_LOOKING_RE.match(text):
+        canonical = _canonical_phone(text)
+        if canonical:
+            canon_key = _hash("phone", canonical)
+            if canon_key not in keys:
+                keys.append(canon_key)
+    return keys
+
+
+def _jwt_account_key() -> str | None:
+    """Account key from an ALREADY VERIFIED JWT (the route puts ``jwt_required``
+    above this decorator). Never taken from the request body."""
+    try:
+        from flask_jwt_extended import get_jwt_identity
+
+        ident = get_jwt_identity()
+    except Exception:
+        return None
+    if not ident:
+        return None
+    return _hash("account", str(ident))
+
+
+def _account_email_key() -> str | None:
+    """Key of the destination e-mail of the authenticated account, if any.
+
+    Bounds e-mail bombing of ONE address across many accounts/IPs (an account's
+    e-mail is user-supplied, so several accounts can point at a victim)."""
+    try:
+        from .auth import get_current_user
+
+        user = get_current_user()
+        email = (getattr(user, "email", None) or "").strip().lower()
+    except Exception:
+        return None
+    if not email or email.endswith("@phone.local"):
+        return None
+    return _hash("email", email)
 
 
 # ---------------------------------------------------------------------------
@@ -310,14 +481,22 @@ def _hit(key: str, max_requests: int, window_s: int) -> int | None:
     return _hit_memory(key, max_requests, window_s)
 
 
-def _limited_response(retry_after: int):
-    resp = jsonify(
-        {
+def _limited_response(retry_after: int, scope: str = "send"):
+    if scope in _OTP_SCOPES:
+        body = {
             "message": "Too many requests. Please try again later.",
             "code": "otp_rate_limited",
-            "retry_after": int(retry_after),
         }
-    )
+    else:
+        # Same status/headers/shape as the OTP limiter. The message keeps the
+        # "Rate limit exceeded" wording of the legacy per-IP decorator these
+        # scopes replace, and is IDENTICAL whichever dimension tripped and
+        # whether or not the account exists (no enumeration signal).
+        body = {
+            "message": "Rate limit exceeded. Too many attempts, please try again later.",
+            "code": "auth_rate_limited",
+        }
+    resp = jsonify({**body, "retry_after": int(retry_after)})
     resp.status_code = 429
     resp.headers["Retry-After"] = str(int(retry_after))
     return resp
@@ -328,8 +507,50 @@ def _disabled() -> bool:
     return env == "testing" or bool(current_app.config.get("TESTING"))
 
 
+def _subjects_for(scope: str) -> dict[str, list[str]]:
+    """``{dimension: [hashed subject, ...]}`` for the current request.
+
+    IMPORTANT (client-asserted data): ``device`` comes from a header the client
+    chooses, ``phone``/``ident`` from the body, so each of them can be rotated
+    or omitted at will. They are therefore only EXTRA limits; the IP ceiling is
+    always present (and, for per-account scopes, the account/phone/e-mail one).
+    A client that rotates device ids still runs into the per-identity limit
+    and into the per-IP ceiling. None of these values ever authenticates or
+    authorises anything."""
+    ip = _security._client_ip()
+    if scope == "email_send":
+        account = _jwt_account_key()
+        email = _account_email_key()
+        return {
+            "account": [account] if account else [],
+            "email": [email] if email else [],
+            "ip": [ip],
+        }
+    if scope == "login":
+        # The handler reads the RAW body (no sanitisation); mirror that.
+        raw = request.get_json(silent=True)
+        raw = raw if isinstance(raw, dict) else {}
+        device = _device_key(raw)
+        return {
+            "ident": _login_identifier_keys(raw.get("username")),
+            "device": [device] if device else [],
+            "ip": [ip],
+        }
+    data = _request_payload()
+    fields = ("phone", "phone_number") if scope == "signup" else _PHONE_FIELDS_DEFAULT
+    device = _device_key(data)
+    return {
+        "phone": _identity_keys(data, fields),
+        "device": [device] if device else [],
+        "ip": [ip],
+    }
+
+
 def check_otp_rate_limit(scope: str):
-    """Return a Flask response when the request must be rejected, else None."""
+    """Return a Flask response when the request must be rejected, else None.
+
+    Despite the historical name this serves every scope in ``_SCOPES``
+    (OTP send/verify and the Part-2 auth scopes)."""
     if _disabled():
         return None
 
@@ -342,40 +563,37 @@ def check_otp_rate_limit(scope: str):
         return None
     done.add(scope)
 
-    data = _request_payload()
-    phone_keys = _identity_keys(data)
-    device = _device_key(data)
-    ip = _security._client_ip()
+    subjects = _subjects_for(scope)
 
-    subjects = {
-        "phone": phone_keys,
-        "device": [device] if device else [],
-        "ip": [ip],
-    }
-
+    # OTP scopes keep their original key namespace (live counters survive a
+    # deploy); the new auth scopes use their own.
+    ns = "otp" if scope in _OTP_SCOPES else "authrl"
     try:
         for dim, windows in _limits_for(scope):
             for subject in subjects.get(dim, []):
                 for max_requests, window_s in windows:
-                    key = f"otp:{scope}:{dim}:{subject}:{window_s}"
+                    key = f"{ns}:{scope}:{dim}:{subject}:{window_s}"
                     retry_after = _hit(key, max_requests, window_s)
                     if retry_after is not None:
                         _log.warning(
-                            "otp rate limit hit scope=%s dimension=%s window_s=%s",
+                            "rate limit hit scope=%s dimension=%s window_s=%s",
                             scope,
                             dim,
                             window_s,
                         )
-                        return _limited_response(retry_after)
+                        return _limited_response(retry_after, scope)
     except _LimiterUnavailable:
         return _security._rate_limit_unavailable_response()
     return None
 
 
+check_identity_rate_limit = check_otp_rate_limit
+
+
 def otp_rate_limit(scope: str):
-    """Decorator: identity/device/IP-ceiling limiter for OTP endpoints."""
+    """Decorator: identity/device/IP-ceiling limiter (OTP and auth scopes)."""
     if scope not in _SCOPES:
-        raise ValueError(f"unknown OTP rate-limit scope {scope!r}")
+        raise ValueError(f"unknown rate-limit scope {scope!r}")
 
     def decorator(f):
         @wraps(f)
@@ -388,3 +606,7 @@ def otp_rate_limit(scope: str):
         return wrapper
 
     return decorator
+
+
+# Readable alias for the Part-2 auth scopes (login/forgot/signup/email_send).
+auth_rate_limit = otp_rate_limit
