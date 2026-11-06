@@ -14,6 +14,8 @@ import '../shared/phone/phone_normalizer.dart';
 import 'api_exception.dart';
 import 'api_cancel_token.dart';
 import 'api/tracked_http_client.dart';
+import 'api/device_id_http_client.dart';
+import 'device_id_service.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/debug/expected_client_noise.dart';
 import '../state/locale_controller.dart';
@@ -167,8 +169,63 @@ class ApiService {
     );
   }
 
-  static http.Client get _httpClient =>
-      _testHttpClient ?? _productionHttpClient;
+  /// The single client every request helper uses. In production it is the
+  /// shared [TrackedHttpClient] wrapped in a [DeviceIdHttpClient] (F-12: the one
+  /// place that adds `X-Device-Id`, so login / register / phone start+verify /
+  /// send-verification / forgot+reset password / refresh / uploads all carry it
+  /// without any call site having to remember).
+  ///
+  /// Tests that bind [testHttpClient] keep their client untouched (no extra
+  /// storage reads or microtask hops in the ~2000 existing tests) unless they
+  /// opt in with [testDeviceIdService].
+  static http.Client get _httpClient {
+    final test = _testHttpClient;
+    if (test != null) {
+      final service = _testDeviceIdService;
+      return service == null ? test : _withDeviceId(test, service);
+    }
+    return _withDeviceId(_productionHttpClient, DeviceIdService.instance);
+  }
+
+  static http.Client? _deviceIdInner;
+  static DeviceIdService? _deviceIdService;
+  static http.Client? _deviceIdWrapped;
+
+  /// One cached wrapper per (inner client, service); [recycleProductionHttpClient]
+  /// swaps the inner client, which transparently creates a new wrapper.
+  static http.Client _withDeviceId(http.Client inner, DeviceIdService service) {
+    final wrapped = _deviceIdWrapped;
+    if (wrapped != null &&
+        identical(inner, _deviceIdInner) &&
+        identical(service, _deviceIdService)) {
+      return wrapped;
+    }
+    _deviceIdInner = inner;
+    _deviceIdService = service;
+    return _deviceIdWrapped = DeviceIdHttpClient(
+      inner,
+      service: service,
+      isFirstParty: _isFirstPartyApiUri,
+    );
+  }
+
+  static bool _isFirstPartyApiUri(Uri url) {
+    try {
+      final baseHost = Uri.parse(apiBaseApi()).host.toLowerCase();
+      return baseHost.isNotEmpty && url.host.toLowerCase() == baseHost;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static DeviceIdService? _testDeviceIdService;
+
+  /// Test hook: with a bound [testHttpClient], also run requests through the
+  /// real [DeviceIdHttpClient] using this (typically fake-storage) service.
+  @visibleForTesting
+  static set testDeviceIdService(DeviceIdService? service) {
+    _testDeviceIdService = service;
+  }
 
   /// Effective HTTP client for other service classes (e.g. [AiService])
   /// that build their own [http.MultipartRequest] instead of going through

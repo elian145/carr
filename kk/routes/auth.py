@@ -45,7 +45,7 @@ from ..models import (
     db,
 )
 from ..config import dev_debug_response_fields_enabled
-from ..rate_identity import otp_rate_limit
+from ..rate_identity import auth_rate_limit, otp_rate_limit
 from ..security import (
     atomic_increment_attempts,
     check_account_login_throttle,
@@ -829,7 +829,7 @@ def _account_login_lock_identifier(*, admin_account=None, user=None):
 
 
 @bp.route("/api/auth/login", methods=["POST"])
-@rate_limit(max_requests=10, window_minutes=15)  # 10 login attempts per 15 minutes per IP
+@auth_rate_limit("login")  # F-12: per-identifier (10/15m) + per-device + IP ceiling (100/15m); M-09 account throttle below unchanged
 def login():
     """User login endpoint"""
     try:
@@ -1711,7 +1711,7 @@ def delete_account():
 
 
 @bp.route("/api/auth/forgot-password", methods=["POST"])
-@rate_limit(max_requests=5, window_minutes=15)  # 5 requests per 15 min per IP
+@auth_rate_limit("forgot")  # F-12: per-phone (3/15m, 10/day) + per-device + IP ceiling (30/15m)
 def forgot_password():
     """Forgot password via SMS only."""
     try:
@@ -1854,7 +1854,7 @@ def reset_password():
 
 @bp.route("/api/auth/send-email-verification", methods=["POST"])
 @jwt_required()
-@rate_limit(max_requests=5, window_minutes=15)
+@auth_rate_limit("email_send")  # F-12: per-account + per-destination-email + IP ceiling
 def send_email_verification():
     """Send email verification link to the current user's email."""
     try:
@@ -2394,7 +2394,7 @@ def phone_verify():
 
 
 @bp.route("/api/auth/signup", methods=["POST"])
-@rate_limit(max_requests=_SIGNUP_MAX_REQUESTS, window_minutes=_SIGNUP_WINDOW_MINUTES)
+@auth_rate_limit("signup")  # F-12: per-phone + per-device + IP ceiling (RATE_LIMIT_SIGNUP seeds the IP ceiling)
 def compat_signup():
     """
     Compatibility signup endpoint for mobile client.
