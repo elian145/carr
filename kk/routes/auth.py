@@ -25,9 +25,11 @@ from sqlalchemy.exc import IntegrityError
 
 from ..admin_tokens import issue_admin_token
 from ..auth import (
+    consume_password_reset_token,
     create_email_verification_token,
     create_password_reset_token,
     get_current_user,
+    invalidate_password_reset_tokens,
     log_user_action,
     user_phone_verified,
     validate_password,
@@ -1274,6 +1276,8 @@ def change_password():
         # H-01: revoke every access/refresh token issued before this moment
         # (same commit as the password update -- no separate transaction).
         current_user.tokens_invalid_before = now
+        # F-29: a pending reset code dies with the old password (same transaction).
+        invalidate_password_reset_tokens(current_user.id)
         db.session.commit()
         log_user_action(current_user, "password_change")
         return jsonify({"message": "Password changed successfully"}), 200
@@ -1946,9 +1950,15 @@ def reset_password():
         # change_password() for why.
         user.tokens_invalid_before = utcnow().replace(microsecond=0)
 
-        reset_token = PasswordReset.query.filter_by(token=token).first()
-        if reset_token:
-            reset_token.is_used = True
+        # Single use, race-safe: atomically claim the presented token (UPDATE ... WHERE
+        # is_used = false). A concurrent redemption / password change that got there first
+        # makes this a no-op -> reject and roll back the password write with it. Then kill any
+        # OTHER outstanding token of this user, all in this one transaction.
+        db.session.flush()  # take the user-row lock before the token-row lock (same order as change_password)
+        if not consume_password_reset_token(token, user.id):
+            db.session.rollback()
+            return jsonify({"message": "Invalid or expired token"}), 400
+        invalidate_password_reset_tokens(user.id)
 
         db.session.commit()
 
@@ -2612,6 +2622,8 @@ def compat_signup():
         user.first_name = first_name or user.first_name or "User"
         user.last_name = last_name or user.last_name or ""
         user.set_password(password)
+        # OTP-proven signup replaces the password of an existing row: pending reset codes die too.
+        invalidate_password_reset_tokens(user.id)
         user.is_verified = True
         user.phone_verified = True
         _apply_dealer_profile(
