@@ -24,6 +24,7 @@ class _ListingPriceBadgeStyle {
 _ListingPriceBadgeStyle _listingPriceBadgeStyle({
   required double rowWidth,
   required bool hasPrice,
+  double textScale = 1.0,
 }) {
   // Only shrink on very narrow tiles; otherwise keep the fuller pill size.
   final double tight = rowWidth < 130 ? 0.0 : 1.0;
@@ -31,9 +32,11 @@ _ListingPriceBadgeStyle _listingPriceBadgeStyle({
   final double fontSize = hasPrice ? 14.0 + 1.0 * tight : 11.0 + 1.0 * tight;
   final double horizontalPadding =
       hasPrice ? 7.0 + 1.0 * tight : 5.5 + 1.0 * tight;
-  final double badgeHeight = 24.0 + 2.0 * tight;
+  // The pill height is fixed so Roboto vs SF Pro metrics cannot change it,
+  // but it grows with the system text scale so scaled prices are not clipped.
+  final double badgeHeight = (24.0 + 2.0 * tight) * textScale;
   final double radius = 7.0 + 0.5 * tight;
-  final double footerHeight = 26.0 + 2.0 * tight;
+  final double footerHeight = (26.0 + 2.0 * tight) * textScale;
 
   return _ListingPriceBadgeStyle(
     fontSize: fontSize,
@@ -106,6 +109,9 @@ Widget _buildGridCarCardInnerText(
 }) {
   // Grid tiles: brand logo + title, trim, year/price, mileage/city.
   final bool compact = AppResponsive.isCompactPhone(context);
+  // System text scale (1.0..2.0, see SystemDisplayLock). Text inherits it;
+  // the fixed-height slots below grow by the same factor.
+  final double ts = appTextScaleOf(context);
   // Fixed title metrics so the brand logo sits at the same spot on every card.
   // 1.28 line height keeps Arabic/Kurdish descenders from clipping in the
   // fixed two-line slot (1.12 was too tight with forceStrutHeight).
@@ -115,7 +121,7 @@ Widget _buildGridCarCardInnerText(
   const double logoSize = 24;
   const double logoPad = 4.0;
   const double logoTitleGap = 6.0;
-  final double titleLineBoxHeight = titleFontSize * titleLineHeight;
+  final double titleLineBoxHeight = titleFontSize * titleLineHeight * ts;
   // +2px slack covers font metric rounding on the second line.
   final double reservedTitleHeight = titleLineBoxHeight * titleMaxLines + 2;
   final double sectionGap = compact ? 3.0 : 4.0;
@@ -157,7 +163,6 @@ Widget _buildGridCarCardInnerText(
         value,
         textDirection: textDirection,
         textAlign: TextAlign.start,
-        textScaler: const TextScaler.linear(1.0),
         maxLines: 1,
         softWrap: false,
         overflow: TextOverflow.visible,
@@ -183,7 +188,7 @@ Widget _buildGridCarCardInnerText(
     final double iconGap = compact ? 3.0 : 3.5;
     final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
     final double chipFont = compact ? 11.0 : 13.0;
-    final double chipHeight = chipFont + (compact ? 10.0 : 12.0);
+    final double chipHeight = chipFont * ts + (compact ? 10.0 : 12.0);
     const TextDirection chipDir = TextDirection.ltr;
 
     return Container(
@@ -222,7 +227,6 @@ Widget _buildGridCarCardInnerText(
             value,
             textDirection: chipDir,
             textAlign: TextAlign.left,
-            textScaler: const TextScaler.linear(1.0),
             maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.visible,
@@ -254,7 +258,7 @@ Widget _buildGridCarCardInnerText(
         ),
       ),
       textDirection: TextDirection.ltr,
-      textScaler: TextScaler.noScaling,
+      textScaler: TextScaler.linear(ts),
       maxLines: 1,
     )..layout(minWidth: 0, maxWidth: double.infinity);
     final textW = painter.width;
@@ -440,7 +444,6 @@ Widget _buildGridCarCardInnerText(
             child: Text(
               titleText,
               textDirection: textDirection,
-              textScaler: TextScaler.noScaling,
               textAlign: isRtl ? TextAlign.right : TextAlign.left,
               style: titleStyle,
               strutStyle: titleStrut,
@@ -512,6 +515,7 @@ Widget _buildGridCarCardInnerText(
       final priceStyle = _listingPriceBadgeStyle(
         rowWidth: constraints.maxWidth,
         hasPrice: hasPrice,
+        textScale: ts,
       );
       // Long prices need most of the footer; city can scale down.
       final double maxPriceWidth =
@@ -530,7 +534,7 @@ Widget _buildGridCarCardInnerText(
       final pricePainter = TextPainter(
         text: TextSpan(text: priceText, style: priceTextStyle),
         textDirection: TextDirection.ltr,
-        textScaler: TextScaler.noScaling,
+        textScaler: TextScaler.linear(ts),
         maxLines: 1,
       )..layout(minWidth: 0, maxWidth: double.infinity);
       final priceTextW = pricePainter.width;
@@ -542,7 +546,6 @@ Widget _buildGridCarCardInnerText(
       final Widget priceLabel = Text(
         priceText,
         textDirection: TextDirection.ltr,
-        textScaler: const TextScaler.linear(1.0),
         maxLines: 1,
         softWrap: false,
         overflow: TextOverflow.visible,
@@ -598,7 +601,6 @@ Widget _buildGridCarCardInnerText(
                         Text(
                           cityLine,
                           textDirection: textDirection,
-                          textScaler: const TextScaler.linear(1.0),
                           maxLines: 1,
                           softWrap: false,
                           overflow: TextOverflow.visible,
@@ -653,8 +655,10 @@ Widget _buildListCarCardInnerText(
 }) {
   final bool isLight = Theme.of(context).brightness == Brightness.light;
   final bool compact = AppResponsive.isCompactPhone(context);
+  // System text scale (1.0..2.0); fixed-height slots grow with it.
+  final double ts = appTextScaleOf(context);
   final double chipFontSize = compact ? 11.0 : 13.0;
-  final double sharedChipHeight = chipFontSize + (compact ? 10.0 : 12.0);
+  final double sharedChipHeight = chipFontSize * ts + (compact ? 10.0 : 12.0);
   final inheritedTextDirection = Directionality.of(context);
   final languageCode = Localizations.localeOf(context).languageCode;
   final bool isRtl =
@@ -708,7 +712,6 @@ Widget _buildListCarCardInnerText(
         child: Text(
           titleText,
           textDirection: textDirection,
-          textScaler: TextScaler.noScaling,
           textAlign: isRtl ? TextAlign.right : TextAlign.left,
           style: TextStyle(
             fontWeight: FontWeight.w800,
@@ -746,7 +749,7 @@ Widget _buildListCarCardInnerText(
     final pricePainter = TextPainter(
       text: TextSpan(text: priceText, style: textStyle),
       textDirection: TextDirection.ltr,
-      textScaler: TextScaler.noScaling,
+      textScaler: TextScaler.linear(ts),
       maxLines: 1,
     )..layout(minWidth: 0, maxWidth: double.infinity);
     final priceTextW = pricePainter.width;
@@ -759,7 +762,6 @@ Widget _buildListCarCardInnerText(
     final label = Text(
       priceText,
       textDirection: TextDirection.ltr,
-      textScaler: const TextScaler.linear(1.0),
       maxLines: 1,
       softWrap: false,
       overflow: TextOverflow.visible,
@@ -847,7 +849,6 @@ Widget _buildListCarCardInnerText(
             value,
             textDirection: chipDir,
             textAlign: TextAlign.left,
-            textScaler: const TextScaler.linear(1.0),
             maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.visible,
@@ -879,7 +880,7 @@ Widget _buildListCarCardInnerText(
         ),
       ),
       textDirection: TextDirection.ltr,
-      textScaler: TextScaler.noScaling,
+      textScaler: TextScaler.linear(ts),
       maxLines: 1,
     )..layout(minWidth: 0, maxWidth: double.infinity);
     final textW = painter.width;
@@ -971,7 +972,6 @@ Widget _buildListCarCardInnerText(
     return Text(
       value,
       textDirection: textDirection,
-      textScaler: const TextScaler.linear(1.0),
       maxLines: 1,
       softWrap: false,
       overflow: TextOverflow.visible,
@@ -1020,6 +1020,7 @@ Widget _buildListCarCardInnerText(
       final priceStyle = _listingPriceBadgeStyle(
         rowWidth: constraints.maxWidth,
         hasPrice: hasPrice,
+        textScale: ts,
       );
       final double maxPriceWidth =
           constraints.maxWidth * (hasPrice ? 0.72 : 0.52);
@@ -1047,7 +1048,6 @@ Widget _buildListCarCardInnerText(
                     Text(
                       cityText,
                       textDirection: textDirection,
-                      textScaler: const TextScaler.linear(1.0),
                       maxLines: 1,
                       softWrap: false,
                       overflow: TextOverflow.ellipsis,
@@ -1097,7 +1097,7 @@ Widget _buildListCarCardInnerText(
               ),
               maxLines: 1,
               textDirection: textDirection,
-              textScaler: TextScaler.noScaling,
+              textScaler: TextScaler.linear(ts),
             )..layout(maxWidth: availableTitleWidth);
             final singleLine = !titleProbe.didExceedMaxLines;
 

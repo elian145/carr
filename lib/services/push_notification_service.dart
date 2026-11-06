@@ -42,11 +42,189 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   }
 }
 
+/// Notification permission as far as [PushNotificationService] cares.
+enum PushPermissionStatus { granted, denied, notDetermined }
+
+/// Thin seam over Firebase Messaging / OS permission / local notifications so
+/// the push lifecycle (re-enable, denied-then-granted, token rotation, logout
+/// cleanup) can be unit-tested without native plugins. Production always uses
+/// the real implementation ([_FirebasePushPlatform]); tests inject a fake via
+/// [PushNotificationService.debugPlatform].
+abstract class PushMessagingPlatform {
+  /// Initializes Firebase if needed. False when Firebase is unavailable.
+  Future<bool> ensureFirebaseReady();
+  Future<void> ensureLocalNotifications();
+
+  /// Current permission WITHOUT prompting.
+  Future<PushPermissionStatus> permissionStatus();
+
+  /// Shows the OS permission prompt (no-op/denied when already decided).
+  Future<PushPermissionStatus> requestPermission();
+
+  /// Platform preparation required before [getToken] (iOS presentation
+  /// options + waiting for the APNs token).
+  Future<void> prepareForToken();
+  Future<String?> getToken();
+
+  /// Invalidates this installation's FCM token (a new one is minted on demand).
+  Future<void> deleteToken();
+  Stream<String> get onTokenRefresh;
+  void attachForegroundDisplay();
+  void attachOpenHandlers();
+
+  /// Removes notifications already shown for the signed-out account.
+  Future<void> cancelAllNotifications();
+}
+
+class _FirebasePushPlatform implements PushMessagingPlatform {
+  static PushPermissionStatus _map(AuthorizationStatus s) {
+    switch (s) {
+      case AuthorizationStatus.authorized:
+      case AuthorizationStatus.provisional:
+        return PushPermissionStatus.granted;
+      case AuthorizationStatus.denied:
+        return PushPermissionStatus.denied;
+      case AuthorizationStatus.notDetermined:
+        return PushPermissionStatus.notDetermined;
+    }
+  }
+
+  @override
+  Future<bool> ensureFirebaseReady() async {
+    try {
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp();
+      }
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('PushNotificationService: Firebase init failed: $e');
+      }
+      return false;
+    }
+  }
+
+  @override
+  Future<void> ensureLocalNotifications() =>
+      PushNotificationService._ensureLocalNotifications();
+
+  @override
+  Future<PushPermissionStatus> permissionStatus() async => _map(
+    (await FirebaseMessaging.instance.getNotificationSettings())
+        .authorizationStatus,
+  );
+
+  @override
+  Future<PushPermissionStatus> requestPermission() async {
+    if (Platform.isAndroid) {
+      await Permission.notification.request();
+    }
+    final settings = await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+    );
+    return _map(settings.authorizationStatus);
+  }
+
+  @override
+  Future<void> prepareForToken() async {
+    if (!Platform.isIOS) return;
+    final messaging = FirebaseMessaging.instance;
+    await messaging.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    await PushNotificationService._waitForApnsToken(messaging);
+  }
+
+  @override
+  Future<String?> getToken() => FirebaseMessaging.instance.getToken();
+
+  @override
+  Future<void> deleteToken() async {
+    // No Firebase app => this process never obtained a token to invalidate.
+    if (Firebase.apps.isEmpty) return;
+    await FirebaseMessaging.instance.deleteToken();
+  }
+
+  @override
+  Stream<String> get onTokenRefresh =>
+      FirebaseMessaging.instance.onTokenRefresh;
+
+  @override
+  void attachForegroundDisplay() {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+      await PushNotificationService._showLocalNotification(message);
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print(
+          'FCM foreground: ${message.notification?.title ?? message.data}',
+        );
+      }
+    });
+  }
+
+  @override
+  void attachOpenHandlers() {
+    FirebaseMessaging.onMessageOpenedApp.listen(
+      PushNotificationService._handleRemoteMessageOpen,
+    );
+    FirebaseMessaging.instance.getInitialMessage().then((message) {
+      if (message != null) {
+        PushNotificationService._handleRemoteMessageOpen(message);
+      }
+    });
+  }
+
+  @override
+  Future<void> cancelAllNotifications() async {
+    await PushNotificationService._ensureLocalNotifications();
+    await _localNotifications.cancelAll();
+  }
+}
+
 /// Registers the device FCM token with the backend after auth is ready.
 class PushNotificationService {
   static bool _messagingReady = false;
   static bool _refreshListenerAttached = false;
+  static bool _foregroundListenerAttached = false;
   static bool _openHandlersAttached = false;
+  // F-38: notification permission may be granted AFTER the first (denied)
+  // attempt, or push may be re-enabled later. The OS prompt is shown at most
+  // once per process unless the user explicitly asks (toggle); later
+  // re-checks only READ the current status.
+  static bool _permissionRequested = false;
+  static bool _recheckPending = false;
+  static Future<void>? _setupInFlight;
+  static Future<void>? _localCleanup;
+  static PushMessagingPlatform _platform = _FirebasePushPlatform();
+
+  /// Test seam: replaces the Firebase/OS layer (null restores the real one).
+  @visibleForTesting
+  static set debugPlatform(PushMessagingPlatform? platform) {
+    _platform = platform ?? _FirebasePushPlatform();
+  }
+
+  /// Test hook: forget all per-process lifecycle state.
+  @visibleForTesting
+  static void debugResetForTests() {
+    _messagingReady = false;
+    _refreshListenerAttached = false;
+    _foregroundListenerAttached = false;
+    _openHandlersAttached = false;
+    _permissionRequested = false;
+    _recheckPending = false;
+    _setupInFlight = null;
+    _localCleanup = null;
+    _platform = _FirebasePushPlatform();
+  }
+
+  @visibleForTesting
+  static bool get debugMessagingReady => _messagingReady;
   static GlobalKey<NavigatorState>? _navigatorKey;
   static Map<String, dynamic>? _pendingNavigation;
 
@@ -189,11 +367,7 @@ class PushNotificationService {
   static void _attachOpenHandlers() {
     if (_openHandlersAttached) return;
     _openHandlersAttached = true;
-
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleRemoteMessageOpen);
-    FirebaseMessaging.instance.getInitialMessage().then((message) {
-      if (message != null) _handleRemoteMessageOpen(message);
-    });
+    _platform.attachOpenHandlers();
   }
 
   static Future<void> _ensureLocalNotifications() async {
@@ -258,65 +432,72 @@ class PushNotificationService {
   }
 
   /// Firebase + permission + local token cache. Safe to call multiple times.
-  static Future<void> initialize() async {
-    if (kSideloadBuild && Platform.isIOS) return;
+  ///
+  /// [userInitiated] (the Settings toggle) may show the OS permission prompt
+  /// again; every other caller prompts at most once per process and afterwards
+  /// only RE-READS the permission, so a user who denied first and granted later
+  /// (system settings) gets handlers attached and the token registered without
+  /// being nagged (F-38).
+  static Future<void> initialize({bool userInitiated = false}) =>
+      _runInitialize(userInitiated: userInitiated, syncAfter: true);
 
-    try {
-      if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp();
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('PushNotificationService: Firebase init failed: $e');
-      }
-      return;
+  static Future<void> _runInitialize({
+    required bool userInitiated,
+    required bool syncAfter,
+  }) {
+    if (kSideloadBuild && Platform.isIOS) return Future<void>.value();
+    final inFlight = _setupInFlight;
+    if (inFlight != null) return inFlight;
+    final run = _initializeOnce(
+      userInitiated: userInitiated,
+      syncAfter: syncAfter,
+    );
+    _setupInFlight = run;
+    return run.whenComplete(() {
+      if (identical(_setupInFlight, run)) _setupInFlight = null;
+    });
+  }
+
+  /// Whether notifications may be shown. Prompts at most once per process
+  /// unless [userInitiated]; otherwise only reads the current status.
+  static Future<bool> _ensurePermission({required bool userInitiated}) async {
+    var status = await _platform.permissionStatus();
+    if (status == PushPermissionStatus.granted) return true;
+    if (userInitiated || !_permissionRequested) {
+      _permissionRequested = true;
+      status = await _platform.requestPermission();
     }
+    return status == PushPermissionStatus.granted;
+  }
 
+  static Future<void> _initializeOnce({
+    required bool userInitiated,
+    required bool syncAfter,
+  }) async {
+    if (!await _platform.ensureFirebaseReady()) return;
     if (_messagingReady) return;
-    _messagingReady = true;
 
     try {
-      await _ensureLocalNotifications();
+      await _platform.ensureLocalNotifications();
 
       final sp = await SharedPreferences.getInstance();
       if (!(sp.getBool('push_enabled') ?? true)) return;
 
-      if (Platform.isAndroid) {
-        await Permission.notification.request();
-      }
-
-      final messaging = FirebaseMessaging.instance;
-      final settings = await messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-        provisional: false,
-      );
-
-      if (settings.authorizationStatus != AuthorizationStatus.authorized &&
-          settings.authorizationStatus != AuthorizationStatus.provisional) {
+      if (!await _ensurePermission(userInitiated: userInitiated)) {
+        // Not "ready": a later initialize()/login sync re-checks the
+        // permission (without prompting) and finishes the setup.
+        _recheckPending = true;
         if (kDebugMode) {
           // ignore: avoid_print
-          print(
-            'PushNotificationService: notification permission not granted '
-            '(${settings.authorizationStatus})',
-          );
+          print('PushNotificationService: notification permission not granted');
         }
         return;
       }
 
-      if (Platform.isIOS) {
-        await messaging.setForegroundNotificationPresentationOptions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-        await _waitForApnsToken(messaging);
-      }
+      await _platform.prepareForToken();
 
-      final token = await messaging.getToken();
-      if (token != null && token.isNotEmpty) {
+      final token = (await _platform.getToken())?.trim() ?? '';
+      if (token.isNotEmpty) {
         await TokenStore.savePushToken(token);
         await sp.remove('push_token');
         await sp.remove('push_last_sync_error');
@@ -326,9 +507,6 @@ class PushNotificationService {
             'PushNotificationService: FCM token cached (${token.length} chars)',
           );
         }
-        if (ApiService.isAuthenticated) {
-          await syncTokenWithBackend();
-        }
       } else if (kDebugMode) {
         // ignore: avoid_print
         print(
@@ -336,37 +514,48 @@ class PushNotificationService {
         );
       }
 
-      if (!_refreshListenerAttached) {
-        _refreshListenerAttached = true;
-        messaging.onTokenRefresh.listen((newToken) async {
-          if (newToken.isEmpty) return;
-          await TokenStore.savePushToken(newToken);
-          await sp.remove('push_token');
-          await syncTokenWithBackend();
-        });
+      _attachListeners();
+      _messagingReady = true;
+      _recheckPending = false;
+
+      if (token.isNotEmpty && syncAfter && ApiService.isAuthenticated) {
+        await _syncTokenWithBackend();
       }
 
       if (Platform.isIOS) {
         unawaited(_scheduleIosBackendSyncRetries());
       }
-
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-        await _showLocalNotification(message);
-        if (kDebugMode) {
-          // ignore: avoid_print
-          print(
-            'FCM foreground: ${message.notification?.title ?? message.data}',
-          );
-        }
-      });
-
-      _attachOpenHandlers();
     } catch (e) {
+      _recheckPending = true;
       if (kDebugMode) {
         // ignore: avoid_print
         print('PushNotificationService: setup failed: $e');
       }
     }
+  }
+
+  /// Idempotent: each handler is attached at most once per process.
+  static void _attachListeners() {
+    if (!_refreshListenerAttached) {
+      _refreshListenerAttached = true;
+      // Token rotation: persist the new token and register it for whoever is
+      // signed in NOW (the server binds it to the caller's JWT only and
+      // replaces that account's previous token). While signed out it is only
+      // cached; the next login registers it.
+      _platform.onTokenRefresh.listen((newToken) async {
+        final t = newToken.trim();
+        if (t.isEmpty) return;
+        await TokenStore.savePushToken(t);
+        final sp = await SharedPreferences.getInstance();
+        await sp.remove('push_token');
+        await syncTokenWithBackend();
+      });
+    }
+    if (!_foregroundListenerAttached) {
+      _foregroundListenerAttached = true;
+      _platform.attachForegroundDisplay();
+    }
+    _attachOpenHandlers();
   }
 
   /// Wait until APNs token is available (TestFlight/production builds).
@@ -391,10 +580,32 @@ class PushNotificationService {
 
   /// POST FCM token to `/api/users/push_token` when logged in.
   static Future<void> syncTokenWithBackend() async {
+    // A logout/account-switch wipe of the previous account's device token must
+    // finish first, or the OLD token could be registered for the new account.
+    final cleanup = _localCleanup;
+    if (cleanup != null) {
+      try {
+        await cleanup;
+      } catch (_) {}
+    }
+    if (_recheckPending && !_messagingReady && ApiService.isAuthenticated) {
+      // F-38: permission was denied (or setup failed) earlier; pick up a
+      // later grant without prompting again.
+      try {
+        await _runInitialize(userInitiated: false, syncAfter: false);
+      } catch (e, st) {
+        logNonFatal(e, st, 'PushNotificationService.recheck');
+      }
+    }
+    await _syncTokenWithBackend();
+  }
+
+  /// True when the token was registered with the backend.
+  static Future<bool> _syncTokenWithBackend() async {
     try {
       final sp = await SharedPreferences.getInstance();
-      if (!(sp.getBool('push_enabled') ?? true)) return;
-      if (!ApiService.isAuthenticated) return;
+      if (!(sp.getBool('push_enabled') ?? true)) return false;
+      if (!ApiService.isAuthenticated) return false;
 
       var token = (await TokenStore.readPushToken())?.trim() ?? '';
       if (token.isEmpty) {
@@ -406,7 +617,7 @@ class PushNotificationService {
       }
       if (token.isEmpty) {
         try {
-          token = (await FirebaseMessaging.instance.getToken())?.trim() ?? '';
+          token = (await _platform.getToken())?.trim() ?? '';
           if (token.isNotEmpty) {
             await TokenStore.savePushToken(token);
           }
@@ -414,7 +625,7 @@ class PushNotificationService {
           logNonFatal(e, st, 'PushNotificationService.getToken');
         }
       }
-      if (token.isEmpty) return;
+      if (token.isEmpty) return false;
 
       await ApiService.registerPushToken(token);
       await sp.setString('push_last_sync_ok', DateTime.now().toIso8601String());
@@ -423,6 +634,7 @@ class PushNotificationService {
         // ignore: avoid_print
         print('PushNotificationService: token registered with backend');
       }
+      return true;
     } catch (e, st) {
       final sp = await SharedPreferences.getInstance();
       await sp.setString('push_last_sync_error', e.toString());
@@ -431,6 +643,7 @@ class PushNotificationService {
         print('PushNotificationService: backend register failed: $e');
       }
       logNonFatal(e, st, 'PushNotificationService.syncTokenWithBackend');
+      return false;
     }
   }
 
@@ -467,20 +680,82 @@ class PushNotificationService {
     }
   }
 
-  static Future<void> setPushEnabled(bool enabled) async {
+  /// Turns push on/off for the signed-in account. Returns false (and restores
+  /// the previous preference) when the change could not be applied, so the
+  /// caller can keep its switch truthful.
+  static Future<bool> setPushEnabled(bool enabled) async {
     final sp = await SharedPreferences.getInstance();
+    final previous = sp.getBool('push_enabled') ?? true;
     await sp.setBool('push_enabled', enabled);
-    if (!ApiService.isAuthenticated) return;
-    try {
-      await ApiService.registerPushToken(
-        enabled ? (sp.getString('push_token') ?? '') : '',
-        enabled: enabled,
-      );
-    } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('PushNotificationService: setPushEnabled failed: $e');
+
+    if (!enabled) {
+      if (!ApiService.isAuthenticated) return true;
+      try {
+        await ApiService.registerPushToken('', enabled: false);
+        return true;
+      } catch (e, st) {
+        await sp.setBool('push_enabled', previous);
+        logNonFatal(e, st, 'PushNotificationService.setPushEnabled.disable');
+        return false;
       }
+    }
+
+    // F-38: enabling used to POST `sp.getString('push_token')` -- a key that
+    // was migrated into secure storage -- i.e. an empty token (HTTP 400,
+    // swallowed). Resolve the token the same way every other path does
+    // (secure store, else a fresh FCM token) and re-run the setup that a
+    // disabled/denied start skipped (handlers + permission re-check).
+    await initialize(userInitiated: true);
+    if (!ApiService.isAuthenticated) return true; // registered at next login
+    final ok = await _syncTokenWithBackend();
+    if (!ok) await sp.setBool('push_enabled', previous);
+    return ok;
+  }
+
+  /// Wipes everything push-related that belongs to the account that just
+  /// signed out (explicit logout, expired/unrefreshable session, account
+  /// deletion): the cached device token, push preferences/diagnostics,
+  /// notifications already shown, and the FCM token itself -- so even when the
+  /// server could not be told (expired session, offline) the old account's
+  /// token is dead and the next account gets a fresh one. Never throws.
+  static Future<void> clearLocalPushState() {
+    final inFlight = _localCleanup;
+    if (inFlight != null) return inFlight;
+    final run = _clearLocalPushState();
+    _localCleanup = run;
+    return run.whenComplete(() {
+      if (identical(_localCleanup, run)) _localCleanup = null;
+    });
+  }
+
+  static Future<void> _clearLocalPushState() async {
+    try {
+      await TokenStore.savePushToken(null);
+    } catch (e, st) {
+      logNonFatal(e, st, 'PushNotificationService.clear.token');
+    }
+    try {
+      final sp = await SharedPreferences.getInstance();
+      for (final key in const [
+        'push_token',
+        'push_last_sync_ok',
+        'push_last_sync_error',
+        'push_enabled',
+      ]) {
+        await sp.remove(key);
+      }
+    } catch (e, st) {
+      logNonFatal(e, st, 'PushNotificationService.clear.prefs');
+    }
+    try {
+      await _platform.cancelAllNotifications();
+    } catch (e, st) {
+      logNonFatal(e, st, 'PushNotificationService.clear.notifications');
+    }
+    try {
+      await _platform.deleteToken().timeout(const Duration(seconds: 10));
+    } catch (e, st) {
+      logNonFatal(e, st, 'PushNotificationService.clear.deleteToken');
     }
   }
 }

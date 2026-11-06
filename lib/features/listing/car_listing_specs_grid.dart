@@ -19,6 +19,7 @@ import '../../shared/i18n/listing_value_labels.dart';
 import '../../shared/i18n/locale_formatting.dart';
 import '../../shared/i18n/region_spec_labels.dart';
 import '../../shared/media/media_url.dart';
+import '../../shared/ui/app_text_scale.dart';
 import '../../shared/vin/open_vin_search.dart';
 
 /// Full URLs for listing images tagged `kind: damage` (shared by detail + specs grid).

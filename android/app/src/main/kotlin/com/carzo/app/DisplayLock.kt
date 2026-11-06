@@ -6,7 +6,13 @@ import android.content.res.Resources
 import android.os.Build
 import android.util.DisplayMetrics
 
-/** Ignore the user Font size and Display size settings so layouts stay designed. */
+/**
+ * Ignore the user Display size (density) setting so layouts stay designed.
+ *
+ * The user Font size ([Configuration.fontScale]) is deliberately NOT touched
+ * (F-10): accessibility font scaling must reach Flutter. Dart bounds it to
+ * 1.0..2.0 in SystemDisplayLock.
+ */
 internal fun Context.withLockedSystemDisplay(): Context {
     val config = Configuration(resources.configuration)
     lockSystemDisplay(config, resources.displayMetrics)
@@ -17,7 +23,6 @@ internal fun lockSystemDisplay(
     config: Configuration,
     metrics: DisplayMetrics? = null,
 ) {
-    config.fontScale = 1.0f
     val stableDpi = stableDensityDpi(metrics)
     if (stableDpi > 0) {
         config.densityDpi = stableDpi
@@ -33,9 +38,9 @@ internal fun stableDensityDpi(metrics: DisplayMetrics? = null): Int {
 }
 
 /**
- * FlutterView reads [DisplayMetrics.density] and [Configuration.fontScale]
- * from [Activity.getResources], not from a wrapped attachBaseContext. Patch
- * both on every read so emulator Display size / Font size cannot leak in.
+ * FlutterView reads [DisplayMetrics.density] from [Activity.getResources],
+ * not from a wrapped attachBaseContext. Patch it on every read so emulator
+ * Display size cannot leak in. The font scale is preserved as the user set it.
  */
 internal fun Resources.lockToDesignedDisplay() {
     val stableDpi = stableDensityDpi(displayMetrics)
@@ -44,15 +49,16 @@ internal fun Resources.lockToDesignedDisplay() {
     val metrics = displayMetrics
     metrics.densityDpi = stableDpi
     metrics.density = density
-    metrics.scaledDensity = density
+    val fontScale = configuration.fontScale
+    metrics.scaledDensity = density * fontScale
     val config = configuration
-    if (config.fontScale != 1.0f || config.densityDpi != stableDpi) {
+    if (config.densityDpi != stableDpi) {
         val locked = Configuration(config)
         lockSystemDisplay(locked, metrics)
         @Suppress("DEPRECATION")
         updateConfiguration(locked, metrics)
         metrics.densityDpi = stableDpi
         metrics.density = density
-        metrics.scaledDensity = density
+        metrics.scaledDensity = density * fontScale
     }
 }

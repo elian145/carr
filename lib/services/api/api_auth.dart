@@ -8,6 +8,9 @@ abstract final class _ApiServiceAuth {
     String emailOrPhone,
     String password,
   ) async {
+    // This attempt may only install credentials while it is still the latest
+    // authentication activity (no newer login, sign-out or cancel).
+    final attempt = _ApiServiceHttp.beginAuthAttempt();
     final response = await ApiService._httpClient
         .post(
           Uri.parse('${ApiService.baseUrl}/auth/login'),
@@ -25,9 +28,12 @@ abstract final class _ApiServiceAuth {
         ? legacyToken
         : access;
     if (token != null && token.isNotEmpty) {
-      await ApiService._saveAccessToken(token);
-    }
-    if (refresh != null && refresh.isNotEmpty) {
+      _ApiServiceHttp.assertAuthAttemptCurrent(attempt);
+      // A login always starts a NEW authentication session (and drops any
+      // previous account's refresh token).
+      await ApiService._installSession(token, refresh);
+    } else if (refresh != null && refresh.isNotEmpty) {
+      _ApiServiceHttp.assertAuthAttemptCurrent(attempt);
       await ApiService._saveRefreshToken(refresh);
     }
     return data;
@@ -90,6 +96,7 @@ abstract final class _ApiServiceAuth {
     String? purpose,
   }) async {
     final normalizedPhone = normalizePhoneNumber(phoneNumber);
+    final attempt = _ApiServiceHttp.beginAuthAttempt();
     final response = await ApiService._httpClient
         .post(
           Uri.parse('${ApiService.baseUrl}/auth/phone/verify'),
@@ -119,9 +126,10 @@ abstract final class _ApiServiceAuth {
     final String? access = (data['access_token'] as String?)?.trim();
     final String? refresh = (data['refresh_token'] as String?)?.trim();
     if (access != null && access.isNotEmpty) {
-      await ApiService._saveAccessToken(access);
-    }
-    if (refresh != null && refresh.isNotEmpty) {
+      _ApiServiceHttp.assertAuthAttemptCurrent(attempt);
+      await ApiService._installSession(access, refresh);
+    } else if (refresh != null && refresh.isNotEmpty) {
+      _ApiServiceHttp.assertAuthAttemptCurrent(attempt);
       await ApiService._saveRefreshToken(refresh);
     }
     return data;
@@ -129,20 +137,42 @@ abstract final class _ApiServiceAuth {
 
   static Future<void> logout() async {
     // Best-effort server-side revocation; then clear locally.
+    // The call is bound to the session being signed out: if a DIFFERENT
+    // session was installed while the (slow) revocation request was in
+    // flight, the local clear below must not wipe it.
+    final session = ApiService.captureSession();
     try {
-      final headers = ApiService._getHeaders();
-      final rt = (ApiService._refreshToken ?? '').trim();
-      final body = (rt.isNotEmpty) ? json.encode({'refresh_token': rt}) : null;
-      await ApiService._httpClient
-          .post(
-            Uri.parse('${ApiService.baseUrl}/auth/logout'),
-            headers: headers,
-            body: body,
-          )
-          .timeout(ApiService._defaultTimeout);
+      // Built per attempt: after a refresh the access AND refresh tokens have
+      // rotated, and the server must revoke the NEW refresh token.
+      Future<http.Response> post() {
+        final rt = (ApiService._refreshToken ?? '').trim();
+        return ApiService._httpClient
+            .post(
+              Uri.parse('${ApiService.baseUrl}/auth/logout'),
+              headers: ApiService._getHeaders(),
+              body: rt.isNotEmpty ? json.encode({'refresh_token': rt}) : null,
+            )
+            .timeout(ApiService._defaultTimeout);
+      }
+
+      var response = await post();
+      if (response.statusCode == 401 &&
+          ApiService.isSessionCurrent(session)) {
+        // F-38: an expired access token must not leave the server session
+        // (and the account's push token, which only /auth/logout clears)
+        // behind. The refresh token is the proof of identity: renew the
+        // access token with it -- the normal, session-bound refresh -- and
+        // retry once. If the refresh token is also dead there is nothing left
+        // that proves who is signing out: the server is NOT asked to clear
+        // anything, and the local wipe below still happens.
+        if (await ApiService._refreshAccessToken(session)) {
+          response = await post();
+        }
+      }
     } catch (e, st) {
       logNonFatal(e, st, 'ApiService.logout');
     }
+    if (!ApiService.isSessionCurrent(session)) return;
     await ApiService.clearTokens();
   }
 

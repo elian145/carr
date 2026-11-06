@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:car_listing_app/features/chat/chat_strings.dart';
+import 'package:car_listing_app/shared/i18n/app_locale_resolution.dart';
 import 'package:car_listing_app/shared/i18n/ku_delegates.dart';
 import 'package:car_listing_app/state/locale_controller.dart';
 import 'package:flutter/cupertino.dart';
@@ -8,6 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// NOTE (F-09): this file unit-tests `ku_delegates.dart` through a hand-built
+/// MaterialApp. That the PRODUCTION app (`MyApp`) really registers these
+/// delegates, and that `ckb` device locales resolve to `ku`, is covered by
+/// `f09_kurdish_production_wiring_test.dart`.
+///
 /// U-07: Kurdish must no longer intentionally use Arabic Material/Cupertino
 /// localization as a proxy (and, per a later follow-up, must no longer
 /// silently fall back to English either): Kurdish system chrome
@@ -35,6 +41,15 @@ void main() {
     test('Kurdish locale resolution remains "ku" (not "ckb")', () {
       expect(LocaleController.supportedCodes, ['en', 'ar', 'ku']);
       expect(LocaleController.supportedCodes, isNot(contains('ckb')));
+      // F-09: the production resolver (not just this list) maps ckb -> ku.
+      expect(
+        resolveAppLocale(
+          explicit: null,
+          device: const Locale('ckb', 'IQ'),
+          supported: kAppSupportedLocales,
+        ),
+        const Locale('ku'),
+      );
     });
   });
 
@@ -111,6 +126,7 @@ void main() {
         expect(matLoc.cancelButtonLabel, 'هەڵوەشاندنەوە');
         expect(matLoc.okButtonLabel, isNot('OK'));
         expect(matLoc.okButtonLabel, isNot('موافق'));
+        expect(matLoc.okButtonLabel, isNot('حسنًا')); // actual Arabic "OK"
         expect(matLoc.cancelButtonLabel, isNot('Cancel'));
         expect(matLoc.cancelButtonLabel, isNot('إلغاء'));
         expect(matLoc.closeButtonLabel, 'داخستن');

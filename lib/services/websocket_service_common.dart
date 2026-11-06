@@ -30,3 +30,15 @@ DateTime parseApiDateTime(dynamic raw) {
     return DateTime.now();
   }
 }
+
+/// Nullable variant of [parseApiDateTime] for fields that are legitimately
+/// absent: `null` for null/empty/unparseable input, otherwise the same
+/// (verified) interpretation - offset-less API strings are UTC, `Z`/offset
+/// strings are honoured - returned as a local [DateTime].
+DateTime? tryParseApiDateTime(dynamic raw) {
+  if (raw == null) return null;
+  if (raw is DateTime) return raw;
+  final text = raw.toString().trim();
+  if (text.isEmpty || DateTime.tryParse(text) == null) return null;
+  return parseApiDateTime(text);
+}

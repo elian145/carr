@@ -215,6 +215,9 @@ class _ChatListPageState extends State<ChatListPage>
                               '')
                           .toString();
                   final receiverId = (other['id'] ?? '').toString();
+                  // A deleted counterpart has no id; the server hands out a
+                  // key that still identifies THAT thread (F-05).
+                  final peerKey = (c['peer_key'] ?? '').toString();
                   final listingMeta = listingMetaFromChatRow(c);
                   final carTitle = localizedListingTitle(
                     context,
@@ -303,6 +306,8 @@ class _ChatListPageState extends State<ChatListPage>
                                   'carId': carId,
                                   if (receiverId.isNotEmpty)
                                     'receiverId': receiverId,
+                                  if (receiverId.isEmpty && peerKey.isNotEmpty)
+                                    'peerKey': peerKey,
                                   if (carTitle.isNotEmpty) 'carTitle': carTitle,
                                   if (carImageUrl.isNotEmpty)
                                     'carImageUrl': carImageUrl,

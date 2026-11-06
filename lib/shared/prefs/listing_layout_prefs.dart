@@ -60,7 +60,37 @@ class ListingLayoutPrefs {
     return 4;
   }
 
-  static double gridChildAspectRatioForWidth(int listingColumns, double width) {
+  /// Height (dp) of the text block under the photo in a grid listing card at
+  /// text scale 1.0. Mirrors `textReserve` in global_listing_card_build.dart.
+  static const double gridCardTextBlockHeight = 150;
+
+  /// Aspect ratio for a listing cell at system text scale [textScale]
+  /// (1.0..2.0, see `SystemDisplayLock`). At 1.0 this is exactly
+  /// [_baseGridChildAspectRatioForWidth]. Above 1.0 the cell gets taller so
+  /// the scaled title / chips / price fit instead of overflowing:
+  /// - list (1 column): the whole card is text rows -> height * textScale;
+  /// - grid: only the text block under the photo grows.
+  static double gridChildAspectRatioForWidth(
+    int listingColumns,
+    double width, {
+    double textScale = 1.0,
+  }) {
+    final base = _baseGridChildAspectRatioForWidth(listingColumns, width);
+    if (!(textScale > 1.0)) return base;
+    final ts = textScale > 2.0 ? 2.0 : textScale;
+    if (listingColumns == 1) {
+      return base / ts;
+    }
+    final cols = listingColumns < 2 ? 2 : listingColumns;
+    final cellW = ((width - 8.0 * (cols + 1)) / cols).clamp(120.0, 600.0);
+    final baseH = cellW / base;
+    return cellW / (baseH + gridCardTextBlockHeight * (ts - 1.0));
+  }
+
+  static double _baseGridChildAspectRatioForWidth(
+    int listingColumns,
+    double width,
+  ) {
     if (listingColumns == 1) {
       // Give the four information rows comfortable vertical spacing.
       if (width < 320) return 2.20;

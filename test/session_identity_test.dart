@@ -454,14 +454,20 @@ void main() {
       });
 
       test('inconsistent tokens (access=A, refresh=B) -> null', () async {
-        await ApiService.setTokens(
-          accessToken: fakeSessionJwt(_a, expiresIn: const Duration(hours: -3)),
-          refreshToken: fakeSessionJwt(
+        // `setTokens` itself refuses to install such a pair (see
+        // auth_attempt_race_test); a pair like this can only come back from
+        // corrupted persisted storage, which must still fail closed.
+        await TokenStore.save(
+          fakeSessionJwt(_a, expiresIn: const Duration(hours: -3)),
+        );
+        await TokenStore.saveRefresh(
+          fakeSessionJwt(
             _b,
             type: 'refresh',
             expiresIn: const Duration(days: -2),
           ),
         );
+        await ApiService.initializeTokens();
         expect(AuthService().userId, isNull);
       });
     });
