@@ -956,6 +956,45 @@ def listing_share_landing(listing_id: str):
     return Response(html, 200, {"Content-Type": "text/html; charset=utf-8"})
 
 
+# F-27: extensions that browsers treat as active content. Nothing legitimate is ever
+# stored under ``uploads/`` with these (photos are re-encoded to JPEG, videos to MP4), so
+# refuse to serve them from the user-upload tree even if one is dropped on the disk.
+_UPLOAD_ACTIVE_CONTENT_EXTS = frozenset(
+    {
+        ".html", ".htm", ".xhtml", ".shtml", ".svg", ".svgz", ".xml", ".xsl", ".xslt",
+        ".js", ".mjs", ".css", ".json", ".swf", ".php", ".py", ".pl", ".cgi",
+    }
+)
+
+
+def _static_path_is_refused(filename: str) -> bool:
+    """True for paths that must never be served by ``/static/<path>`` (404).
+
+    * hidden segments (``.env``, ``.git/...``) anywhere in the path;
+    * active-content file types under the user-upload tree (``uploads/``).
+
+    Path traversal (``..``) is handled separately by ``safe_join`` /
+    ``send_from_directory``.
+    """
+    parts = [p for p in filename.replace("\\", "/").split("/") if p]
+    if any(p.startswith(".") for p in parts):
+        return True
+    if parts and parts[0] == "uploads":
+        ext = os.path.splitext(parts[-1])[1].lower()
+        if ext in _UPLOAD_ACTIVE_CONTENT_EXTS:
+            return True
+    return False
+
+
+def _harden_static_response(filename: str, resp):
+    """Defence-in-depth headers for files served from the user-upload tree."""
+    if filename.startswith("uploads/"):
+        resp.headers["X-Content-Type-Options"] = "nosniff"
+        # Only relevant if the file is opened as a document; <img>/<video> loads ignore it.
+        resp.headers.setdefault("Content-Security-Policy", "default-src 'none'; sandbox")
+    return resp
+
+
 @bp.route("/static/<path:filename>")
 def static_files(filename: str):
     """Serve static files from kk/static, then repo root static/ as fallback.
@@ -963,9 +1002,15 @@ def static_files(filename: str):
     User-generated uploads (photos/videos) are stored under UPLOAD_FOLDER (see app_factory).
     When UPLOAD_FOLDER points to a persistent volume, serve those files here so URLs like
     /static/uploads/car_videos/... keep working after redeploys.
+
+    Listing media is public by design (the R2 bucket is public-read too). There is no
+    directory listing (``os.path.isfile`` gate) and traversal is rejected by ``safe_join``.
     """
     if filename.startswith("uploads/uploads/"):
         filename = filename[len("uploads/") :]
+
+    if _static_path_is_refused(filename):
+        abort(404)
 
     # 1) Configured upload root (may be outside kk/static for persistent storage)
     upload_root = (current_app.config.get("UPLOAD_FOLDER") or "").strip()
@@ -974,7 +1019,9 @@ def static_files(filename: str):
         try:
             safe_path = safe_join(upload_root, rel_under_uploads)
             if safe_path and os.path.isfile(safe_path):
-                return send_from_directory(upload_root, rel_under_uploads)
+                return _harden_static_response(
+                    filename, send_from_directory(upload_root, rel_under_uploads)
+                )
         except Exception as e:
             logger.warning(
                 "static_files UPLOAD_FOLDER failed for %s: %s",
@@ -987,7 +1034,7 @@ def static_files(filename: str):
     try:
         safe_path = safe_join(static_dir, filename)
         if safe_path and os.path.isfile(safe_path):
-            return send_from_directory(static_dir, filename)
+            return _harden_static_response(filename, send_from_directory(static_dir, filename))
     except Exception as e:
         logger.warning("static_files kk/static failed for %s: %s", filename, e, exc_info=True)
 
@@ -995,7 +1042,7 @@ def static_files(filename: str):
     try:
         safe_path = safe_join(repo_static, filename)
         if safe_path and os.path.isfile(safe_path):
-            return send_from_directory(repo_static, filename)
+            return _harden_static_response(filename, send_from_directory(repo_static, filename))
     except Exception as e:
         logger.warning("static_files repo static failed for %s: %s", filename, e, exc_info=True)
 
