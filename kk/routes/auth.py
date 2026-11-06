@@ -21,6 +21,7 @@ from flask_jwt_extended import (
 from sqlalchemy import func, inspect
 from sqlalchemy.exc import IntegrityError
 
+from ..admin_tokens import issue_admin_token
 from ..auth import (
     create_email_verification_token,
     create_password_reset_token,
@@ -773,6 +774,11 @@ def _access_token_for_user(
         user, admin_scope=admin_scope, auth_method=auth_method
     )
     if claims:
+        # F-19: admin-scoped tokens are signed with the admin key when
+        # ADMIN_JWT_PRIVATE_KEY is configured (None => legacy HS256 below).
+        admin_token = issue_admin_token(identity, "access", claims)
+        if admin_token is not None:
+            return admin_token
         return create_access_token(identity=identity, additional_claims=claims)
     return create_access_token(identity=identity)
 
@@ -788,6 +794,10 @@ def _refresh_token_for_user(
         user, admin_scope=admin_scope, auth_method=auth_method
     )
     if claims:
+        # F-19: see _access_token_for_user.
+        admin_token = issue_admin_token(identity, "refresh", claims)
+        if admin_token is not None:
+            return admin_token
         return create_refresh_token(identity=identity, additional_claims=claims)
     return create_refresh_token(identity=identity)
 
