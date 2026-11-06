@@ -41,6 +41,14 @@ Use this document when completing Google Play Data Safety, Apple App Privacy, an
 - Airbridge: only if Airbridge app name/token are configured for attribution/deep links.
 - Email/SMS providers: Resend/SendGrid/SMTP and configured SMS provider for verification and password reset flows.
 
+## Account Deletion: What Remains (DRAFT - legal review required)
+
+Verified from `kk/routes/auth.py::delete_account` (no behaviour change here). Full detail, suggested wording and open decisions: [`PRIVACY_DRAFT_ACCOUNT_DELETION.md`](PRIVACY_DRAFT_ACCOUNT_DELETION.md).
+
+- Deleted: login/profile, favourites, saved searches, blocks, notifications, tokens; listings go offline with description, VIN, contact numbers, coordinates and listing photos/videos removed.
+- **Not deleted: chat message text and chat media (photos, videos, voice).** They stay visible to the other chat participant (and to admins), unlinked from the deleted account (sender/receiver set to NULL; the old numeric user id stays on the row as a pseudonymous marker). **No retention period is stated and no automatic expiry is implemented** (retained for an unspecified period; the counterpart has no in-app way to delete a departed user's messages).
+- Store forms (Play Data Safety / Apple App Privacy) must not claim that all user content is deleted with the account. OPEN DECISION: keep and disclose, or change the behaviour - product + legal.
+
 ## Store Form Guidance
 
 - Google Play Data Safety: mark account info, contact info, user content, app activity, app info/performance, and device identifiers as collected if enabled by production configuration.
