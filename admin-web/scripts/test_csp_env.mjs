@@ -11,33 +11,21 @@
  * usage is applied via per-property CSSOM mutation, not a literal `style`
  * attribute string), so it is dropped uniformly, not gated by env.
  *
- * This mirrors admin-web/src/middleware.ts::securityHeaders()'s env check
- * and CSP string construction exactly, the same way
- * test_verify_admin_jwt.mjs mirrors verify-admin-jwt.ts, so it can run as a
- * plain Node script without a TypeScript/Next.js build step.
+ * F-19: script-src's 'unsafe-inline' is gone in production (per-request nonce
+ * + 'strict-dynamic', see test_f19_security_headers.mjs for the full header
+ * matrix). This script now loads the REAL admin-web/src/lib/security-headers.ts
+ * (via scripts/ts-loader.mjs) instead of mirroring the CSP string by hand.
  *
  * Run from repo root: node admin-web/scripts/test_csp_env.mjs
  */
 import assert from "node:assert/strict";
 
+import { createTsLoader } from "./ts-loader.mjs";
+
+const { buildCsp: realBuildCsp } = createTsLoader().load("src/lib/security-headers.ts");
+const NONCE = "test-nonce";
 function buildCsp(env) {
-  const isProd =
-    (env.NODE_ENV || "").trim() === "production" ||
-    (env.APP_ENV || "").trim().toLowerCase() === "production";
-  const scriptSrc = isProd
-    ? "script-src 'self' 'unsafe-inline'"
-    : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
-  return [
-    "default-src 'self'",
-    scriptSrc,
-    "style-src 'self'",
-    "img-src 'self' data: blob: https:",
-    "font-src 'self' data:",
-    "connect-src 'self' https: http://localhost:* http://127.0.0.1:*",
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-  ].join("; ");
+  return realBuildCsp(env, NONCE);
 }
 
 /** Split a CSP header string into its individual directives (trimmed), for
@@ -54,11 +42,15 @@ const prodByAppEnv = buildCsp({ NODE_ENV: "", APP_ENV: "Production" });
 const devByNodeEnv = buildCsp({ NODE_ENV: "development" });
 const devByUnset = buildCsp({});
 
-// --- script-src: unchanged behavior (this task must not touch it) ---
+// --- script-src: production = nonce + strict-dynamic, no unsafe-inline/eval (F-19) ---
 for (const csp of [prodByNodeEnv, prodByAppEnv]) {
   const ds = directives(csp);
-  assert.ok(ds.includes("script-src 'self' 'unsafe-inline'"), `production script-src must be exactly 'self' 'unsafe-inline': ${csp}`);
+  assert.ok(
+    ds.includes(`script-src 'self' 'nonce-${NONCE}' 'strict-dynamic'`),
+    `production script-src must be nonce-based: ${csp}`,
+  );
   assert.equal(csp.includes("unsafe-eval"), false, `production CSP must not contain unsafe-eval: ${csp}`);
+  assert.equal(csp.includes("unsafe-inline"), false, `production CSP must not contain unsafe-inline: ${csp}`);
 }
 for (const csp of [devByNodeEnv, devByUnset]) {
   const ds = directives(csp);

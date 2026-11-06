@@ -233,6 +233,11 @@ def create_app():
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = _access_token_expires()
     app.config["JWT_REFRESH_TOKEN_EXPIRES"] = _refresh_token_expires()
     validate_required_secrets(env_name)
+    # F-19: reject a malformed/partial ADMIN_JWT_* configuration before any
+    # DB/migration work (no-op when the env vars are unset).
+    from .admin_tokens import validate_admin_token_config
+
+    validate_admin_token_config()
 
     configure_logging(app)
     install_request_id_and_access_log(app)
@@ -525,6 +530,11 @@ def create_app():
     )
 
     init_jwt_callbacks(jwt)
+    # F-19: admin-scoped (ES256) token verification hook. No-op unless the
+    # ADMIN_JWT_* env vars are set, so legacy HS256 behaviour is unchanged.
+    from .admin_tokens import init_admin_tokens
+
+    init_admin_tokens(app, jwt)
     register_blueprints(app)
     register_socketio_handlers(socketio)
 

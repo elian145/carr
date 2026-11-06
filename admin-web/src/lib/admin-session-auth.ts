@@ -29,11 +29,20 @@ function jwtSecret(): string {
   return (process.env.JWT_SECRET_KEY || "").trim();
 }
 
+/**
+ * F-19: PUBLIC key (PEM) of the API's admin-token signing key. This is all the
+ * admin service needs to verify its session cookie; it cannot sign anything.
+ */
+function adminPublicKey(): string {
+  return (process.env.ADMIN_JWT_PUBLIC_KEY || "").trim();
+}
+
+/** Production fails closed unless the edge can actually verify signatures. */
 function requireSecretInProd(): boolean {
   const isProd =
     (process.env.NODE_ENV || "").trim() === "production" ||
     (process.env.APP_ENV || "").trim().toLowerCase() === "production";
-  return isProd && !jwtSecret();
+  return isProd && !jwtSecret() && !adminPublicKey();
 }
 
 type CookieJar = {
@@ -164,9 +173,10 @@ export async function resolveAdminAccessToken(
 ): Promise<string | null> {
   if (requireSecretInProd()) return null;
   const secret = jwtSecret();
+  const publicKey = adminPublicKey();
   const accessRaw = jar.get(ADMIN_JWT_COOKIE)?.value || "";
   if (accessRaw) {
-    const check = await verifyAdminAccessJwt(accessRaw, secret);
+    const check = await verifyAdminAccessJwt(accessRaw, secret, publicKey);
     if (check.ok) return accessRaw;
   }
 

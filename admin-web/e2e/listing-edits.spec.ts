@@ -1,6 +1,12 @@
 import fs from "node:fs";
 import { expect, request as playwrightRequest, test, type BrowserContext } from "@playwright/test";
 
+// F-19: state-changing requests to admin-web must carry a same-origin `Origin`
+// (browsers always send it; Playwright's APIRequestContext does not).
+const ADMIN_ORIGIN =
+  process.env.ADMIN_WEB_BASE_URL ||
+  `http://127.0.0.1:${process.env.ADMIN_WEB_PORT || 3000}`;
+
 /**
  * Listing edits (pending revisions of published listings) in the real admin
  * UI, against a real backend:
@@ -54,7 +60,7 @@ test.describe("listing edits - authenticated admin", () => {
   async function signIn(context: BrowserContext) {
     const res = await context.request.post("/api/admin-session", {
       data: { username: E2E_ADMIN_USERNAME, password: E2E_ADMIN_PASSWORD },
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Origin: ADMIN_ORIGIN },
     });
     expect(res.status(), "real admin login").toBe(200);
   }
