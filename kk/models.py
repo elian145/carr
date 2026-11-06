@@ -14,6 +14,7 @@ bcrypt = Bcrypt()
 from .time_utils import iso_utc, utcnow
 from .dealer_socials import public_dealership_socials as _public_dealership_socials
 from .reset_token_crypto import HashedResetToken
+from .phone_format import normalize_stored_iraqi_mobile
 
 
 def _mask_phone_number(raw) -> str | None:
@@ -40,8 +41,17 @@ def _listing_contact_phone_list(car) -> list[str]:
         text = str(val).strip()
         if not text:
             return
-        digits = "".join(ch for ch in text if ch.isdigit())
-        key = digits or text
+        # Read-time display fix for legacy rows (no data rewrite): a stored value
+        # that is an Iraqi mobile in any spelling -- notably the malformed
+        # ``+96407701234567`` -- is shown as ``+9647701234567``. Values that
+        # cannot be normalised are left untouched.
+        canonical = normalize_stored_iraqi_mobile(text)
+        if canonical:
+            text = f"+964{canonical}"
+            key = canonical
+        else:
+            digits = "".join(ch for ch in text if ch.isdigit())
+            key = digits or text
         if key in seen:
             return
         seen.add(key)

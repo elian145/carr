@@ -16,6 +16,11 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action, validate_user_input
 from .auth import _hash_phone_verification_code, _normalize_phone
+from ..phone_format import (
+    normalize_iraqi_mobile,
+    normalize_stored_iraqi_mobile,
+    to_e164_iraq,
+)
 from ..config import dev_debug_response_fields_enabled
 from ..models import (
     Car,
@@ -204,10 +209,36 @@ def _hash_dealer_phone_code(phone_digits: str, code: str) -> str:
     return hmac.new(key, msg=message, digestmod=hashlib.sha256).hexdigest()
 
 
-def _hash_contact_phone_code(phone_digits: str, code: str) -> str:
+def _hash_contact_phone_code(phone_key: str, code: str) -> str:
+    """OTP hash for a listing contact phone.
+
+    ``phone_key`` MUST be the canonical ``7XXXXXXXXX`` key
+    (``kk.phone_format.normalize_iraqi_mobile``) so a code requested for ``07...``
+    verifies when the same number is later submitted as ``7...`` / ``+9647...``.
+    """
     key = (current_app.config.get("SECRET_KEY") or "").encode("utf-8")
-    message = f"contact-phone:{phone_digits}:{code}".encode("utf-8")
+    message = f"contact-phone:{phone_key}:{code}".encode("utf-8")
     return hmac.new(key, msg=message, digestmod=hashlib.sha256).hexdigest()
+
+
+def _contact_phone_code_matches(stored_hash: str, phone_key: str, code: str) -> bool:
+    """Constant-time check of ``code`` against the pending contact-phone OTP hash.
+
+    Codes issued before the canonical-key change were hashed over the digits as
+    typed: the 10-digit spelling (identical to the canonical hash) or the 11-digit
+    national ``0`` + key spelling. Both are accepted once for the same number;
+    attempt limits / lockout / expiry are enforced by the caller, unchanged.
+    """
+    stored = str(stored_hash or "")
+    candidates = (
+        _hash_contact_phone_code(phone_key, code),
+        _hash_contact_phone_code("0" + phone_key, code),  # legacy typed 07... spelling
+    )
+    matched = False
+    for candidate in candidates:  # no short-circuit: both always compared
+        if hmac.compare_digest(stored, candidate):
+            matched = True
+    return matched
 
 
 DEALERSHIP_EMAIL_MAX = 5
@@ -309,14 +340,21 @@ def _verified_dealer_phone_digits(user: User) -> list[str]:
 
 
 def _verified_contact_phone_digits(user: User) -> list[str]:
+    """Canonical ``7XXXXXXXXX`` keys of every contact phone this user may publish.
+
+    Stored ``contact_verified_phones`` entries may carry any legacy spelling
+    (``07...``, ``7...``, ``+9647...``, ``+96407...``); each is folded to the
+    canonical key so the same number is verified in any spelling. Entries that are
+    not an Iraqi mobile are ignored (they can no longer be submitted anyway).
+    """
     raw = getattr(user, "contact_verified_phones", None)
     verified = raw if isinstance(raw, list) else []
     output: list[str] = []
     for value in verified:
-        normalized = _normalize_dealer_phone(value)
+        normalized = normalize_stored_iraqi_mobile(value)
         if normalized and normalized not in output:
             output.append(normalized)
-    account_phone = _normalize_dealer_phone(getattr(user, "phone_number", None))
+    account_phone = normalize_stored_iraqi_mobile(getattr(user, "phone_number", None))
     # Account phone is always acceptable for listing contact without extra OTP.
     if account_phone and account_phone not in output:
         output.append(account_phone)
@@ -324,26 +362,46 @@ def _verified_contact_phone_digits(user: User) -> list[str]:
 
 
 LISTING_CONTACT_PHONE_MAX = 3
+INVALID_CONTACT_PHONE_MESSAGE = "Enter a valid phone number"
 
 
-def parse_listing_contact_phones(data: dict | None) -> list[str]:
-    """Normalize contact_phones / contact_phone from a request body (max 3)."""
+def _submitted_listing_contact_phones(data: dict | None) -> list:
+    """Raw contact phone entries of a request body (``contact_phones`` first)."""
     data = data or {}
     phones = _clean_phone_list(data.get("contact_phones"))
     if not phones:
-        single = (data.get("contact_phone") or "").strip()
+        single = data.get("contact_phone")
+        single = "" if single is None else str(single).strip()
         if single:
             phones = [single]
+    return phones
+
+
+def invalid_listing_contact_phones(data: dict | None) -> list[str]:
+    """Submitted contact phone entries that are not a valid Iraqi mobile."""
+    return [
+        phone
+        for phone in _submitted_listing_contact_phones(data)
+        if normalize_iraqi_mobile(phone) is None
+    ]
+
+
+def parse_listing_contact_phones(data: dict | None) -> list[str]:
+    """Normalize contact_phones / contact_phone from a request body (max 3).
+
+    Returns ONLY valid ``+9647XXXXXXXXX`` numbers (de-duplicated by subscriber);
+    invalid entries are skipped here -- routes call
+    :func:`invalid_listing_contact_phones` first to answer 400 instead of silently
+    treating a submitted-but-invalid phone as "no phone".
+    """
     out: list[str] = []
     seen: set[str] = set()
-    for phone in phones:
-        digits = _normalize_dealer_phone(phone)
-        if len(digits) not in {10, 11}:
+    for phone in _submitted_listing_contact_phones(data):
+        key = normalize_iraqi_mobile(phone)
+        if key is None or key in seen:
             continue
-        if digits in seen:
-            continue
-        seen.add(digits)
-        out.append(f"+964{digits}")
+        seen.add(key)
+        out.append(to_e164_iraq(key))
         if len(out) >= LISTING_CONTACT_PHONE_MAX:
             break
     return out
@@ -353,8 +411,10 @@ def assert_listing_phones_verified(user: User, phones: list[str]) -> str | None:
     """Return an error message if any phone is not OTP-proven for this user."""
     verified = set(_verified_contact_phone_digits(user))
     for phone in phones:
-        digits = _normalize_dealer_phone(phone)
-        if digits not in verified:
+        key = normalize_iraqi_mobile(phone)
+        if key is None:
+            return INVALID_CONTACT_PHONE_MESSAGE
+        if key not in verified:
             return "Verify each contact phone with a code before publishing"
     return None
 
@@ -1742,9 +1802,10 @@ def send_contact_phone_verification():
 
     data = validate_input_sanitization(request.get_json(silent=True) or {})
     raw_phone = (data.get("phone_number") or data.get("phone") or "").strip()
-    phone_digits = _normalize_dealer_phone(raw_phone)
-    if len(phone_digits) not in {10, 11}:
-        return jsonify({"message": "Enter a valid phone number"}), 400
+    phone_digits = normalize_iraqi_mobile(raw_phone)
+    if phone_digits is None:
+        # No SMS is sent for landlines / wrong lengths / foreign / ambiguous input.
+        return jsonify({"message": INVALID_CONTACT_PHONE_MESSAGE}), 400
 
     verified = _verified_contact_phone_digits(current_user)
     if phone_digits in verified:
@@ -1805,8 +1866,10 @@ def verify_contact_phone():
     data = validate_input_sanitization(request.get_json(silent=True) or {})
     raw_phone = (data.get("phone_number") or data.get("phone") or "").strip()
     code = str(data.get("verification_code") or data.get("code") or "").strip()
-    phone_digits = _normalize_dealer_phone(raw_phone)
-    if len(phone_digits) not in {10, 11} or len(code) != 6 or not code.isdigit():
+    phone_digits = normalize_iraqi_mobile(raw_phone)
+    if phone_digits is None:
+        return jsonify({"message": INVALID_CONTACT_PHONE_MESSAGE}), 400
+    if len(code) != 6 or not code.isdigit():
         return jsonify({"message": "Phone number and a six-digit code are required"}), 400
 
     verified = _verified_contact_phone_digits(current_user)
@@ -1832,8 +1895,7 @@ def verify_contact_phone():
         db.session.commit()
         return jsonify({"message": "Invalid or expired verification code"}), 400
 
-    expected = _hash_contact_phone_code(phone_digits, code)
-    if not hmac.compare_digest(code_hash, expected):
+    if not _contact_phone_code_matches(code_hash, phone_digits, code):
         attempts = atomic_increment_attempts(current_user, "phone_verification_attempts")
         if attempts >= 5:
             current_user.phone_verification_locked_until = now + timedelta(minutes=15)
@@ -1843,9 +1905,12 @@ def verify_contact_phone():
         db.session.commit()
         return jsonify({"message": "Invalid or expired verification code"}), 400
 
+    # Legacy spellings already stored are left as they are (no rewrite); the
+    # canonical key is appended only when that subscriber is not yet represented.
     stored = getattr(current_user, "contact_verified_phones", None)
     stored_list = [str(x).strip() for x in stored] if isinstance(stored, list) else []
-    if phone_digits not in stored_list:
+    represented = {normalize_stored_iraqi_mobile(x) for x in stored_list}
+    if phone_digits not in represented:
         stored_list.append(phone_digits)
     current_user.contact_verified_phones = stored_list
     current_user.phone_verification_code_hash = None
