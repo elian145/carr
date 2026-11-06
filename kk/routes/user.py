@@ -11,10 +11,11 @@ import secrets
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action, validate_user_input
-from .auth import _hash_phone_verification_code
+from .auth import _hash_phone_verification_code, _normalize_phone
 from ..config import dev_debug_response_fields_enabled
 from ..models import (
     Car,
@@ -146,6 +147,55 @@ def _normalize_dealer_phone(value) -> str:
     if len(digits) > 11:
         digits = digits[-11:]
     return digits
+
+
+# Spellings under which an account phone may already sit in ``user.phone_number``.
+# New rows are canonical (10 digits, no leading 0, see ``auth._normalize_phone``);
+# older rows may still carry a leading ``0`` / country code written by earlier
+# releases or by hand. ``user.phone_number`` is UNIQUE only per exact string, so
+# without checking all of them one subscriber could own two accounts.
+_ACCOUNT_PHONE_LEGACY_PREFIXES = (
+    "0",
+    "964",
+    "0964",
+    "+964",
+    "00964",
+    "9640",
+    "+9640",
+    "009640",
+)
+
+
+def _canonical_account_phone(value) -> str:
+    """Canonical stored form of an account phone (same as the auth routes)."""
+    return _normalize_phone(str(value or ""))
+
+
+def _account_phone_variants(canonical: str) -> list[str]:
+    """Every stored spelling that denotes the same subscriber as ``canonical``.
+
+    Canonical first. Iraqi mobiles (10 digits, not starting with 0) also match
+    their ``0``/``964``/``+964``/``00964`` spellings; any number also matches a
+    literal ``+`` + digits spelling.
+    """
+    canonical = _canonical_account_phone(canonical)
+    if not canonical:
+        return []
+    variants = [canonical, "+" + canonical]
+    if len(canonical) == 10 and not canonical.startswith("0"):
+        variants.extend(prefix + canonical for prefix in _ACCOUNT_PHONE_LEGACY_PREFIXES)
+    return variants
+
+
+def _account_phone_owner(canonical: str, exclude_user_id=None):
+    """Another user that already owns this phone in ANY spelling, else None."""
+    variants = _account_phone_variants(canonical)
+    if not variants:
+        return None
+    query = User.query.filter(User.phone_number.in_(variants))
+    if exclude_user_id is not None:
+        query = query.filter(User.id != exclude_user_id)
+    return query.first()
 
 
 def _hash_dealer_phone_code(phone_digits: str, code: str) -> str:
@@ -628,6 +678,7 @@ def recently_viewed():
 @jwt_required()
 def update_profile():
     """Update user profile"""
+    phone_change_pending = ""
     try:
         current_user = get_current_user()
         if not current_user:
@@ -662,14 +713,16 @@ def update_profile():
                     ), 400
                 current_user.locale = normalized
         if "phone_number" in data:
-            new_digits = _normalize_dealer_phone(data.get("phone_number"))
-            old_digits = _normalize_dealer_phone(getattr(current_user, "phone_number", None))
+            # Canonical form (same as the auth routes): every spelling of one
+            # number is the same number, and only that form is ever stored.
+            new_digits = _canonical_account_phone(data.get("phone_number"))
+            old_digits = _canonical_account_phone(getattr(current_user, "phone_number", None))
             if new_digits and new_digits != old_digits:
                 if len(new_digits) < 7:
                     return jsonify({"message": "Enter a valid phone number"}), 400
-                existing_phone = User.query.filter_by(phone_number=new_digits).first()
-                if existing_phone and existing_phone.id != current_user.id:
+                if _account_phone_owner(new_digits, current_user.id) is not None:
                     return jsonify({"message": "Phone number already exists"}), 400
+                phone_change_pending = new_digits
                 code = str(
                     data.get("verification_code")
                     or data.get("phone_verification_code")
@@ -762,6 +815,13 @@ def update_profile():
     except ValueError as exc:
         db.session.rollback()
         return jsonify({"message": str(exc)}), 400
+    except IntegrityError:
+        db.session.rollback()
+        # Lost a race for the phone number (UNIQUE column) -> same answer as a
+        # plain duplicate instead of a 500.
+        if phone_change_pending and _account_phone_owner(phone_change_pending) is not None:
+            return jsonify({"message": "Phone number already exists"}), 400
+        return jsonify({"message": "Failed to update profile"}), 500
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to update profile"}), 500
@@ -799,19 +859,18 @@ def send_account_phone_change_code():
         or data.get("phone")
         or ""
     ).strip()
-    new_digits = _normalize_dealer_phone(raw_phone)
+    new_digits = _canonical_account_phone(raw_phone)
     if len(new_digits) < 7:
         return jsonify({"message": "Enter a valid phone number"}), 400
 
-    old_digits = _normalize_dealer_phone(getattr(current_user, "phone_number", None))
+    old_digits = _canonical_account_phone(getattr(current_user, "phone_number", None))
     if new_digits == old_digits:
         return jsonify({"message": "This is already your phone number"}), 400
 
     # New-phone uniqueness, checked up front so we don't burn an SMS send on
     # a number `update_profile()` would reject anyway; re-checked there too
     # at commit time in case someone else claims it in the meantime.
-    existing_phone = User.query.filter_by(phone_number=new_digits).first()
-    if existing_phone and existing_phone.id != current_user.id:
+    if _account_phone_owner(new_digits, current_user.id) is not None:
         return jsonify({"message": "Phone number already exists"}), 400
 
     now = utcnow()
