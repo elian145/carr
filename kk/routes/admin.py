@@ -39,6 +39,7 @@ from ..retention_dispatch import (
     dispatch_saved_search_alerts_for_activated,
     is_new_publication_transition,
 )
+from ..saved_search_alert_jobs import record_alert_job
 from ..listing_search import apply_listing_text_search
 from ..localization import get_background_locale, translate
 from ..time_utils import iso_utc, utcnow
@@ -1706,6 +1707,10 @@ def update_car_status(car_id: str):
             if is_new_publication_transition(old_status_for_alerts, car.is_active, car.status)
             else None
         )
+        if alert_car_id is not None:
+            # F-04 durability: the "alerts owed" marker commits (or rolls
+            # back) together with this activation. No-op while the flag is off.
+            record_alert_job(alert_car_id)
 
         db.session.commit()
         invalidate_filter_facets_cache()
@@ -1835,6 +1840,9 @@ def bulk_update_car_status():
 
             if is_new_publication_transition(bulk_old_status, car.is_active, car.status):
                 bulk_alert_car_ids.append(car.id)
+                # F-04 durability: same transaction as the activation
+                # (single commit below; the row is under this loop's car lock).
+                record_alert_job(car.id)
 
             new_moderation_state = _car_moderation_state(car.is_active, car.status)
             bulk_outcomes.append(

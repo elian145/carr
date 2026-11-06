@@ -511,6 +511,14 @@ def publish_subject(subject: Subject, *, reviewer: str) -> PublishResult:
         car.status = "active"
         car.is_active = True
         car.updated_at = utcnow()
+        if newly_active:
+            # F-04 durability: the "alerts owed" marker joins THIS transaction
+            # (committed by the caller together with the publication; shared by
+            # auto-moderation and the admin override-approve). No-op while the
+            # SAVED_SEARCH_ALERT_DURABILITY flag is off.
+            from ..saved_search_alert_jobs import record_alert_job
+
+            record_alert_job(car.id)
         notification = _queue_listing_moderation_notification(car, "active")
         return PublishResult(car, notification, car.seller, newly_active=newly_active)
     result = lr.publish_revision(subject.revision.id, expected_token=subject.token, reviewer=reviewer)

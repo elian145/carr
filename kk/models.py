@@ -1724,6 +1724,46 @@ class SavedSearchAlert(db.Model):
         return f'<SavedSearchAlert search={self.saved_search_id} car={self.car_id}>'
 
 
+class SavedSearchAlertJob(db.Model):
+    """F-04 durable alert marker: "saved-search alerts are owed for this listing".
+
+    One row per listing, at most (``UNIQUE(car_id)`` = the first-publication
+    marker: once a listing has had a job -- finished, expired or failed -- it
+    never gets another, so un-hide / sold -> active / re-approval cannot alert
+    again). Inserted in the SAME transaction that publishes the listing, only
+    while ``SAVED_SEARCH_ALERT_DURABILITY`` is ``record`` or ``on`` (see
+    ``kk/saved_search_alert_jobs.py``). State machine:
+
+    * pending  -- ``finished_at IS NULL``
+    * done     -- ``outcome='done'``     every matching saved search was handled
+    * expired  -- ``outcome='expired'``  older than the recovery window; never sent late
+    * failed   -- ``outcome='failed'``   attempts exhausted; surfaced in logs
+
+    Redis/Celery only transport work; this row is the durable intent.
+    """
+    __tablename__ = 'saved_search_alert_job'
+
+    id = db.Column(db.Integer, primary_key=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id', ondelete='CASCADE'), nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    # Lease start of the runner currently processing the job (NULL = free).
+    claimed_at = db.Column(db.DateTime, nullable=True)
+    # Earliest time the sweep may (re)dispatch the job (back-off / dispatch lease).
+    next_run_at = db.Column(db.DateTime, nullable=True)
+    finished_at = db.Column(db.DateTime, nullable=True)
+    outcome = db.Column(db.String(16), nullable=True)
+    attempts = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    last_error = db.Column(db.String(255), nullable=True)
+
+    __table_args__ = (
+        db.UniqueConstraint('car_id', name='uq_saved_search_alert_job_car'),
+        db.Index('ix_saved_search_alert_job_pending', 'finished_at', 'created_at'),
+    )
+
+    def __repr__(self):
+        return f'<SavedSearchAlertJob car={self.car_id} outcome={self.outcome}>'
+
+
 class BlockedUser(db.Model):
     __tablename__ = 'blocked_user'
 
