@@ -4,6 +4,7 @@ import {
   cookieSecureFromRequest,
   setAdminSessionCookies,
 } from "@/lib/admin-session-auth";
+import { rejectCrossSiteRequest } from "@/lib/origin-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,6 +61,11 @@ async function fetchUpstream(
  * Stores access + refresh JWTs (access is short-lived; refresh rotates it).
  */
 export async function POST(request: Request) {
+  // F-19: block cross-site login CSRF (attacker signing the admin into an
+  // attacker-controlled account) - same-origin only.
+  const blocked = rejectCrossSiteRequest(request);
+  if (blocked) return blocked;
+
   let body: { username?: string; password?: string };
   try {
     body = (await request.json()) as { username?: string; password?: string };
@@ -165,6 +171,8 @@ export async function POST(request: Request) {
 
 /** Clear httpOnly admin access + refresh cookies. */
 export async function DELETE(request: Request) {
+  const blocked = rejectCrossSiteRequest(request);
+  if (blocked) return blocked;
   const res = NextResponse.json({ ok: true });
   clearAdminSessionCookies(res, cookieSecureFromRequest(request));
   return res;
