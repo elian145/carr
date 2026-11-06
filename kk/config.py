@@ -310,6 +310,42 @@ def _refresh_token_expires() -> timedelta:
     return timedelta(days=days)
 
 
+# --- F-19: admin-scoped token separation (all OFF unless env vars are set) ---
+def _pem_from_env(name: str) -> str:
+    """Read a PEM from env; hosting dashboards often store newlines as ``\\n``."""
+    raw = (os.environ.get(name) or "").strip()
+    if not raw:
+        return ""
+    return raw.replace("\\r\\n", "\n").replace("\\n", "\n").strip()
+
+
+def admin_jwt_private_key_pem() -> str:
+    """``ADMIN_JWT_PRIVATE_KEY``: EC P-256 private key (PEM). API service ONLY.
+
+    Never give this to admin-web. When set, the API signs admin-scoped tokens
+    (``account_scope=admin``) with ES256 using this key.
+    """
+    return _pem_from_env("ADMIN_JWT_PRIVATE_KEY")
+
+
+def admin_jwt_public_key_pem() -> str:
+    """``ADMIN_JWT_PUBLIC_KEY``: matching public key (PEM). API + admin-web.
+
+    Optional on the API when the private key is set (it is derived then).
+    admin-web only ever needs this PUBLIC key to verify its session cookie.
+    """
+    return _pem_from_env("ADMIN_JWT_PUBLIC_KEY")
+
+
+def admin_jwt_enforce_enabled() -> bool:
+    """``ADMIN_JWT_ENFORCE=1``: stop accepting HS256 tokens that carry admin claims.
+
+    Only set after the staged roll-out (see docs/F19_ADMIN_TOKEN_SEPARATION.md).
+    Requires the admin key pair to be configured.
+    """
+    return _env_flag("ADMIN_JWT_ENFORCE")
+
+
 class Config:
     # Basic Flask Configuration
     # In production, secrets are REQUIRED (validated via validate_required_secrets()).
