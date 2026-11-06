@@ -3,8 +3,10 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
+import re
 import secrets
 import time
+import unicodedata
 from datetime import datetime, timedelta, timezone
 
 import requests
@@ -113,14 +115,81 @@ _SIGNUP_WINDOW_MINUTES = 60
 
 
 def _normalize_phone(raw_phone: str) -> str:
-    digits = "".join(ch for ch in (raw_phone or "") if ch.isdigit())
+    """Canonical stored/compared form of a phone number.
+
+    SEC-003: Iraqi mobiles are written both as ``07715000015`` (national, 11
+    digits, what a SIM card shows) and ``7715000015`` (what the app sends after
+    its fixed "+964" prefix). They are the same SIM, so every spelling collapses
+    to ONE canonical form -- 10 digits, no leading ``0``, no country code -- and
+    ``User.phone_number`` (a UNIQUE column) can therefore hold at most one row
+    per subscriber. Rows written before this change may still be stored with
+    the leading ``0``; ``_find_user_by_phone`` finds those too.
+
+    Idempotent: ``_normalize_phone(_normalize_phone(x)) == _normalize_phone(x)``
+    (``kk.rate_identity`` and the OTP hashes rely on that).
+    """
+    # ``str.isdigit`` also accepts Arabic-Indic / Persian / fullwidth digits.
+    # Fold them to ASCII so the same number typed with a different keyboard
+    # cannot become a second "identity" (and a second account) for one SIM.
+    digits = "".join(
+        str(unicodedata.digit(ch))
+        for ch in (raw_phone or "")
+        if ch.isdigit() and unicodedata.digit(ch, None) is not None
+    )
     if not digits:
         return ""
+    if digits.startswith("00964"):  # international "00" dialling prefix
+        digits = digits[2:]
     if digits.startswith("964") and len(digits) >= 12:
         digits = digits[3:]
     if len(digits) > 11:
         digits = digits[-11:]
+    if len(digits) == 11 and digits.startswith("0"):
+        digits = digits[1:]
     return digits
+
+
+def _phone_lookup_variants(phone_digits: str) -> list[str]:
+    """Stored spellings that may already exist for a canonical phone.
+
+    Accounts created before SEC-003 may be stored as ``07...`` (11 digits).
+    Looking up both spellings lets those users keep their account without a
+    data migration; new accounts are always stored in canonical form. The
+    canonical spelling is always first (it is preferred when both exist).
+    """
+    digits = _normalize_phone(phone_digits)
+    if not digits:
+        return []
+    variants = [digits]
+    if len(digits) == 10 and not digits.startswith("0"):
+        variants.append("0" + digits)
+    return variants
+
+
+_PHONE_IDENTIFIER_RE = re.compile(r"^\+?[\d\s\-().]{7,24}$")
+
+
+def _looks_like_phone_identifier(ident) -> bool:
+    """True for a login identifier written like a phone number (digits with
+    optional ``+``/spaces/dashes/parentheses). Usernames never qualify, so the
+    phone fallback cannot turn a username guess into a phone lookup."""
+    return isinstance(ident, str) and bool(_PHONE_IDENTIFIER_RE.match(ident.strip()))
+
+
+def _find_user_by_phone(phone_digits: str, **filters) -> User | None:
+    """First user whose stored phone is any spelling of ``phone_digits``.
+
+    ``phone_digits`` is re-canonicalised, so callers cannot accidentally miss
+    a legacy row by passing a non-canonical spelling. Prefers the canonical
+    spelling when both exist (legacy duplicates), never matches a different
+    subscriber, and applies ``filters`` (e.g. ``is_active=True``) to every
+    spelling.
+    """
+    for variant in _phone_lookup_variants(phone_digits):
+        user = User.query.filter_by(phone_number=variant, **filters).first()
+        if user is not None:
+            return user
+    return None
 
 
 def _to_bool(value) -> bool:
@@ -143,14 +212,15 @@ def _to_bool(value) -> bool:
 #   GOOGLE_REVIEW_PHONE          - the exact phone number this applies to
 #   GOOGLE_REVIEW_OTP            - the fixed code accepted for that phone
 #
-# GOOGLE_REVIEW_PHONE format gotcha: the mobile login screen always sends
-# "+964" + exactly the 10 digits typed into its phone field, and
-# `_normalize_phone()` below strips that "964" back off before any
-# comparison happens. So GOOGLE_REVIEW_PHONE must be set to EXACTLY those
-# 10 digits (no leading 0, no "+964") -- the same 10 digits the reviewer
-# types into the app. Setting it to the 11-digit "0XXXXXXXXXX" local
-# format instead (what you'd read off a SIM) normalizes to a different
-# string and the bypass below will never match.
+# GOOGLE_REVIEW_PHONE format: the mobile login screen always sends
+# "+964" + the digits typed into its phone field, and `_normalize_phone()`
+# collapses EVERY spelling of one Iraqi mobile (``7XXXXXXXXX``,
+# ``07XXXXXXXXX``, ``+9647XXXXXXXXX``, ``00964...``) to the same canonical
+# 10 digits (SEC-003) BEFORE any comparison -- for the configured value and
+# for the incoming number alike. So GOOGLE_REVIEW_PHONE may be written in any
+# of those spellings (the documented 10-digit form is still the
+# recommendation); it identifies exactly ONE subscriber/account either way,
+# and a different number never matches.
 #
 # Design invariants enforced below (see phone_start()/phone_verify()):
 #   * The bypass only ever matches when the incoming phone number, after the
@@ -202,7 +272,13 @@ def _google_review_otp_matches(code: str) -> bool:
     review_otp = _google_review_otp_code()
     if not review_otp or not code:
         return False
-    return hmac.compare_digest(code, review_otp)
+    # SEC-009: ``hmac.compare_digest`` raises TypeError for non-ASCII ``str``.
+    # Compare bytes so hostile input is a plain mismatch, never a 500 (which
+    # would also reveal the reviewer phone).
+    try:
+        return hmac.compare_digest(code.encode("utf-8"), review_otp.encode("utf-8"))
+    except Exception:
+        return False
 
 
 def _apply_dealer_profile(
@@ -291,14 +367,19 @@ class OtpError(Exception):
 def _invalid_credentials_response(user: "User | None" = None):
     """Localized generic 401 for a failed login (MI-03).
 
-    Only the human-readable message text varies by locale (Accept-Language
-    header, then the resolved account's own ``User.locale`` when one was
-    resolved) -- the machine-readable shape (401 status, single generic
-    ``message`` key, no ``code``) is unchanged. This keeps the M-09
-    "identical response whether the account is wrong, throttled, or the
-    password was wrong" guarantee intact for every locale.
+    Only the human-readable message text varies by locale (the request's
+    Accept-Language header, else English) -- the machine-readable shape (401
+    status, single generic ``message`` key, no ``code``) is unchanged. This
+    keeps the M-09 "identical response whether the account is wrong,
+    throttled, or the password was wrong" guarantee intact for every locale.
     """
-    locale = current_request_locale(getattr(user, "locale", None) if user else None)
+    # SEC-008: the message language must depend ONLY on the request
+    # (Accept-Language), never on the resolved account's stored locale.
+    # Using ``user.locale`` made a wrong password for a real account come
+    # back in that user's language while an unknown identifier got the
+    # request default -- an account-existence oracle. ``user`` is kept in the
+    # signature so call sites stay unchanged.
+    locale = current_request_locale(None)
     return jsonify({"message": translate("invalid_credentials", locale)}), 401
 
 
@@ -405,7 +486,7 @@ def _generate_unique_username(prefix: str = "u") -> str:
 
 
 def _get_active_user_by_phone(phone_digits: str) -> User | None:
-    return User.query.filter_by(phone_number=phone_digits, is_active=True).first()
+    return _find_user_by_phone(phone_digits, is_active=True)
 
 
 def _deactivated_account_otp_response(phone_digits: str, code: str):
@@ -432,7 +513,7 @@ def _deactivated_account_otp_response(phone_digits: str, code: str):
     through (return None) to the caller's existing generic branches,
     completely unchanged.
     """
-    user = User.query.filter_by(phone_number=phone_digits, is_active=False).first()
+    user = _find_user_by_phone(phone_digits, is_active=False)
     if not user:
         return None
 
@@ -567,7 +648,10 @@ def _get_or_create_user_for_phone(phone_digits: str) -> User:
         supplied after OTP (``/auth/signup``, profile edit, dealer
         onboarding; ``/phone/verify`` for dealer fields).
     """
-    user = User.query.filter_by(phone_number=phone_digits).first()
+    # SEC-003: a row is ONLY ever created in canonical form (callers already
+    # pass ``_normalize_phone`` output; this makes the invariant local).
+    phone_digits = _normalize_phone(phone_digits)
+    user = _find_user_by_phone(phone_digits)
     if user:
         return user
     # Signup is phone-only; never accept a client-provided email here.
@@ -605,7 +689,18 @@ def _get_or_create_user_for_phone(phone_digits: str) -> User:
     # schema: always an unguessable random value (see docstring).
     user.set_password(secrets.token_urlsafe(18))
     db.session.add(user)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError:
+        # Two concurrent first requests for the same number (any spelling:
+        # they share ONE canonical ``phone_number``) race on the UNIQUE
+        # column. The loser must adopt the winner's row, never 500 and never
+        # create a second account for the subscriber.
+        db.session.rollback()
+        winner = _find_user_by_phone(phone_digits)
+        if winner is None:
+            raise
+        return winner
     return user
 
 
@@ -860,6 +955,14 @@ def login():
             user = User.query.filter(
                 or_(User.phone_number == ident, User.username == ident)
             ).first()
+            if user is None and _looks_like_phone_identifier(ident):
+                # SEC-003: the same SIM can be typed ``07XXXXXXXXX`` /
+                # ``+9647XXXXXXXXX`` / ``7XXXXXXXXX``; ``phone_number`` is
+                # stored canonically (or, for pre-fix rows, with a leading
+                # 0), so fall back to the canonical lookup. Only reached when
+                # NOTHING matched the identifier as typed, so an existing
+                # exact match (username / stored spelling) is never displaced.
+                user = _find_user_by_phone(_normalize_phone(ident))
             if user and AdminAccount.query.filter_by(principal_user_id=user.id).first():
                 return _invalid_credentials_response(user)
 
@@ -1723,7 +1826,7 @@ def forgot_password():
         if not phone_digits:
             return jsonify({"message": "Phone number is required"}), 400
 
-        user = User.query.filter_by(phone_number=phone_digits).first()
+        user = _find_user_by_phone(phone_digits)
 
         # Prevent account enumeration: always return 200.
         if not user:
@@ -1914,7 +2017,7 @@ def verify_phone():
         if not phone_digits or not verification_code:
             return jsonify({"message": "Phone number and verification code are required"}), 400
 
-        user = User.query.filter_by(phone_number=phone_digits).first()
+        user = _find_user_by_phone(phone_digits)
         if not user:
             return jsonify({"message": "User not found"}), 404
 
@@ -2005,7 +2108,7 @@ def send_phone_verification():
                 return jsonify({"message": "Dealership location is required for dealer accounts"}), 400
 
         # For legacy signup flow: get or create user so we can send OTP to any phone.
-        user = User.query.filter_by(phone_number=phone_digits).first()
+        user = _find_user_by_phone(phone_digits)
         if not user:
             try:
                 # Bare unverified account only: dealer fields are validated
@@ -2240,6 +2343,19 @@ def _google_review_login_success_response():
     phone_digits = _google_review_phone_digits()
     user = _get_or_create_user_for_phone(phone_digits)
 
+    # SEC-004: the fixed review OTP must NEVER open a privileged account. If
+    # GOOGLE_REVIEW_PHONE is (mis)set to a number owned by an admin, or by the
+    # principal of a dashboard AdminAccount, refuse with the same generic
+    # response as a wrong code (no signal that the number is special).
+    if getattr(user, "is_admin", False) or AdminAccount.query.filter_by(
+        principal_user_id=user.id
+    ).first() is not None:
+        current_app.logger.error(
+            "Refusing Google review login: GOOGLE_REVIEW_PHONE maps to a "
+            "privileged account. Fix the env var and disable the review login."
+        )
+        return jsonify({"message": "Invalid or expired verification code"}), 400
+
     if not user.is_active:
         # Should never happen for the dedicated review account, but stay
         # consistent with the real deactivated-account response rather
@@ -2438,7 +2554,7 @@ def compat_signup():
                 "code": "otp_required",
             }), 400
 
-        user = User.query.filter_by(phone_number=phone_digits).first()
+        user = _find_user_by_phone(phone_digits)
         if not user:
             return jsonify({
                 "message": "User not found. Request a new code.",
