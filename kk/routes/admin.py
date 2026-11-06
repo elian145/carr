@@ -3154,13 +3154,19 @@ def update_settings():
         denied = _deny("settings")
         if denied:
             return denied
-        from ..app_settings import update_platform_settings
+        from ..app_settings import SettingsValidationError, update_platform_settings
 
         admin_user = get_current_user()
         data = request.get_json(silent=True) or {}
         if not isinstance(data, dict):
             return jsonify({"message": "JSON object required"}), 400
-        payload = update_platform_settings(data)
+        try:
+            payload = update_platform_settings(data)
+        except SettingsValidationError as exc:
+            # Force-update hardening: a malformed version floor / build /
+            # store URL is rejected before anything is stored.
+            db.session.rollback()
+            return jsonify({"message": exc.message, "field": exc.field}), 400
         if admin_user:
             log_user_action(
                 admin_user,

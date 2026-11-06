@@ -88,20 +88,12 @@ def _app_config_payload() -> dict:
 
     locale = get_request_locale(request.headers.get("Accept-Language"))
 
-    def _s(key: str, default: str = "") -> str:
-        val = s.get(key)
-        if val is None:
-            return default
-        return str(val).strip()
+    from ..app_settings import public_version_gate_settings
 
-    def _i(key: str) -> int | None:
-        raw = _s(key)
-        if not raw:
-            return None
-        try:
-            return int(raw)
-        except (TypeError, ValueError):
-            return None
+    # Force-update hardening: every version/build/store-URL field is sanitised
+    # on READ, so a malformed value already stored in the DB (or env) is served
+    # as "unset" and can never lock users out. Field names/types are unchanged.
+    gate = public_version_gate_settings(s)
 
     # Keep in sync with kk.listing_moderation.listing_require_approval
     require_approval = listing_require_approval()
@@ -122,27 +114,46 @@ def _app_config_payload() -> dict:
     from ..app_settings import get_localized_platform_message
 
     return {
-        "min_app_version": _s("min_app_version"),
-        "min_android_build": _i("min_android_build"),
-        "min_ios_build": _i("min_ios_build"),
+        "min_app_version": gate["min_app_version"],
+        "min_android_build": gate["min_android_build"],
+        "min_ios_build": gate["min_ios_build"],
         # MI-03: field names unchanged; value now localized by Accept-Language.
         "force_update_message": get_localized_platform_message(
             "force_update_message", locale, s
         ),
-        "recommended_app_version": _s("recommended_app_version"),
-        "recommended_android_build": _i("recommended_android_build"),
-        "recommended_ios_build": _i("recommended_ios_build"),
+        "recommended_app_version": gate["recommended_app_version"],
+        "recommended_android_build": gate["recommended_android_build"],
+        "recommended_ios_build": gate["recommended_ios_build"],
+        # Additive (old clients ignore unknown keys): latest published version.
+        "latest_app_version": gate["latest_app_version"],
         "soft_update_message": get_localized_platform_message(
             "soft_update_message", locale, s
         ),
-        "android_store_url": _s(
-            "android_store_url",
-            "https://play.google.com/store/apps/details?id=com.carnetiq.app",
-        ),
-        "ios_store_url": _s("ios_store_url"),
+        "android_store_url": gate["android_store_url"],
+        "ios_store_url": gate["ios_store_url"],
         "listing_require_approval": require_approval,
         "feature_flags": flags,
     }
+
+
+_DIAG_HEADER_RE = re.compile(r"[^A-Za-z0-9._+\- ]")
+
+
+def _log_client_version_headers() -> None:
+    """Diagnostics only: log optional ``X-App-Version`` / ``X-App-Platform``.
+
+    Deliberately NOT used for any decision (no server-side enforcement); the
+    values are charset-filtered and truncated so they cannot inject log lines.
+    """
+    version = request.headers.get("X-App-Version")
+    platform = request.headers.get("X-App-Platform")
+    if not version and not platform:
+        return
+    logger.info(
+        "config/app client version=%s platform=%s",
+        _DIAG_HEADER_RE.sub("", (version or "")[:40]),
+        _DIAG_HEADER_RE.sub("", (platform or "")[:20]),
+    )
 
 
 @bp.route("/api/config/trust", methods=["GET"])
@@ -154,6 +165,7 @@ def trust_config():
 @bp.route("/api/config/app", methods=["GET"])
 def app_config():
     """Minimum + recommended client version gates and store URLs."""
+    _log_client_version_headers()
     return jsonify(_app_config_payload()), 200
 
 

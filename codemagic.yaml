@@ -230,8 +230,10 @@ workflows:
             exit 1
           fi
           echo "iOS build number (CFBundleVersion): $BUILD_NUM (from CM_BUILD_ID=$CM_BUILD_ID)"
+          # No --build-name: Flutter takes CFBundleShortVersionString from the
+          # pubspec.yaml `version:` (same source as Android), so an iOS
+          # min_app_version floor can actually be met by a newer release.
           flutter build ipa --release \
-            --build-name="1.0.0" \
             --build-number="$BUILD_NUM" \
             --export-options-plist="$EXPORT_PLIST" \
             --dart-define=API_BASE="$API_BASE" \
