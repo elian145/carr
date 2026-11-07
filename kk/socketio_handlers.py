@@ -33,6 +33,16 @@ from .security import _client_ip, validate_input_sanitization
 from .time_utils import utcnow
 
 
+def _allow_anonymous() -> bool:
+    """Anonymous (token-less) sockets are off unless explicitly enabled."""
+    return (os.environ.get("SOCKETIO_ALLOW_ANONYMOUS") or "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+
+
 def _allow_socket_query_token() -> bool:
     """Query-string JWTs are for local/test clients only (S-06)."""
     env = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "").strip().lower()
@@ -415,8 +425,13 @@ def register_socketio_handlers(socketio) -> None:
                 # the client as a guest; no credentials at all stay a guest.
                 logger.info("Socket.IO connect refused: token_in_query")
                 raise ConnectionRefusedError("token_in_query")
-            # C-1: a guest holds a worker thread but can do nothing useful, so
-            # guests are capped per address and in total.
+            if not _allow_anonymous():
+                # C-1: the app never connects without a token and a guest only
+                # pins a worker thread, so anonymous sockets are refused
+                # (SOCKETIO_ALLOW_ANONYMOUS=1 re-enables them).
+                logger.info("Socket.IO connect refused: authentication_required")
+                raise ConnectionRefusedError("authentication_required")
+            # Opt-in guests are capped per address and in total.
             admission = _REGISTRY.admit(request.sid, _client_ip(), None)
             if admission.refused:
                 logger.info("Socket.IO guest refused: %s", admission.refused)

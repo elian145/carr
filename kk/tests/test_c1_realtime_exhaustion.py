@@ -522,15 +522,24 @@ class TestSocketAdmission:
         assert b.is_connected() and reg.total() == 1
 
     def test_guest_sockets_are_capped_per_address(self, ctx, sh, monkeypatch):
+        monkeypatch.setenv("SOCKETIO_ALLOW_ANONYMOUS", "1")
         reg = _with_limits(monkeypatch, sh, max_guests_per_ip=2, max_guests_total=10)
         g1, g2, g3 = _connect(ctx), _connect(ctx), _connect(ctx)
         assert g1.is_connected() and g2.is_connected()
         assert not g3.is_connected()
         assert reg.guests() == 2
 
-    def test_guest_connect_without_credentials_still_works_under_default_limits(
+    def test_anonymous_connect_is_refused_by_default(self, ctx, sh, monkeypatch):
+        monkeypatch.delenv("SOCKETIO_ALLOW_ANONYMOUS", raising=False)
+        reg = _with_limits(monkeypatch, sh)
+        g = _connect(ctx)
+        assert not g.is_connected()
+        assert reg.total() == 0 and reg.guests() == 0
+
+    def test_guest_connect_without_credentials_works_only_when_opted_in(
         self, ctx, sh, monkeypatch
     ):
+        monkeypatch.setenv("SOCKETIO_ALLOW_ANONYMOUS", "1")
         _with_limits(monkeypatch, sh)  # generous defaults for one guest
         g = _connect(ctx)
         assert g.is_connected()

@@ -69,11 +69,29 @@ optional environment variables:
 |----------|---------|--------|
 | `GUNICORN_THREADS` | `32` | Threads in the single gthread worker. |
 | `SOCKETIO_MAX_CONNECTIONS` | `threads - max(8, threads/2)` (= 16 at 32 threads) | Sockets in total; new ones are refused (`server_busy`) so HTTP always keeps >= half the threads. The app falls back to HTTP polling for chat. |
+| `SOCKETIO_ALLOW_ANONYMOUS` | off | Token-less sockets are **refused** (`401 authentication_required` at the WSGI edge, before any Engine.IO session). The app always connects with a bearer token. `1` re-enables guests (then the two guest caps below apply). |
 | `SOCKETIO_MAX_CONNECTIONS_PER_USER` | `5` | Per account; the OLDEST socket is evicted (`connection_replaced`) so a reconnect never locks a user out. |
 | `SOCKETIO_MAX_GUEST_CONNECTIONS` | `max(1, total/4)` | Credential-less sockets in total. |
 | `SOCKETIO_MAX_GUESTS_PER_IP` | `2` | Credential-less sockets per address (authenticated users are not limited per IP: carrier NAT). |
 | `SOCKETIO_MAX_HTTP_BUFFER_SIZE` | `65536` | Largest Socket.IO message (engine.io default was 1 MB). |
 | `JSON_MAX_CONTENT_LENGTH` | `1048576` | Largest `application/json` request body (413 `payload_too_large`). Multipart uploads keep `MAX_CONTENT_LENGTH`. |
+
+**Edge guard (`kk/socket_edge_guard.py`).** The registry above only sees sockets
+that reached the Socket.IO `connect` handler, but under `gthread` an Engine.IO
+transport pins a thread *before* that, and a refused CONNECT leaves the
+transport open. Reproduced on real Gunicorn: 32 raw websockets that never sent
+CONNECT (or 16 transports kept open after `server_busy`) froze `/api/cars`.
+A WSGI middleware in front of Socket.IO therefore (1) returns a cheap `401` for
+new sessions/upgrades without a *signed* access JWT (expired-but-signed tokens
+pass so the `token_expired` -> refresh flow still works), (2) holds one slot per
+in-flight `/socket.io` request and answers `503 server_busy` + `Retry-After`
+above `min(total + max(2, total/4), threads - 2)` (20 at 32 threads), so REST
+always keeps at least two threads whatever `GUNICORN_THREADS` is, and (3) closes
+Engine.IO sessions with no Socket.IO connection after
+`SOCKETIO_AUTH_DEADLINE_SECONDS` (default `10`, `0` disables).
+**If Render still has `GUNICORN_THREADS=4`** the service stays up: 2 realtime
+requests at most (1 engaged socket), REST keeps 2 threads, everything else gets
+503 and the app polls over REST; a boot warning is logged. Set it to `32`.
 
 Socket events are rate limited too: `send_message` 20 per 10 s per socket and
 120 per 10 min per user (same budget as `POST /api/chat/<id>/send`),

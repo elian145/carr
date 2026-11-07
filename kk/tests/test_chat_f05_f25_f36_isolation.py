@@ -567,7 +567,7 @@ class TestF36SocketAuthenticationLifetime:
     ):
         """A JWT in the query string (when that source is disabled) is a
         presented credential: it must be refused, not downgraded to a guest.
-        Connecting with no credentials at all stays an anonymous guest."""
+        Connecting with no credentials at all is refused too (C-1)."""
         from kk import socketio_handlers as sh
 
         app, sio, client = ctx
@@ -580,15 +580,19 @@ class TestF36SocketAuthenticationLifetime:
         assert not c.is_connected()
 
         guest = sio.test_client(app, flask_test_client=client)
-        assert guest.is_connected()
-        ev = _events(guest, "connected")[0]["args"][0]
-        assert ev["authenticated"] is False
+        assert not guest.is_connected()
 
         # The very same token through the Authorization header is accepted.
         assert _connect_raw(ctx, world.tok[world.b1]).is_connected()
 
-    def test_no_credentials_is_still_an_anonymous_connection(self, ctx):
+    def test_no_credentials_is_an_anonymous_connection_only_when_opted_in(
+        self, ctx, monkeypatch
+    ):
         app, sio, client = ctx
+        # C-1: refused by default ...
+        assert not sio.test_client(app, flask_test_client=client).is_connected()
+        # ... guests only exist behind an explicit opt-in.
+        monkeypatch.setenv("SOCKETIO_ALLOW_ANONYMOUS", "1")
         c = sio.test_client(app, flask_test_client=client)
         assert c.is_connected()
         ev = _events(c, "connected")[0]["args"][0]
