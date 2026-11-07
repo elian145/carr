@@ -120,6 +120,80 @@ class SavedSearchService {
 
   static String localKeyForOwner(String ownerId) => '$_ownedKeyPrefix$ownerId';
 
+  /// F-43: ids the user deleted locally whose server DELETE has not yet been
+  /// confirmed. Persisted so a failed/killed delete is retried and the
+  /// search is never resurrected by the next sync.
+  static String pendingDeleteKeyForOwner(String ownerId) =>
+      'saved_searches_pending_delete_v1:$ownerId';
+
+  static Future<Set<String>> pendingDeletes(String ownerId) async {
+    final sp = await SharedPreferences.getInstance();
+    final raw = sp.getString(pendingDeleteKeyForOwner(ownerId));
+    if (raw == null || raw.isEmpty) return <String>{};
+    try {
+      final decoded = json.decode(raw);
+      if (decoded is List) return decoded.map((e) => e.toString()).toSet();
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
+    return <String>{};
+  }
+
+  static Future<void> _writePendingDeletes(
+    String ownerId,
+    Set<String> ids,
+  ) async {
+    final sp = await SharedPreferences.getInstance();
+    if (ids.isEmpty) {
+      await sp.remove(pendingDeleteKeyForOwner(ownerId));
+    } else {
+      await sp.setString(
+        pendingDeleteKeyForOwner(ownerId),
+        json.encode(ids.toList()),
+      );
+    }
+  }
+
+  /// Attempts the server DELETE for [id]; the tombstone is cleared only on
+  /// confirmed success (or 404 = already gone).
+  static Future<void> _attemptServerDelete(String ownerId, String id) async {
+    try {
+      await ApiService.deleteSavedSearch(id);
+    } on ApiException catch (e, st) {
+      if (e.statusCode != 404) {
+        logNonFatal(e, st);
+        return;
+      }
+    } catch (e, st) {
+      logNonFatal(e, st);
+      return;
+    }
+    final ids = await pendingDeletes(ownerId);
+    if (ids.remove(id)) await _writePendingDeletes(ownerId, ids);
+  }
+
+  /// Retries every unconfirmed delete for [ownerId].
+  static Future<void> flushPendingDeletes(
+    String ownerId,
+    AuthSessionSnapshot s,
+  ) async {
+    for (final id in await pendingDeletes(ownerId)) {
+      if (!ApiService.isSessionCurrent(s)) return;
+      await _attemptServerDelete(ownerId, id);
+    }
+  }
+
+  static List<Map<String, dynamic>> _withoutPending(
+    List<Map<String, dynamic>> items,
+    Set<String> pending,
+  ) {
+    if (pending.isEmpty) return items;
+    return [
+      for (final i in items)
+        if (!pending.contains((i['id'] ?? '').toString())) i,
+    ];
+  }
+
   static bool _legacyPurged = false;
 
   /// Deletes the pre-isolation global key. Safe to call repeatedly.
@@ -151,6 +225,7 @@ class SavedSearchService {
   static Future<void> purgeOwner(String ownerId) async {
     final sp = await SharedPreferences.getInstance();
     await sp.remove(localKeyForOwner(ownerId));
+    await sp.remove(pendingDeleteKeyForOwner(ownerId));
   }
 
   /// Reads [ownerId]'s local list (defaults to the current account). Signed
@@ -218,19 +293,23 @@ class SavedSearchService {
         if (!ApiService.isSessionCurrent(s)) return [];
         return _fromServerResponse(res);
       }
-      final local = await loadLocal(ownerId: owner);
+      // F-43: retry unconfirmed deletes first, then never show/sync them.
+      await flushPendingDeletes(owner, s);
+      if (!ApiService.isSessionCurrent(s)) return [];
+      final pending = await pendingDeletes(owner);
+      final local = _withoutPending(await loadLocal(ownerId: owner), pending);
       if (!ApiService.isSessionCurrent(s)) return [];
       try {
         if (local.isNotEmpty) {
           final synced = await ApiService.syncSavedSearches(local);
           if (!ApiService.isSessionCurrent(s)) return [];
-          final merged = _fromServerResponse(synced);
+          final merged = _withoutPending(_fromServerResponse(synced), pending);
           await persistLocal(merged, ownerId: owner);
           return ApiService.isSessionCurrent(s) ? merged : [];
         }
         final res = await ApiService.getSavedSearches();
         if (!ApiService.isSessionCurrent(s)) return [];
-        final server = _fromServerResponse(res);
+        final server = _withoutPending(_fromServerResponse(res), pending);
         await persistLocal(server, ownerId: owner);
         return ApiService.isSessionCurrent(s) ? server : [];
       } on ApiSessionChangedException {
@@ -403,8 +482,20 @@ class SavedSearchService {
     if (!_isServerId(id)) return;
     final s = session ?? ApiService.captureSession();
     if (!s.authenticated || !ApiService.isSessionCurrent(s)) return;
-    try {
-      await ApiService.deleteSavedSearch(id);
-    } catch (e, st) { logNonFatal(e, st); }
+    final owner = s.accountId;
+    if (owner == null || owner.isEmpty) {
+      // No safe place to persist a tombstone; best effort only.
+      try {
+        await ApiService.deleteSavedSearch(id);
+      } catch (e, st) {
+        logNonFatal(e, st);
+      }
+      return;
+    }
+    // F-43: record the tombstone BEFORE the request so a failure (or the app
+    // being killed) cannot let the next sync bring the search back.
+    final ids = await pendingDeletes(owner);
+    if (ids.add(id)) await _writePendingDeletes(owner, ids);
+    await _attemptServerDelete(owner, id);
   }
 }
