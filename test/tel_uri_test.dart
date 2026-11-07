@@ -26,6 +26,11 @@ void main() {
         '07701234567',
         '0770 123 4567',
         '7701234567',
+        '+964 (770) 123 4567',
+        '00964 770 123 4567',
+        '  +9647701234567  ',
+        '96407701234567',
+        '009640 7701234567',
       ];
       for (final s in spellings) {
         expect(dialableTelNumber(s), '+9647701234567', reason: s);
@@ -45,6 +50,15 @@ void main() {
     test('a foreign number keeps its explicit + and is not rewritten', () {
       expect(dialableTelNumber('+44 20 7183 8750'), '+442071838750');
       expect(dialableTelNumber('0044 20 7183 8750'), '+442071838750');
+    });
+
+    test('another country keeps its + (UAE), also via the 00 prefix', () {
+      expect(telUriFor('+971501234567').toString(), 'tel:+971501234567');
+      expect(telUriFor('00971501234567').toString(), 'tel:+971501234567');
+    });
+
+    test('a non-mobile local number keeps the previous digits-only behaviour', () {
+      expect(telUriFor('01 234 5678').toString(), 'tel:012345678');
     });
 
     test('a bare non-Iraqi local number stays digits-only (nothing to infer)', () {
