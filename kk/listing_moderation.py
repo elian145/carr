@@ -30,15 +30,20 @@ def listing_require_approval() -> bool:
 
     Explicit 1/true/yes/on → True.
     Explicit 0/false/no/off → False (auto-publish).
-    Unset: True in production, False otherwise.
+    Unset: follows get_app_env() -- True in production (which is also what an
+    unset APP_ENV/FLASK_ENV resolves to), False for development/testing.
     """
     raw = (os.environ.get("LISTING_REQUIRE_APPROVAL") or "").strip().lower()
     if raw in ("1", "true", "yes", "on"):
         return True
     if raw in ("0", "false", "no", "off"):
         return False
-    env = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "").strip().lower()
-    return env == "production"
+    # F-26: use the same resolver as the rest of the app so an unset
+    # APP_ENV/FLASK_ENV (which get_app_env() treats as production) cannot
+    # silently auto-publish listings.
+    from .config import get_app_env
+
+    return get_app_env() == "production"
 
 
 def listing_needs_manual_review(
