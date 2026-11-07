@@ -108,6 +108,10 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
       }
       c.setLooping(false);
       await c.play();
+      if (!mounted) {
+        await c.dispose();
+        return;
+      }
       setState(() {
         _controller = c;
         _loading = false;

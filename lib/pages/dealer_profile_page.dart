@@ -92,6 +92,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
       final data = await ApiService.getDealerProfile(widget.dealerPublicId);
       final dealerRaw = data['dealer'];
       final listingsRaw = data['listings'];
+      if (!mounted) return;
       setState(() {
         _dealer = dealerRaw is Map
             ? Map<String, dynamic>.from(dealerRaw.cast<String, dynamic>())
@@ -101,6 +102,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
             : <Map<String, dynamic>>[];
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = userErrorText(
           context,

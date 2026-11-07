@@ -207,6 +207,7 @@ mixin _SellStep5Build on _SellStep5Logic {
           contactPhones: contactPhones,
           verifiedPhonesCache: pageState?._verifiedListingPhones,
         );
+        if (!mounted) return;
         if (!verified) {
           setState(() {
             isSubmitting = false;
@@ -214,7 +215,6 @@ mixin _SellStep5Build on _SellStep5Logic {
           });
           return;
         }
-        if (!mounted) return;
       }
       final List<String> required = [
         'brand',

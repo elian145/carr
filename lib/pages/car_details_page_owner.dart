@@ -301,6 +301,8 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
   }
 
   Future<void> _toggleFavoriteOnServer() async {
+    if (_favoriteBusy) return;
+    _favoriteBusy = true;
     try {
       final tok = ApiService.accessToken;
       if (tok == null || tok.isEmpty) {
@@ -347,6 +349,8 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
           ),
         ),
       );
+    } finally {
+      _favoriteBusy = false;
     }
   }
 }
