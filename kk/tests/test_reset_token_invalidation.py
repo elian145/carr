@@ -28,6 +28,10 @@ OLD_PW = "Original1!"
 CHANGED_PW = "Changed1Pass!"
 RESET_PW = "ResetPass1!"
 PG_URL = os.environ.get("B7_RESET_PG_URL", "").strip()
+# The CI PostgreSQL job sets CARNET_REQUIRE_PG_TESTS=1: there the PostgreSQL
+# parametrisation is mandatory and a missing B7_RESET_PG_URL is a hard failure
+# (never a silently SQLite-only run).
+PG_REQUIRED = os.environ.get("CARNET_REQUIRE_PG_TESTS") == "1"
 
 
 def _make_app(uri):
@@ -51,8 +55,10 @@ def _make_app(uri):
     return app
 
 
-@pytest.fixture(scope="module", params=["sqlite"] + (["pg"] if PG_URL else []))
+@pytest.fixture(scope="module", params=["sqlite"] + (["pg"] if (PG_URL or PG_REQUIRED) else []))
 def ctx(request):
+    if request.param == "pg" and not PG_URL:
+        pytest.fail("CARNET_REQUIRE_PG_TESTS=1 but B7_RESET_PG_URL is not set")
     saved = {k: os.environ.get(k) for k in ("APP_ENV", "ALLOW_DEV_CODE_IN_RESPONSE", LEGACY_PLAINTEXT_ENV)}
     os.environ["APP_ENV"] = "testing"
     os.environ.pop("ALLOW_DEV_CODE_IN_RESPONSE", None)

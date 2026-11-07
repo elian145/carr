@@ -29,7 +29,11 @@ for _key in ("DATABASE_URL", "REDIS_URL"):
     os.environ.pop(_key, None)
 
 # Skip reasons emitted by the PostgreSQL-only modules when no server is wired.
-_PG_SKIP_MARKERS = ("CARNET_PG_TEST_URL not set", "No disposable Postgres")
+_PG_SKIP_MARKERS = (
+    "CARNET_PG_TEST_URL not set",
+    "No disposable Postgres",
+    "PHONE_INVENTORY_TEST_PG_URL not set",
+)
 
 
 @pytest.fixture(scope="module", autouse=True)

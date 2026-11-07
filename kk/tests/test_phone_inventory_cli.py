@@ -354,7 +354,10 @@ def test_build_inventory_pure_function():
     assert cli.build_inventory([(1, "a", "7711111111", True)])["manual_merge_required"] is False
 
 
-@pytest.mark.skipif(not os.environ.get("PHONE_INVENTORY_TEST_PG_URL"), reason="disposable PG not configured")
+@pytest.mark.skipif(
+    not os.environ.get("PHONE_INVENTORY_TEST_PG_URL"),
+    reason="PHONE_INVENTORY_TEST_PG_URL not set (disposable PG not configured)",
+)
 def test_postgres_read_only_run(capsys):
     url = os.environ["PHONE_INVENTORY_TEST_PG_URL"]
     code, out, err = _run(["--database-url", url, "--json"], capsys)
