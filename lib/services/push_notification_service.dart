@@ -178,6 +178,9 @@ class _FirebasePushPlatform implements PushMessagingPlatform {
         PushNotificationService._handleRemoteMessageOpen(message);
       }
     });
+    // F-45: a local (foreground-shown) notification tapped while the app was
+    // killed launches the app without invoking the tap callback; recover it.
+    unawaited(PushNotificationService._handleLocalLaunchNotification());
   }
 
   @override
@@ -362,6 +365,28 @@ class PushNotificationService {
       logNonFatal(e, st, 'PushNotificationService.localPayload');
     }
     _openFromNotificationData(const {'type': 'chat_message'});
+  }
+
+  /// F-45: cold-start handling for a tapped local notification.
+  static Future<void> _handleLocalLaunchNotification() async {
+    try {
+      await _ensureLocalNotifications();
+      handleLocalLaunchDetails(
+        await _localNotifications.getNotificationAppLaunchDetails(),
+      );
+    } catch (e, st) {
+      logNonFatal(e, st, 'PushNotificationService.localLaunch');
+    }
+  }
+
+  /// Routes the notification that launched the app (if any). Public so it can
+  /// be tested without the native plugin.
+  @visibleForTesting
+  static void handleLocalLaunchDetails(NotificationAppLaunchDetails? details) {
+    if (details == null || !details.didNotificationLaunchApp) return;
+    final response = details.notificationResponse;
+    if (response == null) return;
+    _handleLocalNotificationPayload(response.payload);
   }
 
   static void _attachOpenHandlers() {

@@ -766,7 +766,8 @@ class FakeApiServer {
       }
     }
 
-    if (path.startsWith('/api/analytics/')) {
+    if (path.startsWith('/api/analytics/') &&
+        path != '/api/analytics/listings') {
       return _json(200, <String, dynamic>{});
     }
 

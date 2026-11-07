@@ -1,4 +1,4 @@
-import '../shared/debug/app_log.dart';
+﻿import '../shared/debug/app_log.dart';
 
 import '../models/analytics_model.dart';
 import 'api_service.dart';
@@ -23,49 +23,6 @@ class AnalyticsService {
     return out;
   }
 
-  static List<ListingAnalytics> _listingsCompatToAnalytics(
-    List<Map<String, dynamic>> listings,
-  ) {
-    int? parseMileage(dynamic v) {
-      if (v == null) return null;
-      if (v is int) return v;
-      if (v is double) return v.toInt();
-      final s = v.toString().replaceAll(RegExp(r'[^0-9]'), '');
-      if (s.isEmpty) return null;
-      return int.tryParse(s);
-    }
-
-    return listings.map((listing) {
-      String? fullImageUrl;
-      final imageUrl = listing['image_url']?.toString();
-      if (imageUrl != null && imageUrl.isNotEmpty) {
-        fullImageUrl = imageUrl.startsWith('http')
-            ? imageUrl
-            : '$_imageBaseUrl/static/uploads/$imageUrl';
-      }
-
-      return ListingAnalytics(
-        listingId: listing['id'].toString(),
-        title: listing['title'] ?? '',
-        brand: listing['brand'] ?? '',
-        model: listing['model'] ?? '',
-        year: listing['year'] ?? 0,
-        price: (listing['price'] ?? 0).toDouble(),
-        imageUrl: fullImageUrl,
-        mileage: parseMileage(
-          listing['mileage'] ?? listing['odometer'] ?? listing['miles'],
-        ),
-        city: listing['city']?.toString() ?? listing['location']?.toString(),
-        views: 0,
-        messages: 0,
-        calls: 0,
-        shares: 0,
-        favorites: 0,
-        createdAt: DateTime.now().subtract(const Duration(days: 30)),
-        lastUpdated: DateTime.now(),
-      );
-    }).toList();
-  }
 
   /// Get analytics for all user's listings
   static Future<List<ListingAnalytics>> getUserListingsAnalytics() async {
@@ -75,17 +32,14 @@ class AnalyticsService {
         throw Exception('User not authenticated');
       }
 
-      try {
-        final rows =
-            await ApiService.getAuthenticatedJsonList('/analytics/listings');
-        return _parseListingAnalyticsRows(rows);
-      } catch (e, st) {
-        logNonFatal(e, st, 'AnalyticsService.endpointFallback');
-      }
-
-      final listings = await ApiService.getMyListingsCompat();
-      return _listingsCompatToAnalytics(listings);
-    } catch (e) {
+      // F-42: no invented fallback (zero counts / fake "created 30 days
+      // ago"). A failed fetch must surface as an error so the UI can show
+      // an error state with retry instead of fake numbers.
+      final rows =
+          await ApiService.getAuthenticatedJsonList('/analytics/listings');
+      return _parseListingAnalyticsRows(rows);
+    } catch (e, st) {
+      logNonFatal(e, st, 'AnalyticsService.getUserListingsAnalytics');
       throw Exception('Error fetching analytics: $e');
     }
   }

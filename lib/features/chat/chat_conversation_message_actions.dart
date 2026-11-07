@@ -148,6 +148,7 @@ mixin _ChatConversationMessageActions on _ChatConversationMedia {
         messageId: message.id,
       );
       final msg = response['message'];
+      if (!mounted) return;
       if (msg is Map<String, dynamic>) {
         setState(() {
           final deleted = ChatMessage.fromJson(msg);

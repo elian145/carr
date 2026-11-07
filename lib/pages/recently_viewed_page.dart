@@ -99,6 +99,7 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
     } catch (e) {
       if (!mounted) return;
       final fallback = await RecentlyViewedService.loadLocalDisplayList();
+      if (!mounted) return;
       setState(() {
         _cars = fallback;
         _loading = false;

@@ -1,4 +1,4 @@
-part of 'car_details_page.dart';
+﻿part of 'car_details_page.dart';
 
 mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
   Future<void> _loadFavoriteStatus() async {
@@ -146,11 +146,16 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
   }
 
   Future<ListingAnalytics> _fetchOwnListingAnalytics(String listingId) async {
-    final current = car ?? <String, dynamic>{};
+    // F-42: never fabricate analytics (zero counts, placeholder dates). If
+    // both server lookups fail, surface the error so the dialog shows it.
+    Object? lastError;
+    StackTrace? lastStack;
     try {
       final a = await AnalyticsService.getListingAnalytics(listingId);
       if (a.listingId.toString().isNotEmpty) return a;
     } catch (e, st) {
+      lastError = e;
+      lastStack = st;
       logNonFatal(e, st);
     }
 
@@ -159,39 +164,15 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
       for (final a in all) {
         if (a.listingId.toString() == listingId) return a;
       }
-    } catch (_) {}
-
-    int parseInt(dynamic v, {int fallback = 0}) {
-      if (v == null) return fallback;
-      if (v is int) return v;
-      if (v is double) return v.toInt();
-      return int.tryParse(v.toString()) ?? fallback;
+    } catch (e, st) {
+      lastError = e;
+      lastStack = st;
+      logNonFatal(e, st);
     }
 
-    double parseDouble(dynamic v, {double fallback = 0}) {
-      if (v == null) return fallback;
-      if (v is double) return v;
-      if (v is int) return v.toDouble();
-      return double.tryParse(v.toString()) ?? fallback;
-    }
-
-    return ListingAnalytics(
-      listingId: listingId,
-      title: (current['title'] ?? '').toString(),
-      brand: (current['brand'] ?? '').toString(),
-      model: (current['model'] ?? '').toString(),
-      year: parseInt(current['year']),
-      price: parseDouble(current['price']),
-      imageUrl: null,
-      mileage: null,
-      city: (current['city'] ?? current['location'])?.toString(),
-      views: 0,
-      messages: 0,
-      calls: 0,
-      shares: 0,
-      favorites: 0,
-      createdAt: DateTime.now(),
-      lastUpdated: DateTime.now(),
+    Error.throwWithStackTrace(
+      lastError ?? Exception('Analytics unavailable for this listing'),
+      lastStack ?? StackTrace.current,
     );
   }
 
@@ -320,6 +301,8 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
   }
 
   Future<void> _toggleFavoriteOnServer() async {
+    if (_favoriteBusy) return;
+    _favoriteBusy = true;
     try {
       final tok = ApiService.accessToken;
       if (tok == null || tok.isEmpty) {
@@ -366,6 +349,8 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
           ),
         ),
       );
+    } finally {
+      _favoriteBusy = false;
     }
   }
 }
