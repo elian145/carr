@@ -11,10 +11,16 @@ import secrets
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action, validate_user_input
-from .auth import _hash_phone_verification_code
+from .auth import _hash_phone_verification_code, _normalize_phone
+from ..phone_format import (
+    normalize_iraqi_mobile,
+    normalize_stored_iraqi_mobile,
+    to_e164_iraq,
+)
 from ..config import dev_debug_response_fields_enabled
 from ..models import (
     Car,
@@ -29,7 +35,7 @@ from ..models import (
 from ..security import atomic_increment_attempts, generate_secure_filename, validate_file_upload
 from ..security import validate_input_sanitization
 from ..localization import get_background_locale, normalize_locale, translate
-from ..time_utils import utcnow
+from ..time_utils import iso_utc, utcnow
 from ..dealer_socials import clean_dealership_socials, public_dealership_socials
 from .media import _r2_configured, _r2_public_base
 
@@ -148,16 +154,91 @@ def _normalize_dealer_phone(value) -> str:
     return digits
 
 
+# Spellings under which an account phone may already sit in ``user.phone_number``.
+# New rows are canonical (10 digits, no leading 0, see ``auth._normalize_phone``);
+# older rows may still carry a leading ``0`` / country code written by earlier
+# releases or by hand. ``user.phone_number`` is UNIQUE only per exact string, so
+# without checking all of them one subscriber could own two accounts.
+_ACCOUNT_PHONE_LEGACY_PREFIXES = (
+    "0",
+    "964",
+    "0964",
+    "+964",
+    "00964",
+    "9640",
+    "+9640",
+    "009640",
+)
+
+
+def _canonical_account_phone(value) -> str:
+    """Canonical stored form of an account phone (same as the auth routes)."""
+    return _normalize_phone(str(value or ""))
+
+
+def _account_phone_variants(canonical: str) -> list[str]:
+    """Every stored spelling that denotes the same subscriber as ``canonical``.
+
+    Canonical first. Iraqi mobiles (10 digits, not starting with 0) also match
+    their ``0``/``964``/``+964``/``00964`` spellings; any number also matches a
+    literal ``+`` + digits spelling.
+    """
+    canonical = _canonical_account_phone(canonical)
+    if not canonical:
+        return []
+    variants = [canonical, "+" + canonical]
+    if len(canonical) == 10 and not canonical.startswith("0"):
+        variants.extend(prefix + canonical for prefix in _ACCOUNT_PHONE_LEGACY_PREFIXES)
+    return variants
+
+
+def _account_phone_owner(canonical: str, exclude_user_id=None):
+    """Another user that already owns this phone in ANY spelling, else None."""
+    variants = _account_phone_variants(canonical)
+    if not variants:
+        return None
+    query = User.query.filter(User.phone_number.in_(variants))
+    if exclude_user_id is not None:
+        query = query.filter(User.id != exclude_user_id)
+    return query.first()
+
+
 def _hash_dealer_phone_code(phone_digits: str, code: str) -> str:
     key = (current_app.config.get("SECRET_KEY") or "").encode("utf-8")
     message = f"dealer-phone:{phone_digits}:{code}".encode("utf-8")
     return hmac.new(key, msg=message, digestmod=hashlib.sha256).hexdigest()
 
 
-def _hash_contact_phone_code(phone_digits: str, code: str) -> str:
+def _hash_contact_phone_code(phone_key: str, code: str) -> str:
+    """OTP hash for a listing contact phone.
+
+    ``phone_key`` MUST be the canonical ``7XXXXXXXXX`` key
+    (``kk.phone_format.normalize_iraqi_mobile``) so a code requested for ``07...``
+    verifies when the same number is later submitted as ``7...`` / ``+9647...``.
+    """
     key = (current_app.config.get("SECRET_KEY") or "").encode("utf-8")
-    message = f"contact-phone:{phone_digits}:{code}".encode("utf-8")
+    message = f"contact-phone:{phone_key}:{code}".encode("utf-8")
     return hmac.new(key, msg=message, digestmod=hashlib.sha256).hexdigest()
+
+
+def _contact_phone_code_matches(stored_hash: str, phone_key: str, code: str) -> bool:
+    """Constant-time check of ``code`` against the pending contact-phone OTP hash.
+
+    Codes issued before the canonical-key change were hashed over the digits as
+    typed: the 10-digit spelling (identical to the canonical hash) or the 11-digit
+    national ``0`` + key spelling. Both are accepted once for the same number;
+    attempt limits / lockout / expiry are enforced by the caller, unchanged.
+    """
+    stored = str(stored_hash or "")
+    candidates = (
+        _hash_contact_phone_code(phone_key, code),
+        _hash_contact_phone_code("0" + phone_key, code),  # legacy typed 07... spelling
+    )
+    matched = False
+    for candidate in candidates:  # no short-circuit: both always compared
+        if hmac.compare_digest(stored, candidate):
+            matched = True
+    return matched
 
 
 DEALERSHIP_EMAIL_MAX = 5
@@ -259,14 +340,21 @@ def _verified_dealer_phone_digits(user: User) -> list[str]:
 
 
 def _verified_contact_phone_digits(user: User) -> list[str]:
+    """Canonical ``7XXXXXXXXX`` keys of every contact phone this user may publish.
+
+    Stored ``contact_verified_phones`` entries may carry any legacy spelling
+    (``07...``, ``7...``, ``+9647...``, ``+96407...``); each is folded to the
+    canonical key so the same number is verified in any spelling. Entries that are
+    not an Iraqi mobile are ignored (they can no longer be submitted anyway).
+    """
     raw = getattr(user, "contact_verified_phones", None)
     verified = raw if isinstance(raw, list) else []
     output: list[str] = []
     for value in verified:
-        normalized = _normalize_dealer_phone(value)
+        normalized = normalize_stored_iraqi_mobile(value)
         if normalized and normalized not in output:
             output.append(normalized)
-    account_phone = _normalize_dealer_phone(getattr(user, "phone_number", None))
+    account_phone = normalize_stored_iraqi_mobile(getattr(user, "phone_number", None))
     # Account phone is always acceptable for listing contact without extra OTP.
     if account_phone and account_phone not in output:
         output.append(account_phone)
@@ -274,26 +362,46 @@ def _verified_contact_phone_digits(user: User) -> list[str]:
 
 
 LISTING_CONTACT_PHONE_MAX = 3
+INVALID_CONTACT_PHONE_MESSAGE = "Enter a valid phone number"
 
 
-def parse_listing_contact_phones(data: dict | None) -> list[str]:
-    """Normalize contact_phones / contact_phone from a request body (max 3)."""
+def _submitted_listing_contact_phones(data: dict | None) -> list:
+    """Raw contact phone entries of a request body (``contact_phones`` first)."""
     data = data or {}
     phones = _clean_phone_list(data.get("contact_phones"))
     if not phones:
-        single = (data.get("contact_phone") or "").strip()
+        single = data.get("contact_phone")
+        single = "" if single is None else str(single).strip()
         if single:
             phones = [single]
+    return phones
+
+
+def invalid_listing_contact_phones(data: dict | None) -> list[str]:
+    """Submitted contact phone entries that are not a valid Iraqi mobile."""
+    return [
+        phone
+        for phone in _submitted_listing_contact_phones(data)
+        if normalize_iraqi_mobile(phone) is None
+    ]
+
+
+def parse_listing_contact_phones(data: dict | None) -> list[str]:
+    """Normalize contact_phones / contact_phone from a request body (max 3).
+
+    Returns ONLY valid ``+9647XXXXXXXXX`` numbers (de-duplicated by subscriber);
+    invalid entries are skipped here -- routes call
+    :func:`invalid_listing_contact_phones` first to answer 400 instead of silently
+    treating a submitted-but-invalid phone as "no phone".
+    """
     out: list[str] = []
     seen: set[str] = set()
-    for phone in phones:
-        digits = _normalize_dealer_phone(phone)
-        if len(digits) not in {10, 11}:
+    for phone in _submitted_listing_contact_phones(data):
+        key = normalize_iraqi_mobile(phone)
+        if key is None or key in seen:
             continue
-        if digits in seen:
-            continue
-        seen.add(digits)
-        out.append(f"+964{digits}")
+        seen.add(key)
+        out.append(to_e164_iraq(key))
         if len(out) >= LISTING_CONTACT_PHONE_MAX:
             break
     return out
@@ -303,8 +411,10 @@ def assert_listing_phones_verified(user: User, phones: list[str]) -> str | None:
     """Return an error message if any phone is not OTP-proven for this user."""
     verified = set(_verified_contact_phone_digits(user))
     for phone in phones:
-        digits = _normalize_dealer_phone(phone)
-        if digits not in verified:
+        key = normalize_iraqi_mobile(phone)
+        if key is None:
+            return INVALID_CONTACT_PHONE_MESSAGE
+        if key not in verified:
             return "Verify each contact phone with a code before publishing"
     return None
 
@@ -597,7 +707,7 @@ def recently_viewed():
             d = _with_media_compat(car)
             if viewed_at is not None:
                 try:
-                    d["viewed_at"] = viewed_at.isoformat()
+                    d["viewed_at"] = iso_utc(viewed_at)
                 except Exception:
                     d["viewed_at"] = str(viewed_at)
             if not d.get("city") and d.get("location"):
@@ -628,6 +738,7 @@ def recently_viewed():
 @jwt_required()
 def update_profile():
     """Update user profile"""
+    phone_change_pending = ""
     try:
         current_user = get_current_user()
         if not current_user:
@@ -662,14 +773,16 @@ def update_profile():
                     ), 400
                 current_user.locale = normalized
         if "phone_number" in data:
-            new_digits = _normalize_dealer_phone(data.get("phone_number"))
-            old_digits = _normalize_dealer_phone(getattr(current_user, "phone_number", None))
+            # Canonical form (same as the auth routes): every spelling of one
+            # number is the same number, and only that form is ever stored.
+            new_digits = _canonical_account_phone(data.get("phone_number"))
+            old_digits = _canonical_account_phone(getattr(current_user, "phone_number", None))
             if new_digits and new_digits != old_digits:
                 if len(new_digits) < 7:
                     return jsonify({"message": "Enter a valid phone number"}), 400
-                existing_phone = User.query.filter_by(phone_number=new_digits).first()
-                if existing_phone and existing_phone.id != current_user.id:
+                if _account_phone_owner(new_digits, current_user.id) is not None:
                     return jsonify({"message": "Phone number already exists"}), 400
+                phone_change_pending = new_digits
                 code = str(
                     data.get("verification_code")
                     or data.get("phone_verification_code")
@@ -762,6 +875,13 @@ def update_profile():
     except ValueError as exc:
         db.session.rollback()
         return jsonify({"message": str(exc)}), 400
+    except IntegrityError:
+        db.session.rollback()
+        # Lost a race for the phone number (UNIQUE column) -> same answer as a
+        # plain duplicate instead of a 500.
+        if phone_change_pending and _account_phone_owner(phone_change_pending) is not None:
+            return jsonify({"message": "Phone number already exists"}), 400
+        return jsonify({"message": "Failed to update profile"}), 500
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to update profile"}), 500
@@ -799,19 +919,18 @@ def send_account_phone_change_code():
         or data.get("phone")
         or ""
     ).strip()
-    new_digits = _normalize_dealer_phone(raw_phone)
+    new_digits = _canonical_account_phone(raw_phone)
     if len(new_digits) < 7:
         return jsonify({"message": "Enter a valid phone number"}), 400
 
-    old_digits = _normalize_dealer_phone(getattr(current_user, "phone_number", None))
+    old_digits = _canonical_account_phone(getattr(current_user, "phone_number", None))
     if new_digits == old_digits:
         return jsonify({"message": "This is already your phone number"}), 400
 
     # New-phone uniqueness, checked up front so we don't burn an SMS send on
     # a number `update_profile()` would reject anyway; re-checked there too
     # at commit time in case someone else claims it in the meantime.
-    existing_phone = User.query.filter_by(phone_number=new_digits).first()
-    if existing_phone and existing_phone.id != current_user.id:
+    if _account_phone_owner(new_digits, current_user.id) is not None:
         return jsonify({"message": "Phone number already exists"}), 400
 
     now = utcnow()
@@ -1683,9 +1802,10 @@ def send_contact_phone_verification():
 
     data = validate_input_sanitization(request.get_json(silent=True) or {})
     raw_phone = (data.get("phone_number") or data.get("phone") or "").strip()
-    phone_digits = _normalize_dealer_phone(raw_phone)
-    if len(phone_digits) not in {10, 11}:
-        return jsonify({"message": "Enter a valid phone number"}), 400
+    phone_digits = normalize_iraqi_mobile(raw_phone)
+    if phone_digits is None:
+        # No SMS is sent for landlines / wrong lengths / foreign / ambiguous input.
+        return jsonify({"message": INVALID_CONTACT_PHONE_MESSAGE}), 400
 
     verified = _verified_contact_phone_digits(current_user)
     if phone_digits in verified:
@@ -1746,8 +1866,10 @@ def verify_contact_phone():
     data = validate_input_sanitization(request.get_json(silent=True) or {})
     raw_phone = (data.get("phone_number") or data.get("phone") or "").strip()
     code = str(data.get("verification_code") or data.get("code") or "").strip()
-    phone_digits = _normalize_dealer_phone(raw_phone)
-    if len(phone_digits) not in {10, 11} or len(code) != 6 or not code.isdigit():
+    phone_digits = normalize_iraqi_mobile(raw_phone)
+    if phone_digits is None:
+        return jsonify({"message": INVALID_CONTACT_PHONE_MESSAGE}), 400
+    if len(code) != 6 or not code.isdigit():
         return jsonify({"message": "Phone number and a six-digit code are required"}), 400
 
     verified = _verified_contact_phone_digits(current_user)
@@ -1773,8 +1895,7 @@ def verify_contact_phone():
         db.session.commit()
         return jsonify({"message": "Invalid or expired verification code"}), 400
 
-    expected = _hash_contact_phone_code(phone_digits, code)
-    if not hmac.compare_digest(code_hash, expected):
+    if not _contact_phone_code_matches(code_hash, phone_digits, code):
         attempts = atomic_increment_attempts(current_user, "phone_verification_attempts")
         if attempts >= 5:
             current_user.phone_verification_locked_until = now + timedelta(minutes=15)
@@ -1784,9 +1905,12 @@ def verify_contact_phone():
         db.session.commit()
         return jsonify({"message": "Invalid or expired verification code"}), 400
 
+    # Legacy spellings already stored are left as they are (no rewrite); the
+    # canonical key is appended only when that subscriber is not yet represented.
     stored = getattr(current_user, "contact_verified_phones", None)
     stored_list = [str(x).strip() for x in stored] if isinstance(stored, list) else []
-    if phone_digits not in stored_list:
+    represented = {normalize_stored_iraqi_mobile(x) for x in stored_list}
+    if phone_digits not in represented:
         stored_list.append(phone_digits)
     current_user.contact_verified_phones = stored_list
     current_user.phone_verification_code_hash = None

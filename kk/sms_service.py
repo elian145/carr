@@ -10,6 +10,7 @@ import logging
 import os
 import subprocess
 import sys
+import unicodedata
 from typing import Any, Optional
 
 import requests
@@ -110,25 +111,79 @@ def _normalize_phone_otpiq(phone: str) -> str:
     return digits
 
 
+def _ascii_digits(value: str) -> str:
+    """Digits of ``value`` folded to ASCII (Arabic-Indic / Persian / fullwidth)."""
+    out = []
+    for ch in value or "":
+        if not ch.isdigit():
+            continue
+        d = unicodedata.digit(ch, None)
+        if d is not None:
+            out.append(str(d))
+    return "".join(out)
+
+
 def _normalize_phone_twilio(phone: str) -> str:
-    """Normalize to E.164-ish format for Twilio (best-effort)."""
+    """Normalize to E.164 for Twilio (best-effort, never guesses a country).
+
+    The app is Iraq-only: the login/profile screens send ``+964`` + the typed
+    digits and the backend stores ONE canonical form, the 10-digit national
+    significant number ``7XXXXXXXXX`` (see ``kk.routes.auth._normalize_phone``).
+    Accepted inputs and results:
+
+    * canonical Iraqi mobile ``7XXXXXXXXX`` (10 digits)        -> ``+9647XXXXXXXXX``
+    * national ``07XXXXXXXXX`` (11 digits)                     -> ``+9647XXXXXXXXX``
+    * ``964...`` / ``00964...`` / ``+964...`` (also with a stray
+      trunk ``0`` after the code, as ``+9640770...``)          -> ``+964...``
+    * explicit E.164 ``+<digits>`` of any other country        -> unchanged
+    * ``00<country><number>``                                  -> ``+<country><number>``
+    * 11..15 digits without ``+``/``00`` (e.g. ``447911123456``)-> ``+<digits>``
+    * anything else (10 digits that are not an Iraqi mobile, too short/long,
+      no digits)                                               -> returned as typed
+
+    The last rule is deliberate: prefixing a bare 10-digit number with ``+``
+    turns it into a *different country's* number (``+7...`` is Russia/Kazakhstan,
+    ``+20...`` Egypt) and would deliver the OTP to a stranger; handing Twilio the
+    unprefixed value makes it reject the request instead (fails closed).
+    """
     raw = (phone or "").strip()
     if not raw:
         return ""
-    if raw.startswith("+"):
-        # Keep explicit E.164 input as-is.
-        return raw
-    digits = "".join(c for c in raw if c.isdigit())
+    digits = _ascii_digits(raw)
     if not digits:
         return raw
-    # Iraq local mobile (11 digits like 07xxxxxxxxx) -> +9647xxxxxxxxx
-    if len(digits) == 11 and digits.startswith("0"):
-        return f"+964{digits[1:]}"
-    # Iraq intl without plus
-    if digits.startswith("964"):
+
+    def _iraq(national: str) -> str:
+        # Iraq has no trunk "0" after the country code: +9640770... is a typo
+        # produced by "+964" + a number typed with its national leading 0.
+        if national.startswith("0"):
+            national = national[1:]
+        return f"+964{national}"
+
+    if raw.startswith("+"):
+        if digits.startswith("964"):
+            return _iraq(digits[3:])
+        # Explicit E.164 of another country: keep (formatting characters such
+        # as spaces/dashes are not part of E.164 and are dropped).
         return f"+{digits}"
-    # Generic fallback for international-looking numbers.
-    if 10 <= len(digits) <= 15:
+    if digits.startswith("00") and len(digits) > 2:
+        digits = digits[2:]
+        if digits.startswith("964"):
+            return _iraq(digits[3:])
+        if 8 <= len(digits) <= 15:
+            return f"+{digits}"
+        return raw
+    # Iraq national mobile: 07XXXXXXXXX
+    if len(digits) == 11 and digits.startswith("07"):
+        return f"+964{digits[1:]}"
+    # Canonical stored Iraqi mobile: 7XXXXXXXXX
+    if len(digits) == 10 and digits.startswith("7"):
+        return f"+964{digits}"
+    # Iraq intl without plus
+    if digits.startswith("964") and 11 <= len(digits) <= 14:
+        return _iraq(digits[3:])
+    # Generic fallback for international-looking numbers (country code present).
+    if 11 <= len(digits) <= 15 and not digits.startswith("0"):
         return f"+{digits}"
     return raw
 

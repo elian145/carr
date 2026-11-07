@@ -9,6 +9,7 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
       - name: Checkout
@@ -38,6 +39,130 @@ jobs:
         env:
           APP_ENV: development
         run: python scripts/smoke_tests/test_backend_factory_smoke.py
+
+      # Full backend suite on SQLite (the default test database). Tests that
+      # need a real PostgreSQL server skip here with an explicit reason and are
+      # executed by the "backend-postgres-tests" job below.
+      - name: Run backend test suite (SQLite)
+        run: python -m pytest kk/tests -ra
+
+  backend-postgres-tests:
+    name: Backend tests (Postgres)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        # 17, not 16: test_auto_moderation_postgres.py asserts the server major
+        # version is 17. The migrations job below keeps its own Postgres 16
+        # service unchanged.
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r kk/requirements.txt
+          pip install -r kk/requirements-dev.txt
+
+      # test_auto_moderation_postgres.py drops/re-creates carnet_conc itself
+      # (cloning the template below); the sec/srch modules need an existing
+      # empty database. Everything lives on this throwaway service container.
+      - name: Create disposable databases
+        run: |
+          python - <<'PY'
+          import psycopg
+          with psycopg.connect("postgresql://postgres:postgres@127.0.0.1:5432/postgres", autocommit=True) as c:
+              for name in ("carnet_sec", "carnet_srch", "carnet_prod_head", "carnet_reset", "carnet_phoneinv"):
+                  c.execute(f'CREATE DATABASE "{name}"')
+          PY
+
+      # "Production-head" template for test_auto_moderation_postgres.py: the
+      # schema one revision behind head. The revision is NOT repeated here: it
+      # is read from PREV_HEAD in that test module (single source of truth), so
+      # the template can never silently drift from what the tests expect. The
+      # step fails loudly if the constant cannot be read, if it is not an
+      # ancestor of the current Alembic head, or if the downgrade does not land
+      # exactly on it. (The module itself also asserts NEW_HEAD against the
+      # migrated database, so adding a migration fails the PG job until both
+      # constants are updated deliberately.)
+      - name: Build previous-revision schema template
+        env:
+          APP_ENV: testing
+          AUTO_MIGRATE: "0"
+          SMS_PROVIDER: console
+          FLASK_APP: kk.wsgi:app
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/carnet_prod_head
+        run: |
+          set -euo pipefail
+          PREV_HEAD="$(sed -n 's/^PREV_HEAD = "\([^"]*\)".*/\1/p' kk/tests/test_auto_moderation_postgres.py | head -n 1)"
+          if [ -z "$PREV_HEAD" ]; then
+            echo "::error::Could not read PREV_HEAD from kk/tests/test_auto_moderation_postgres.py"
+            exit 1
+          fi
+          echo "Building template schema at $PREV_HEAD"
+          flask db upgrade
+          flask db downgrade "$PREV_HEAD"
+          CURRENT="$(flask db current 2>/dev/null | grep -Eo '[0-9a-z]{12}' | head -n 1)"
+          if [ "$CURRENT" != "$PREV_HEAD" ]; then
+            echo "::error::Template DB is at '$CURRENT', expected PREV_HEAD '$PREV_HEAD'"
+            exit 1
+          fi
+
+      # Fully migrated (head) schema for the read-only phone-inventory CLI test
+      # (test_phone_inventory_cli.py::test_postgres_read_only_run).
+      - name: Migrate phone-inventory database
+        env:
+          APP_ENV: testing
+          AUTO_MIGRATE: "0"
+          SMS_PROVIDER: console
+          FLASK_APP: kk.wsgi:app
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/carnet_phoneinv
+        run: flask db upgrade
+
+      # CARNET_REQUIRE_PG_TESTS=1 turns a "no PostgreSQL configured" skip into
+      # a failure, so this job can never go green without running PG tests.
+      - name: Run PostgreSQL-backed tests
+        env:
+          CARNET_REQUIRE_PG_TESTS: "1"
+          CARNET_PG_TEST_URL: postgresql://postgres:postgres@127.0.0.1:5432/carnet_conc
+          CARNET_PG_TEST_CONFIRM_DISPOSABLE: "1"
+          CARNET_PG_TEMPLATE_DB: carnet_prod_head
+          CARNET_DISPOSABLE_PG_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/carnet_srch
+          CARNET_SEC_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/carnet_sec
+          B7_RESET_PG_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/carnet_reset
+          PHONE_INVENTORY_TEST_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/carnet_phoneinv
+        run: >-
+          python -m pytest -ra
+          kk/tests/test_auto_moderation_postgres.py
+          kk/tests/test_srch_random_postgres_overflow.py
+          kk/tests/test_sec_f01_f03_phone_signup_ownership.py
+          kk/tests/test_auth_phone_canonical.py
+          kk/tests/test_sec_f02_listing_status_moderation.py
+          kk/tests/test_f06_pg_deadlock.py
+          kk/tests/test_f04_pg_durable_alerts.py
+          kk/tests/test_f04_pg_job_recovery.py
+          kk/tests/test_reset_token_invalidation.py
+          kk/tests/test_phone_inventory_cli.py
 
   migrations:
     name: Migration smoke (Postgres)
@@ -80,4 +205,3 @@ jobs:
           FLASK_APP: kk.wsgi:app
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/car_listings_ci
         run: python scripts/ci_migration_smoke.py
-

@@ -5,47 +5,47 @@ import {
   cookieSecureFromRequest,
   resolveAdminAccessToken,
 } from "@/lib/admin-session-auth";
+import {
+  applyApiSecurityHeaders,
+  applyBaseSecurityHeaders,
+  applyPageSecurityHeaders,
+  buildCsp,
+  isProduction,
+} from "@/lib/security-headers";
 
 const PUBLIC = new Set(["/login"]);
 
-function securityHeaders(res: NextResponse): NextResponse {
-  res.headers.set("X-Frame-Options", "DENY");
-  res.headers.set("X-Content-Type-Options", "nosniff");
-  res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  res.headers.set(
-    "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=()",
-  );
-  const isProd =
-    (process.env.NODE_ENV || "").trim() === "production" ||
-    (process.env.APP_ENV || "").trim().toLowerCase() === "production";
-  // L-02: 'unsafe-eval' has no known production requirement (no app code or
-  // dependency calls eval/new Function) — it is only needed by Next.js
-  // dev-server Fast Refresh/HMR, so it is omitted outside development.
-  const scriptSrc = isProd
-    ? "script-src 'self' 'unsafe-inline'"
-    : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
-  res.headers.set(
-    "Content-Security-Policy",
-    [
-      "default-src 'self'",
-      scriptSrc,
-      // L-02: 'unsafe-inline' has no demonstrated requirement for style-src —
-      // no CSS-in-JS/styled-jsx/inline <style> is used, and React's
-      // style={{...}} usage (TrendChart, ActionBarChart) is applied via
-      // per-property CSSOM mutation, not a literal `style` attribute string,
-      // so it is not governed by this directive. Kept identical in both
-      // environments (unlike script-src's dev-only 'unsafe-eval').
-      "style-src 'self'",
-      "img-src 'self' data: blob: https:",
-      "font-src 'self' data:",
-      "connect-src 'self' https: http://localhost:* http://127.0.0.1:*",
-      "frame-ancestors 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-    ].join("; "),
-  );
+/**
+ * F-19: every response (pages, API routes, the /backend-api proxy, static
+ * files served via public/) now gets the security headers. Previously the
+ * early `NextResponse.next()` returns below skipped them entirely, so proxied
+ * and API responses had no `X-Content-Type-Options: nosniff`.
+ */
+function withHeaders(
+  res: NextResponse,
+  kind: "page" | "api" | "asset",
+  nonce?: string,
+): NextResponse {
+  if (kind === "page") applyPageSecurityHeaders(res.headers, process.env, nonce);
+  else if (kind === "api") applyApiSecurityHeaders(res.headers, process.env);
+  else applyBaseSecurityHeaders(res.headers, process.env);
   return res;
+}
+
+/** Per-request CSP nonce (128 bits, base64). */
+function newNonce(): string {
+  return btoa(crypto.randomUUID());
+}
+
+/**
+ * Pass the nonce-bearing CSP on the *request* so Next.js stamps its own
+ * bootstrap/chunk <script> tags with the nonce, and `x-nonce` for components.
+ */
+function nextWithNonce(nonce: string): NextResponse {
+  const requestHeaders = new Headers();
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("content-security-policy", buildCsp(process.env, nonce));
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export async function middleware(request: NextRequest) {
@@ -54,20 +54,25 @@ export async function middleware(request: NextRequest) {
   // Only skip auth for genuine static assets (a file extension at the END of the
   // path), not for any route that merely contains a dot somewhere in it.
   const isStaticAsset = /\.[a-zA-Z0-9]+$/.test(pathname);
+
+  // API-ish routes (own handlers authenticate / guard themselves). A
+  // /backend-api path that happens to end in ".ext" is still API, not a file.
+  if (
+    pathname.startsWith("/api/admin-session") ||
+    pathname.startsWith("/api/health") ||
+    pathname.startsWith("/backend-api")
+  ) {
+    return withHeaders(NextResponse.next(), "api");
+  }
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
-    pathname.startsWith("/api/admin-session") ||
-    pathname.startsWith("/api/health") ||
     isStaticAsset
   ) {
-    return NextResponse.next();
+    return withHeaders(NextResponse.next(), "asset");
   }
 
-  if (pathname.startsWith("/backend-api")) {
-    return NextResponse.next();
-  }
-
+  const nonce = newNonce();
   let rotatedAccess: string | null = null;
   let rotatedRefresh: string | null = null;
   const token = await resolveAdminAccessToken(request.cookies, (access, refresh) => {
@@ -82,20 +87,24 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
-    return securityHeaders(NextResponse.redirect(url));
+    return withHeaders(NextResponse.redirect(url), "page", nonce);
   }
 
   if (hasAuth && pathname === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
-    const res = securityHeaders(NextResponse.redirect(url));
+    const res = withHeaders(NextResponse.redirect(url), "page", nonce);
     if (rotatedAccess && rotatedRefresh) {
       attachRotatedCookies(res, rotatedAccess, rotatedRefresh, secure);
     }
     return res;
   }
 
-  const res = securityHeaders(NextResponse.next());
+  const res = withHeaders(
+    isProduction(process.env) ? nextWithNonce(nonce) : NextResponse.next(),
+    "page",
+    nonce,
+  );
   if (rotatedAccess && rotatedRefresh) {
     attachRotatedCookies(res, rotatedAccess, rotatedRefresh, secure);
   }

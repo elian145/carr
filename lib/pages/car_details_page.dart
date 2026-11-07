@@ -35,6 +35,7 @@ import '../models/analytics_model.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/ui/app_haptics.dart';
+import '../shared/ui/app_text_scale.dart';
 import '../shared/ui/processing_media_badge.dart';
 import '../shared/i18n/listing_value_labels.dart';
 import '../shared/i18n/locale_formatting.dart';

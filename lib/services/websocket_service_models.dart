@@ -135,8 +135,8 @@ class ChatMessage {
       'listing_preview': listingPreview,
       'is_read': isRead,
       'is_deleted': isDeleted,
-      'created_at': createdAt.toIso8601String(),
-      'edited_at': editedAt?.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'edited_at': editedAt?.toUtc().toIso8601String(),
       'sender_name': senderName,
       'is_pending': isPending,
     };
@@ -302,7 +302,7 @@ class AppNotification {
       'notification_type': notificationType,
       'is_read': isRead,
       'data': data,
-      'created_at': createdAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
     };
   }
 }

@@ -38,10 +38,11 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _togglePush(bool v) async {
-    await PushNotificationService.setPushEnabled(v);
+    final applied = await PushNotificationService.setPushEnabled(v);
     if (!mounted) return;
     setState(() {
-      _pushEnabled = v;
+      // F-38: keep the switch truthful when enabling/disabling failed.
+      _pushEnabled = applied ? v : !v;
     });
   }
 

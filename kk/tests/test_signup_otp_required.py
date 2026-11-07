@@ -58,6 +58,14 @@ def _assert_no_leak(payload) -> None:
         assert marker.lower() not in blob.lower(), f"leaked {marker!r} in {blob!r}"
 
 
+def _phone_forms(phone):
+    """Both stored spellings of a phone (SEC-003: new rows are canonical 10-digit)."""
+    d = "".join(ch for ch in str(phone) if ch.isdigit())
+    if len(d) == 11 and d.startswith("0"):
+        d = d[1:]
+    return [d, "0" + d]
+
+
 @pytest.fixture(scope="module")
 def app_ctx():
     # ignore_cleanup_errors: on Windows the SQLite file stays mapped until the
@@ -119,7 +127,7 @@ def _signup(client, **body):
 def _user_by_phone(app_ctx, phone: str):
     app, _client, _db, User = app_ctx
     with app.app_context():
-        return User.query.filter_by(phone_number=phone).first()
+        return User.query.filter(User.phone_number.in_(_phone_forms(phone))).first()
 
 
 # --- A. OTP is mandatory ----------------------------------------------------
@@ -338,7 +346,7 @@ def test_lockout_expires_after_the_window(app_ctx, client):
     from kk.time_utils import utcnow
 
     with app.app_context():
-        user = User.query.filter_by(phone_number=phone).first()
+        user = User.query.filter(User.phone_number.in_(_phone_forms(phone))).first()
         user.phone_verification_locked_until = utcnow() - timedelta(seconds=1)
         user.phone_verification_last_sent_at = utcnow() - timedelta(
             seconds=_OTP_RESEND_COOLDOWN_SECONDS + 1
@@ -369,7 +377,7 @@ def test_expired_otp_is_rejected(app_ctx, client):
     from kk.time_utils import utcnow
 
     with app.app_context():
-        user = User.query.filter_by(phone_number=phone).first()
+        user = User.query.filter(User.phone_number.in_(_phone_forms(phone))).first()
         user.phone_verification_expires_at = utcnow() - timedelta(seconds=1)
         db.session.commit()
 
@@ -391,7 +399,7 @@ def test_expiry_is_not_client_controllable(app_ctx, client):
     from kk.time_utils import utcnow
 
     with app.app_context():
-        user = User.query.filter_by(phone_number=phone).first()
+        user = User.query.filter(User.phone_number.in_(_phone_forms(phone))).first()
         user.phone_verification_expires_at = utcnow() - timedelta(hours=1)
         db.session.commit()
 
@@ -444,7 +452,7 @@ def test_otp_resend_after_allowed_interval_succeeds(app_ctx, client):
     from kk.time_utils import utcnow
 
     with app.app_context():
-        user = User.query.filter_by(phone_number=phone).first()
+        user = User.query.filter(User.phone_number.in_(_phone_forms(phone))).first()
         user.phone_verification_last_sent_at = utcnow() - timedelta(
             seconds=_OTP_RESEND_COOLDOWN_SECONDS + 1
         )
@@ -468,7 +476,7 @@ def test_resending_invalidates_the_previous_code(app_ctx, client):
     from kk.time_utils import utcnow
 
     with app.app_context():
-        user = User.query.filter_by(phone_number=phone).first()
+        user = User.query.filter(User.phone_number.in_(_phone_forms(phone))).first()
         user.phone_verification_last_sent_at = utcnow() - timedelta(
             seconds=_OTP_RESEND_COOLDOWN_SECONDS + 1
         )
