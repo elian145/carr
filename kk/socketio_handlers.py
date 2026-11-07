@@ -130,18 +130,69 @@ def _throttled(
     return True
 
 
-def _evict_socket(socketio, sid: str) -> None:
-    """Drop an older socket of a user who is over their connection cap."""
+def _evict_socket(
+    socketio,
+    sid: str,
+    event: str = "connection_replaced",
+    code: str = "too_many_connections",
+) -> None:
+    """Drop a socket that lost its slot.
+
+    ``connection_replaced`` -- an older socket of a user over their cap.
+    ``connection_released`` -- an idle socket (no joined conversation) given up
+    to free a worker thread; the client must NOT auto-reconnect and simply
+    reconnects when its user opens a conversation.
+    """
     _unbind_socket(sid)
+    _REGISTRY.release(sid)
     _LIMITER.forget_prefix(f"sid:{sid}:")
     try:
-        socketio.emit("connection_replaced", {"code": "too_many_connections"}, to=sid)
+        socketio.emit(event, {"code": code}, to=sid)
     except Exception:
-        logger.debug("connection_replaced emit failed", exc_info=True)
+        logger.debug("%s emit failed", event, exc_info=True)
     try:
         socketio.server.disconnect(sid, namespace="/")
     except Exception:
         logger.debug("evicted socket disconnect failed", exc_info=True)
+
+
+_SWEEP_INTERVAL_SECONDS = 15.0
+_SWEEPER_REGISTRY: ConnectionRegistry | None = None
+
+
+def release_idle_sockets(socketio, registry: ConnectionRegistry | None = None) -> list[str]:
+    """Release every socket past its idle allowance. Returns the released sids."""
+    reg = registry or _REGISTRY
+    released = []
+    for sid in reg.idle_sids():
+        _evict_socket(socketio, sid, "connection_released", "idle")
+        released.append(sid)
+    return released
+
+
+def _sweep_idle_loop(socketio, registry: ConnectionRegistry) -> None:
+    while registry is _REGISTRY:
+        socketio.sleep(_SWEEP_INTERVAL_SECONDS)
+        if registry is not _REGISTRY:
+            return
+        try:
+            n = len(release_idle_sockets(socketio, registry))
+            if n:
+                logger.info("Socket.IO released %d idle socket(s)", n)
+        except Exception:
+            logger.exception("Socket.IO idle sweep failed")
+
+
+def _ensure_idle_sweeper(socketio) -> None:
+    """Start the (single, per-process) idle sweeper on the first connection."""
+    global _SWEEPER_REGISTRY
+    lim = _REGISTRY.limits
+    if lim.idle_release_s <= 0 and lim.guest_idle_s <= 0:
+        return
+    if _SWEEPER_REGISTRY is _REGISTRY:
+        return
+    _SWEEPER_REGISTRY = _REGISTRY
+    socketio.start_background_task(_sweep_idle_loop, socketio, _REGISTRY)
 
 
 _SOCKET_AUTH: dict[str, dict] = {}
@@ -370,6 +421,7 @@ def register_socketio_handlers(socketio) -> None:
             if admission.refused:
                 logger.info("Socket.IO guest refused: %s", admission.refused)
                 raise ConnectionRefusedError(admission.refused)
+            _ensure_idle_sweeper(socketio)
             emit("connected", {"authenticated": False, "user_id": None})
             return
         claims, err = _verify_access_token(raw)
@@ -387,6 +439,9 @@ def register_socketio_handlers(socketio) -> None:
             raise ConnectionRefusedError(admission.refused)
         for old_sid in admission.evict:
             _evict_socket(socketio, old_sid)
+        for idle_sid in admission.released:
+            _evict_socket(socketio, idle_sid, "connection_released", "capacity")
+        _ensure_idle_sweeper(socketio)
         _bind_socket(sid, user, claims, raw)
         join_room(f"user:{user.public_id}")
         emit(
@@ -412,6 +467,9 @@ def register_socketio_handlers(socketio) -> None:
     def _join_chat(payload):  # type: ignore[no-redef]
         if _throttled("join_chat", _LIMIT_JOIN):
             return
+        # Opening a conversation counts as activity even when the room cannot be
+        # joined yet (a buyer's thread has no messages until the first one).
+        _REGISTRY.touch(request.sid)
         me = _socket_current_user(optional=False)
         if not me:
             emit("error", {"message": "Unauthorized"})
@@ -467,6 +525,7 @@ def register_socketio_handlers(socketio) -> None:
 
         room = room_for_conversation(car.public_id, me.public_id, peer.public_id)
         join_room(room)
+        _REGISTRY.note_room(request.sid, room, True)
         emit(
             "joined_chat",
             {
@@ -492,6 +551,7 @@ def register_socketio_handlers(socketio) -> None:
         room = str(data.get("room") or "").strip()
         if room:
             leave_room(room)
+            _REGISTRY.note_room(getattr(request, "sid", None) or "", room, False)
         emit("left_chat", {"room": room})
 
     def _emit_typing(payload, typing: bool) -> None:
@@ -500,6 +560,7 @@ def register_socketio_handlers(socketio) -> None:
         socket that joined the listing."""
         if _throttled("typing", _LIMIT_TYPING, silent=True):
             return
+        _REGISTRY.touch(request.sid)
         me = _socket_current_user(optional=False)
         if not me:
             return
@@ -642,6 +703,7 @@ def register_socketio_handlers(socketio) -> None:
         # may join the listing typing room.
         room = room_for_conversation(car.public_id, me.public_id, receiver.public_id)
         join_room(room)
+        _REGISTRY.note_room(request.sid, room, True)
         emit(
             "joined_chat",
             {

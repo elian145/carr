@@ -81,10 +81,37 @@ Socket events are rate limited too: `send_message` 20 per 10 s per socket and
 `send_message`/`join_chat` get an `error` event with `code: rate_limited` and
 `retry_after`.
 
-**Capacity note:** 16 concurrent realtime sockets is what one 32-thread gthread
-worker can safely carry. Real scale needs an async worker (eventlet/gevent,
-currently blocked on Render, see below) or a separate realtime service; load
-test before raising `SOCKETIO_MAX_CONNECTIONS`.
+**Capacity is spent on conversations, not on logged-in users.** The app opens
+one socket per signed-in session, but a socket only matters while its user is
+inside a chat conversation: text is always sent over REST, offline users get FCM
+push, and the chat screen falls back to a 12 s REST poll whenever the socket is
+down. So a socket that has joined no conversation is *idle*:
+
+| Variable | Default | Effect |
+|----------|---------|--------|
+| `SOCKETIO_IDLE_RELEASE_SECONDS` | `120` | An authenticated socket with no joined conversation is released after this long (`0` disables the sweep). Opening a thread or typing restarts the clock; sending/joining a conversation engages the socket. |
+| `SOCKETIO_GUEST_IDLE_SECONDS` | `30` | Same for credential-less sockets (they can never join a conversation). |
+| `SOCKETIO_PREEMPT_MIN_IDLE_SECONDS` | `15` | At the total ceiling a new authenticated connection preempts the oldest idle socket (guests first) that has been idle at least this long; engaged sockets are never preempted. |
+
+A released socket receives `connection_released` (`idle` / `capacity`); the app
+does not auto-reconnect, it reconnects when the user opens a conversation. A
+connection above the ceiling is refused with `server_busy`; the app stops the
+transport's retry loop and retries once, only while a conversation is open.
+Net effect: the ceiling (16 at 32 threads) bounds *simultaneously engaged chat
+users*, not everyone who has the app open, and every session still gets
+realtime for ~2 minutes after launch.
+
+Measured with real Gunicorn gthread (see the C-1 report): the old default (4
+threads, no caps) froze the whole API at exactly 4 open sockets; with these
+settings 40 distinct users connecting, 12 guests, 25 overlapping reconnects and
+a 500k-message flood never made an HTTP request slower than ~250 ms.
+
+**Capacity note:** 16 *engaged* conversations is a launch-sized number, not a
+growth-sized one. Beyond it chat degrades to REST polling (still correct), and
+real scale needs an async worker (eventlet/gevent, currently blocked on Render,
+see below) or a separate realtime service. Load test before raising
+`SOCKETIO_MAX_CONNECTIONS`; watch the `Socket.IO released ... idle` and
+`connect refused: server_busy` log lines.
 
 ### Recommended production async mode
 

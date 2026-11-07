@@ -113,6 +113,22 @@ class WebSocketService {
   static bool _recoveringAuth = false;
   static Timer? _refreshTimer;
 
+  // C-1: the server spends its limited socket capacity on conversations. An
+  // idle socket (no conversation joined) is RELEASED by the server
+  // (`connection_released`), and a connection above capacity is refused
+  // (`server_busy`). Neither may turn into a reconnect storm: the socket is
+  // dropped and only comes back lazily (the next join/typing emit) -- or, when
+  // a conversation is open, after a single delayed retry. Meanwhile the chat
+  // screen polls over REST (see `shouldHttpPollChatMessages`).
+  static Duration _capacityRetryDelay = const Duration(seconds: 45);
+
+  /// Test hook: how long to wait before the single capacity retry.
+  @visibleForTesting
+  static set debugCapacityRetryDelay(Duration? delay) {
+    _capacityRetryDelay = delay ?? const Duration(seconds: 45);
+  }
+  static Timer? _capacityRetryTimer;
+
   static WsSocket Function(String base, Map<String, dynamic> options)?
       _socketFactory;
   static DateTime Function() _clock = DateTime.now;
@@ -142,6 +158,30 @@ class WebSocketService {
     _recoveringAuth = false;
     _refreshTimer?.cancel();
     _refreshTimer = null;
+    _capacityRetryTimer?.cancel();
+    _capacityRetryTimer = null;
+  }
+
+  /// Did the server refuse this connection because it is out of capacity?
+  static bool _isCapacityRefusal(Object? err) {
+    final text = (err is Map ? (err['message'] ?? err['data'] ?? err) : err)
+        .toString()
+        .toLowerCase();
+    return text.contains('server_busy') || text.contains('too_many_connections');
+  }
+
+  /// Retry once, later, but only while a conversation is open and nothing else
+  /// has reconnected in the meantime.
+  static void _scheduleCapacityRetry() {
+    _capacityRetryTimer?.cancel();
+    _capacityRetryTimer = null;
+    if (_conversation == null) return;
+    _capacityRetryTimer = Timer(_capacityRetryDelay, () {
+      _capacityRetryTimer = null;
+      if (_conversation != null && !_isConnected && !_isConnecting) {
+        unawaited(connect());
+      }
+    });
   }
 
   static void _hookAccountScope() {
@@ -240,6 +280,8 @@ class WebSocketService {
   static Future<void> connect() async {
     // Widget/integration tests stub HTTP via [ApiService.testHttpClient]; skip real sockets.
     _hookAccountScope();
+    _capacityRetryTimer?.cancel();
+    _capacityRetryTimer = null;
     if (_socketFactory == null && ApiService.isTestHttpClientBound) return;
 
     try {
@@ -368,6 +410,17 @@ class WebSocketService {
         unawaited(_recoverAuth(session, socket));
       });
 
+      // C-1: the server gave this socket's slot to someone else (idle release,
+      // capacity preemption, or a newer socket of this account). Do not fight
+      // for it: keep the conversation and queued emits and reconnect lazily.
+      void onSlotLost(dynamic _) {
+        if (!_isLive(session, socket)) return;
+        _stopSocketKeepingState();
+      }
+
+      socket.on('connection_released', onSlotLost);
+      socket.on('connection_replaced', onSlotLost);
+
       socket.on('disconnect', (_) {
         if (!_isLive(session, socket)) return;
         _isConnected = false;
@@ -380,6 +433,13 @@ class WebSocketService {
         _isConnected = false;
         _isConnecting = false;
         _emitConnected(false);
+        if (_isCapacityRefusal(err)) {
+          // Out of capacity: stop the transport's own retry loop (it would
+          // hammer the handshake) and try again later only if it matters.
+          _teardownSocket();
+          _scheduleCapacityRetry();
+          return;
+        }
         if (_isAuthFailure(err) ||
             _isExpiredOrExpiring(ApiService.accessToken, Duration.zero)) {
           // The (re)connect was refused because of OUR token: refresh and
@@ -557,6 +617,8 @@ class WebSocketService {
 
   // Disconnect
   static void disconnect() {
+    _capacityRetryTimer?.cancel();
+    _capacityRetryTimer = null;
     _teardownSocket();
     _currentRoom = null;
     _serverRoom = null;

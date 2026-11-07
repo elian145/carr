@@ -39,6 +39,9 @@ for _key in (
     "SOCKETIO_MAX_CONNECTIONS_PER_USER",
 ):
     os.environ.setdefault(_key, "1000000")
+# ... and never start the idle sweeper (it would release long-lived test clients).
+for _key in ("SOCKETIO_IDLE_RELEASE_SECONDS", "SOCKETIO_GUEST_IDLE_SECONDS"):
+    os.environ.setdefault(_key, "0")
 
 # Skip reasons emitted by the PostgreSQL-only modules when no server is wired.
 _PG_SKIP_MARKERS = (

@@ -49,7 +49,15 @@ PASSWORD = "Aa123456!"
 
 
 def _limits(**kw):
-    base = dict(max_total=10, max_guests_total=4, max_guests_per_ip=2, max_per_user=2)
+    base = dict(
+        max_total=10,
+        max_guests_total=4,
+        max_guests_per_ip=2,
+        max_per_user=2,
+        idle_release_s=120,
+        guest_idle_s=30,
+        preempt_min_idle_s=15,
+    )
     base.update(kw)
     return SocketLimits(**base)
 
@@ -172,6 +180,151 @@ class TestConnectionRegistry:
         assert r.admit("a", "1.1.1.1", "u1").refused is None
         assert r.admit("a", "1.1.1.1", "u1").refused is None
         assert r.total() == 1
+
+
+class _Clock:
+    def __init__(self):
+        self.now = 1000.0
+
+    def __call__(self):
+        return self.now
+
+
+class TestEngagementAndIdleRelease:
+    """Capacity is spent on conversations: idle sockets are released/preempted."""
+
+    def _reg(self, **kw):
+        clock = _Clock()
+        return ConnectionRegistry(_limits(**kw), clock=clock), clock
+
+    def test_load_limits_idle_defaults_and_overrides(self):
+        lim = load_limits({})
+        assert (lim.idle_release_s, lim.guest_idle_s, lim.preempt_min_idle_s) == (120, 30, 15)
+        lim = load_limits(
+            {
+                "SOCKETIO_IDLE_RELEASE_SECONDS": "0",
+                "SOCKETIO_GUEST_IDLE_SECONDS": "5",
+                "SOCKETIO_PREEMPT_MIN_IDLE_SECONDS": "2",
+            }
+        )
+        assert (lim.idle_release_s, lim.guest_idle_s, lim.preempt_min_idle_s) == (0, 5, 2)
+
+    def test_idle_sockets_are_listed_after_their_allowance(self):
+        reg, clock = self._reg()
+        reg.admit("u", "1.1.1.1", "u1")
+        reg.admit("g", "2.2.2.2", None)
+        assert reg.idle_sids() == []
+        clock.now += 31
+        assert reg.idle_sids() == ["g"]  # guests: 30 s
+        clock.now += 90
+        assert sorted(reg.idle_sids()) == ["g", "u"]  # users: 120 s
+
+    def test_a_socket_in_a_conversation_is_never_idle(self):
+        reg, clock = self._reg()
+        reg.admit("u", "1.1.1.1", "u1")
+        reg.note_room("u", "room-a", True)
+        clock.now += 10_000
+        assert reg.idle_sids() == []
+        assert reg.engaged() == 1 and reg.is_engaged("u")
+
+    def test_leaving_the_last_room_restarts_the_idle_clock(self):
+        reg, clock = self._reg()
+        reg.admit("u", "1.1.1.1", "u1")
+        reg.note_room("u", "a", True)
+        reg.note_room("u", "b", True)
+        clock.now += 500
+        reg.note_room("u", "a", False)
+        assert reg.is_engaged("u")  # still in b
+        reg.note_room("u", "b", False)
+        assert not reg.is_engaged("u")
+        assert reg.idle_sids() == []  # clock restarted just now
+        clock.now += 121
+        assert reg.idle_sids() == ["u"]
+
+    def test_conversation_activity_restarts_the_idle_clock_without_engaging(self):
+        reg, clock = self._reg()
+        reg.admit("u", "1.1.1.1", "u1")
+        clock.now += 100
+        reg.touch("u")
+        clock.now += 100  # 200 s since connect, 100 s since the touch
+        assert reg.idle_sids() == []
+        assert not reg.is_engaged("u")
+        clock.now += 21
+        assert reg.idle_sids() == ["u"]
+        reg.touch("unknown")  # harmless
+
+    def test_idle_sweep_can_be_disabled(self):
+        reg, clock = self._reg(idle_release_s=0, guest_idle_s=0)
+        reg.admit("u", "1.1.1.1", "u1")
+        reg.admit("g", "1.1.1.1", None)
+        clock.now += 10**6
+        assert reg.idle_sids() == []
+
+    def test_at_the_ceiling_an_idle_socket_is_preempted_not_the_newcomer_refused(self):
+        reg, clock = self._reg(max_total=2, max_per_user=5)
+        reg.admit("a", "1.1.1.1", "u1")
+        reg.admit("b", "1.1.1.1", "u2")
+        clock.now += 20  # both idle >= 15 s
+        adm = reg.admit("c", "1.1.1.1", "u3")
+        assert adm.refused is None
+        assert adm.released == ["a"]  # the oldest idle one
+        assert reg.total() == 2
+
+    def test_engaged_sockets_are_protected_from_preemption(self):
+        reg, clock = self._reg(max_total=2, max_per_user=5)
+        reg.admit("a", "1.1.1.1", "u1")
+        reg.admit("b", "1.1.1.1", "u2")
+        reg.note_room("a", "r", True)
+        clock.now += 20
+        adm = reg.admit("c", "1.1.1.1", "u3")
+        assert adm.released == ["b"]  # only the idle one
+        reg.note_room("c", "r2", True)
+        clock.now += 20
+        # a and c are both engaged -> nothing to preempt
+        assert reg.admit("d", "1.1.1.1", "u4").refused == REFUSE_SERVER_BUSY
+        assert reg.total() == 2
+
+    def test_a_young_idle_socket_is_not_preempted(self):
+        reg, clock = self._reg(max_total=1)
+        reg.admit("a", "1.1.1.1", "u1")
+        clock.now += 5  # younger than preempt_min_idle_s
+        assert reg.admit("b", "1.1.1.1", "u2").refused == REFUSE_SERVER_BUSY
+
+    def test_guests_are_preempted_before_idle_users_and_never_preempt(self):
+        reg, clock = self._reg(max_total=2, max_per_user=5)
+        reg.admit("user", "1.1.1.1", "u1")
+        reg.admit("guest", "2.2.2.2", None)
+        clock.now += 20
+        assert reg.admit("new", "3.3.3.3", "u2").released == ["guest"]
+        # now both are users; a guest can never preempt
+        clock.now += 20
+        assert reg.admit("g2", "4.4.4.4", None).refused == REFUSE_SERVER_BUSY
+
+    def test_ceiling_counts_engaged_users_only_once_everyone_idle_is_gone(self):
+        # 16-socket ceiling, 100 app sessions arriving over time: every session
+        # gets a socket for a while; the 16 engaged chats are never dropped.
+        clock = _Clock()
+        reg = ConnectionRegistry(_limits(max_total=16, max_per_user=5), clock=clock)
+        engaged = []
+        for i in range(16):
+            reg.admit(f"chat{i}", "1.1.1.1", f"c{i}")
+            reg.note_room(f"chat{i}", "r", True)
+            engaged.append(f"chat{i}")
+        # ceiling full of engaged chats: newcomers are refused (REST polling)
+        assert reg.admit("late", "1.1.1.1", "late").refused == REFUSE_SERVER_BUSY
+        # half the chats end -> their slots become idle, then preemptable
+        for sid in engaged[:8]:
+            reg.note_room(sid, "r", False)
+        clock.now += 20
+        served = 0
+        for i in range(100):
+            clock.now += 20
+            adm = reg.admit(f"app{i}", "1.1.1.1", f"app-user-{i}")
+            served += adm.refused is None
+            for rel in adm.released:
+                assert rel not in engaged[8:]
+        assert served == 100
+        assert all(reg.is_engaged(s) for s in engaged[8:])
 
 
 class TestEventRateLimiter:
@@ -387,6 +540,111 @@ class TestSocketAdmission:
     def test_engineio_frame_size_is_capped(self, ctx):
         _app, sio, _c = ctx
         assert sio.server.eio.max_http_buffer_size == 65536
+
+
+class TestIdleReleaseOverSockets:
+    def test_idle_sockets_are_released_with_an_event_and_engaged_ones_kept(
+        self, ctx, world, sh, monkeypatch
+    ):
+        clock = _Clock()
+        reg = ConnectionRegistry(_limits(max_total=10, idle_release_s=60), clock=clock)
+        monkeypatch.setattr(sh, "_REGISTRY", reg)
+        monkeypatch.setattr(sh, "_LIMITER", EventRateLimiter())
+        monkeypatch.setattr(sh, "_SWEEPER_REGISTRY", reg)  # no background thread
+        idle = _connect(ctx, world["seller_tok"])
+        busy = _connect(ctx, world["buyer_tok"])  # a buyer may open the thread
+        idle.get_received(), busy.get_received()
+        busy.emit("send_message", {"car_id": world["car"], "receiver_id": world["seller"], "content": "hello"})
+        assert reg.engaged() == 1
+        clock.now += 61
+        _app, sio, _c = ctx
+        released = sh.release_idle_sockets(sio)
+        assert len(released) == 1
+        assert not idle.is_connected()
+        got = [e for e in idle.queue if e.get("name") == "connection_released"]
+        assert got and got[0]["args"][0]["code"] == "idle"
+        assert busy.is_connected()
+
+    def test_new_connection_at_the_ceiling_preempts_an_idle_socket(
+        self, ctx, world, sh, monkeypatch
+    ):
+        clock = _Clock()
+        reg = ConnectionRegistry(
+            _limits(max_total=2, preempt_min_idle_s=15), clock=clock
+        )
+        monkeypatch.setattr(sh, "_REGISTRY", reg)
+        monkeypatch.setattr(sh, "_LIMITER", EventRateLimiter())
+        monkeypatch.setattr(sh, "_SWEEPER_REGISTRY", reg)
+        a = _connect(ctx, world["seller_tok"])
+        b = _connect(ctx, world["buyer_tok"])
+        clock.now += 20
+        b.emit("send_message", {"car_id": world["car"], "receiver_id": world["seller"], "content": "hello"})
+        assert reg.engaged() == 1
+        other, other_name = _user(ctx, "newcomer")
+        c = _connect(ctx, _token(ctx, other_name))
+        assert c.is_connected()
+        assert not a.is_connected()  # the idle one made room
+        got = [e for e in a.queue if e.get("name") == "connection_released"]
+        assert got and got[0]["args"][0]["code"] == "capacity"
+        assert b.is_connected()  # engaged: protected
+        # everyone engaged -> the next newcomer is refused instead
+        c.emit(
+            "send_message",
+            {"car_id": world["car"], "receiver_id": world["seller"], "content": "hello"},
+        )
+        assert reg.engaged() == 2
+        clock.now += 20
+        third, third_name = _user(ctx, "third")
+        d = _connect(ctx, _token(ctx, third_name))
+        assert not d.is_connected()
+
+    def test_sending_a_message_engages_the_socket(self, ctx, world, sh, monkeypatch):
+        reg = _with_limits(monkeypatch, sh)
+        c = _connect(ctx, world["buyer_tok"])
+        c.get_received()
+        assert reg.engaged() == 0
+        c.emit(
+            "send_message",
+            {"car_id": world["car"], "receiver_id": world["seller"], "content": "hi"},
+        )
+        assert reg.engaged() == 1
+
+    def test_leave_chat_makes_the_socket_idle_again(self, ctx, world, sh, monkeypatch):
+        reg = _with_limits(monkeypatch, sh)
+        c = _connect(ctx, world["buyer_tok"])
+        c.get_received()
+        c.emit("send_message", {"car_id": world["car"], "receiver_id": world["seller"], "content": "hello"})
+        room = [e for e in c.get_received() if e["name"] == "joined_chat"][0]["args"][0]["room"]
+        assert reg.engaged() == 1
+        c.emit("leave_chat", {"room": room})
+        assert reg.engaged() == 0
+
+    def test_sweeper_thread_is_started_once_per_registry(self, ctx, world, sh, monkeypatch):
+        started = []
+        reg = ConnectionRegistry(_limits(idle_release_s=60))
+        monkeypatch.setattr(sh, "_REGISTRY", reg)
+        monkeypatch.setattr(sh, "_LIMITER", EventRateLimiter())
+        monkeypatch.setattr(sh, "_SWEEPER_REGISTRY", None)
+        _app, sio, _c = ctx
+        monkeypatch.setattr(
+            sio, "start_background_task", lambda fn, *a, **k: started.append(fn)
+        )
+        _connect(ctx, world["buyer_tok"])
+        _connect(ctx, world["seller_tok"])
+        assert started.count(sh._sweep_idle_loop) == 1
+
+    def test_no_sweeper_when_idle_release_is_disabled(self, ctx, world, sh, monkeypatch):
+        started = []
+        reg = ConnectionRegistry(_limits(idle_release_s=0, guest_idle_s=0))
+        monkeypatch.setattr(sh, "_REGISTRY", reg)
+        monkeypatch.setattr(sh, "_LIMITER", EventRateLimiter())
+        monkeypatch.setattr(sh, "_SWEEPER_REGISTRY", None)
+        _app, sio, _c = ctx
+        monkeypatch.setattr(
+            sio, "start_background_task", lambda fn, *a, **k: started.append(fn)
+        )
+        _connect(ctx, world["buyer_tok"])
+        assert sh._sweep_idle_loop not in started
 
 
 class TestSocketEventLimits:

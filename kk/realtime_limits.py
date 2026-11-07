@@ -18,6 +18,16 @@ This module is deliberately framework-free so it is unit-testable:
   reconnect while a zombie socket lingers never locks the user out); guests are
   limited per address and in total; every connection counts against a total
   that always leaves threads free for HTTP.
+
+  **Capacity is spent on conversations, not on logged-in users.** The app opens
+  one socket per signed-in session, but a socket only matters while its user
+  is inside a chat conversation (text is always sent over REST; offline users
+  get FCM push). A socket that has joined no conversation room is *idle*:
+  it is released after ``idle_release_s`` and is the first thing preempted when
+  the total ceiling is reached, so the ceiling bounds simultaneously ENGAGED
+  chat users instead of everyone who has the app open. Released sockets get a
+  ``connection_released`` event; the client does not auto-reconnect and simply
+  reconnects when the user opens a conversation.
 * :class:`EventRateLimiter` -- in-process sliding-window limiter for socket
   events (per socket and per user).
 
@@ -57,6 +67,14 @@ class SocketLimits:
     max_guests_total: int
     max_guests_per_ip: int
     max_per_user: int
+    # Seconds a socket with no joined conversation may stay connected
+    # (0 disables the idle sweep entirely).
+    idle_release_s: int = 120
+    # Same, for credential-less sockets (they can never join a conversation).
+    guest_idle_s: int = 30
+    # An idle socket must be at least this old before a new connection may
+    # preempt it (prevents connect/evict thrash at the ceiling).
+    preempt_min_idle_s: int = 15
 
 
 def default_max_total(threads: int) -> int:
@@ -77,23 +95,38 @@ def load_limits(env: Mapping[str, str] | None = None) -> SocketLimits:
         ),
         max_guests_per_ip=_env_int(env, "SOCKETIO_MAX_GUESTS_PER_IP", 2),
         max_per_user=_env_int(env, "SOCKETIO_MAX_CONNECTIONS_PER_USER", 5),
+        idle_release_s=_env_int(env, "SOCKETIO_IDLE_RELEASE_SECONDS", 120, minimum=0),
+        guest_idle_s=_env_int(env, "SOCKETIO_GUEST_IDLE_SECONDS", 30, minimum=0),
+        preempt_min_idle_s=_env_int(env, "SOCKETIO_PREEMPT_MIN_IDLE_SECONDS", 15),
     )
 
 
 @dataclass
 class Admission:
     refused: str | None = None
+    # Older sockets of the SAME user dropped to respect the per-user cap.
     evict: list[str] = field(default_factory=list)
+    # Idle sockets (of anyone) released to make room under the total ceiling.
+    released: list[str] = field(default_factory=list)
+
+
+@dataclass
+class _Conn:
+    user_id: str | None
+    ip: str
+    idle_since: float
+    rooms: set = field(default_factory=set)
 
 
 class ConnectionRegistry:
     """Tracks live sockets and decides whether a new one may connect."""
 
-    def __init__(self, limits: SocketLimits):
+    def __init__(self, limits: SocketLimits, clock=time.monotonic):
         self.limits = limits
+        self._clock = clock
         self._lock = threading.Lock()
-        # sid -> (user_id | None, ip); insertion order == connect order.
-        self._conns: dict[str, tuple[str | None, str]] = {}
+        # sid -> _Conn; insertion order == connect order.
+        self._conns: dict[str, _Conn] = {}
 
     # -- introspection (tests / health) ---------------------------------
     def total(self) -> int:
@@ -102,42 +135,114 @@ class ConnectionRegistry:
 
     def guests(self) -> int:
         with self._lock:
-            return sum(1 for u, _ in self._conns.values() if u is None)
+            return sum(1 for c in self._conns.values() if c.user_id is None)
 
     def user_sids(self, user_id: str) -> list[str]:
         with self._lock:
-            return [s for s, (u, _) in self._conns.items() if u == user_id]
+            return [s for s, c in self._conns.items() if c.user_id == user_id]
+
+    def engaged(self) -> int:
+        """Sockets currently inside at least one conversation room."""
+        with self._lock:
+            return sum(1 for c in self._conns.values() if c.rooms)
+
+    def is_engaged(self, sid: str) -> bool:
+        with self._lock:
+            c = self._conns.get(sid)
+            return bool(c and c.rooms)
+
+    # -- engagement -------------------------------------------------------
+    def note_room(self, sid: str, room: str, joined: bool) -> None:
+        with self._lock:
+            c = self._conns.get(sid)
+            if c is None:
+                return
+            if joined:
+                c.rooms.add(room)
+            else:
+                c.rooms.discard(room)
+                if not c.rooms:
+                    c.idle_since = self._clock()
+
+    def touch(self, sid: str) -> None:
+        """Conversation-scoped activity (opening a thread that has no messages
+        yet, typing): restart the idle clock without engaging the socket."""
+        with self._lock:
+            c = self._conns.get(sid)
+            if c is not None:
+                c.idle_since = self._clock()
 
     # -- admission --------------------------------------------------------
     def admit(self, sid: str, ip: str, user_id: str | None) -> Admission:
         """Register ``sid`` or refuse it.
 
-        On success the returned ``evict`` lists older sids of the same user
-        that were already dropped from the registry and must be disconnected
-        by the caller.
+        On success the returned ``evict`` / ``released`` list sids that were
+        already dropped from the registry and must be disconnected by the
+        caller.
         """
         lim = self.limits
+        now = self._clock()
         with self._lock:
             if sid in self._conns:
                 return Admission()
             evict: list[str] = []
+            released: list[str] = []
             if user_id is not None:
-                mine = [s for s, (u, _) in self._conns.items() if u == user_id]
+                mine = [s for s, c in self._conns.items() if c.user_id == user_id]
                 overflow = len(mine) - lim.max_per_user + 1
                 if overflow > 0:
                     evict = mine[:overflow]
             else:
-                guests = [(s, i) for s, (u, i) in self._conns.items() if u is None]
+                guests = [c for c in self._conns.values() if c.user_id is None]
                 if len(guests) >= lim.max_guests_total:
                     return Admission(refused=REFUSE_SERVER_BUSY)
-                if sum(1 for _, i in guests if i == ip) >= lim.max_guests_per_ip:
+                if sum(1 for c in guests if c.ip == ip) >= lim.max_guests_per_ip:
                     return Admission(refused=REFUSE_TOO_MANY_FROM_ADDRESS)
             if len(self._conns) - len(evict) >= lim.max_total:
-                return Admission(refused=REFUSE_SERVER_BUSY)
-            for s in evict:
+                victim = None
+                if user_id is not None:  # a guest never preempts anyone
+                    victim = self._preempt_candidate(now, set(evict))
+                if victim is None:
+                    return Admission(refused=REFUSE_SERVER_BUSY)
+                released.append(victim)
+            for s in evict + released:
                 self._conns.pop(s, None)
-            self._conns[sid] = (user_id, ip)
-            return Admission(evict=evict)
+            self._conns[sid] = _Conn(user_id=user_id, ip=ip, idle_since=now)
+            return Admission(evict=evict, released=released)
+
+    def _preempt_candidate(self, now: float, skip: set) -> str | None:
+        """Oldest idle socket (guests first) that has been idle long enough."""
+        best = None
+        for pass_guests in (True, False):
+            for s, c in self._conns.items():
+                if s in skip or c.rooms:
+                    continue
+                if (c.user_id is None) != pass_guests:
+                    continue
+                if now - c.idle_since < self.limits.preempt_min_idle_s:
+                    continue
+                best = s
+                break
+            if best is not None:
+                return best
+        return None
+
+    # -- idle sweep -------------------------------------------------------
+    def idle_sids(self) -> list[str]:
+        """Sockets past their idle allowance (not removed; caller releases)."""
+        lim = self.limits
+        now = self._clock()
+        out: list[str] = []
+        with self._lock:
+            for s, c in self._conns.items():
+                if c.rooms:
+                    continue
+                allowance = lim.guest_idle_s if c.user_id is None else lim.idle_release_s
+                if allowance <= 0:
+                    continue
+                if now - c.idle_since >= allowance:
+                    out.append(s)
+        return out
 
     def release(self, sid: str | None) -> bool:
         if not sid:
