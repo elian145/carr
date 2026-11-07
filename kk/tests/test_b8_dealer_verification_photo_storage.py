@@ -71,6 +71,8 @@ class FakeR2:
         if op == "delete_object":
             self.objects.pop((bucket, key), None)
             return {"ok": True}
+        if op == "list_and_delete_stale":
+            return {"ok": True, "deleted": 0}
         raise AssertionError(f"unexpected R2 op {op}")
 
 
@@ -501,3 +503,142 @@ def test_submission_still_requires_a_photo_and_unauthenticated_upload_is_rejecte
         ).status_code
         in (401, 422)
     )
+
+
+# --------------------------------------------------------------------------
+# Not reachable through public or chat-media routes; not touched by cleanup
+# --------------------------------------------------------------------------
+
+
+def test_chat_media_presigning_refuses_dealer_verification_keys(env, r2):
+    """Even if a message row were (mis)written with such a key, the chat-media
+    resolver must fail closed instead of issuing a presigned URL."""
+    app, db, _ = env
+    import kk.r2_ops as r2_ops
+    from kk.models import _resolve_chat_media_ref
+
+    with app.app_context():
+        for key in (
+            "dealer_verification/abc.png",
+            "r2:dealer_verification/abc.png",
+        ):
+            with pytest.raises(RuntimeError):
+                r2_ops.r2_presign_get(key=key)
+            assert _resolve_chat_media_ref(key) is None
+        # A normal chat key still presigns (control: the guard is not a blanket block).
+        assert "chat_uploads/ok.jpg" in r2_ops.r2_presign_get(key="chat_uploads/ok.jpg")
+
+
+def test_message_payload_never_exposes_dealer_verification_object(env, r2):
+    app, db, _ = env
+    from kk.models import Message
+
+    with app.app_context():
+        m = Message(
+            content="x",
+            message_type="image",
+            attachment_url="dealer_verification/abc.png",
+            attachments=[{"type": "image", "url": "dealer_verification/abc.png"}],
+        )
+        data = m.to_dict()
+        assert data["attachment_url"] is None
+        assert not data["attachments"]
+
+
+def test_chat_uploads_use_chat_prefixes_and_cleanup_jobs_cannot_reach_the_prefix(env, r2):
+    """The only prefixes chat writes, and the only prefixes the stale-object
+    sweeps delete, are disjoint from dealer_verification/ -- and the sweeps run
+    against the LISTING bucket credentials, not the private chat bucket."""
+    app, db, _ = env
+    import re
+
+    import kk.r2_ops as r2_ops
+    import kk.media_processing as mp
+
+    chat_src = (_REPO_ROOT / "kk" / "routes" / "chat.py").read_text(encoding="utf-8")
+    assert set(re.findall(r'subdir="([a-z_]+)"', chat_src)) == {"chat_uploads", "chat_videos", "chat_audio"}
+
+    for prefix in (
+        mp._ASYNC_STAGING_KEY_PREFIX,
+        mp.VIDEO_SOURCE_STAGING_KEY_PREFIX,
+        mp.PROCESSED_VIDEO_STAGING_KEY_PREFIX,
+    ):
+        assert not "dealer_verification/".startswith(prefix.rstrip("/"))
+        assert not prefix.startswith("dealer_verification")
+
+    with app.app_context():
+        r2_ops.r2_cleanup_stale_staging(prefix="video_source_staging/", older_than_seconds=60)
+    ops = [c for c in r2.calls if c[0] == "list_and_delete_stale"]
+    assert ops and all(b == _LISTING_BUCKET for (_op, b, _k) in ops)
+
+
+# --------------------------------------------------------------------------
+# Legacy-photo recovery for submitted / under-review applications
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("status", ["submitted", "under_review"])
+def test_lost_legacy_photo_recovery_path(env, r2, status):
+    """Photo lost to a deploy while the application is submitted/under_review:
+    the admin sees 404 photo_missing, asks for changes, the applicant re-uploads
+    to private R2 and resubmits. No DB repair is needed and nothing else changes."""
+    app, db, _ = env
+    client = app.test_client()
+    pid, username = _mk_user(env, with_application=True, status=status)
+    _a, admin_name = _mk_user(env, is_admin=True, admin_role="moderator")
+    admin = _token(client, admin_name)
+    user = _token(client, username)
+    _set_column(env, pid, "legacy-lost-by-deploy.jpg")  # no such file on disk
+
+    # 1. Admin: clean 404, never a 500.
+    gone = client.get(_admin_url(pid), headers=admin)
+    assert gone.status_code == 404 and gone.get_json()["code"] == "photo_missing"
+
+    # 2. Applicant cannot re-upload while submitted/under_review.
+    assert _upload(client, user).status_code == 400
+
+    # 3. Admin requests changes (reason required) -- works from both statuses.
+    resp = client.post(
+        f"/api/admin/dealers/{pid}/review",
+        headers=admin,
+        json={"action": "needs_changes", "reason": "Your verification photo was lost; please upload it again."},
+    )
+    assert resp.status_code == 200, resp.data
+
+    # 4. Resubmitting on the dangling reference is refused ...
+    payload = {
+        "dealership_name": "Shop",
+        "dealership_phone": "07700000000",
+        "dealership_location": "Erbil",
+        "submit": True,
+    }
+    stale = client.put("/api/user/dealer-application", headers=user, json=payload)
+    assert stale.status_code == 400
+    assert "upload it again" in stale.get_data(as_text=True)
+
+    # 5. ... the applicant re-uploads (private R2) and resubmits.
+    assert _upload(client, user).status_code == 200
+    assert _column(env, pid).startswith("r2:dealer_verification/")
+    ok = client.put("/api/user/dealer-application", headers=user, json=payload)
+    assert ok.status_code == 200, ok.data
+    assert client.get(_admin_url(pid), headers=admin).data == _png_bytes()
+
+
+def test_pending_application_with_intact_legacy_photo_can_still_be_resubmitted(env, r2):
+    app, db, _ = env
+    client = app.test_client()
+    pid, username = _mk_user(env, with_application=True, status="draft")
+    user = _token(client, username)
+    _write_legacy_disk(env, app, "legacy-intact.jpg")
+    _set_column(env, pid, "legacy-intact.jpg")
+    ok = client.put(
+        "/api/user/dealer-application",
+        headers=user,
+        json={
+            "dealership_name": "Shop",
+            "dealership_phone": "07700000000",
+            "dealership_location": "Erbil",
+            "submit": True,
+        },
+    )
+    assert ok.status_code == 200, ok.data

@@ -8,7 +8,9 @@ One table, ``account_deletion_request``: the durable record behind
 ``POST /api/account-deletion-request`` (the public /delete-account form). The
 row is committed BEFORE the API reports success, so an email-provider outage
 can no longer silently lose a request; the support email is only a
-best-effort notification of the row. ``status`` is ``pending`` -> ``completed``.
+best-effort notification of the row. ``status`` is ``pending`` -> ``completed``,
+and a completed row carries a ``resolution`` (``account_deleted`` /
+``no_account_found`` / ``declined``) so "completed" never implies deletion by itself.
 A PARTIAL unique index allows at most one ``pending`` row per ``phone_key``
 (repeat submissions are de-duplicated; completed rows never block a later
 request).
@@ -62,6 +64,7 @@ def upgrade() -> None:
         sa.Column("completed_at", sa.DateTime(), nullable=True),
         sa.Column("completed_by_user_id", sa.Integer(), nullable=True),
         sa.Column("completion_note", sa.String(length=255), nullable=True),
+        sa.Column("resolution", sa.String(length=24), nullable=True),
         sa.ForeignKeyConstraint(["completed_by_user_id"], ["user.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("public_id"),

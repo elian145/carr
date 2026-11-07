@@ -194,6 +194,22 @@ def read_dealer_verification(value: str) -> tuple[bytes, str]:
         raise PrivateMediaError("local storage failed") from e
 
 
+def dealer_verification_is_available(value: str | None) -> bool:
+    """Cheap pre-submit check that a stored reference is not dangling.
+
+    Only LEGACY local-disk references can dangle after a deploy, so only those
+    are checked (a stat, no network). A private-R2 reference is trusted here;
+    the admin read path reports a lost object as ``photo_missing`` (404).
+    """
+    value = (value or "").strip()
+    if not value:
+        return False
+    if is_r2_ref(value):
+        return True
+    name = os.path.basename(value)
+    return bool(name) and os.path.isfile(os.path.join(_disk_folder(), name))
+
+
 def delete_dealer_verification(value: str | None) -> bool:
     """Best-effort delete. Never raises. Returns True if nothing is left."""
     value = (value or "").strip()

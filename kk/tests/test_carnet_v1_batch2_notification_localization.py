@@ -433,7 +433,7 @@ def test_dealer_application_submitted_notification_localized_by_applicant_locale
             dealership_name="Draft Motors",
             dealership_phone="07700000005",
             dealership_location="Erbil",
-            verification_photo_filename="already-uploaded.jpg",
+            verification_photo_filename="r2:dealer_verification/already-uploaded.jpg",
         )
         db.session.add(application)
         db.session.commit()

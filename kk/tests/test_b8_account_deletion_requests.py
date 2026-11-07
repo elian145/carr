@@ -308,7 +308,7 @@ def test_new_request_allowed_after_previous_one_is_completed(env):
         done = app.test_client().post(
             f"/api/admin/account-deletion-requests/{row['id']}/complete",
             headers=headers,
-            json={"note": "deleted"},
+            json={"note": "no such account", "resolution": "no_account_found"},
         )
         assert done.status_code == 200
         assert _post(env, phone).status_code == 200
@@ -367,7 +367,7 @@ def test_operator_sees_pending_and_completed_status_and_completion_scrubs_contac
     done = c.post(
         f"/api/admin/account-deletion-requests/{req_id}/complete",
         headers=headers,
-        json={"note": "account removed"},
+        json={"note": "account removed", "resolution": "no_account_found"},
     )
     assert done.status_code == 200 and done.get_json()["changed"] is True
     again = c.post(f"/api/admin/account-deletion-requests/{req_id}/complete", headers=headers)
@@ -376,6 +376,7 @@ def test_operator_sees_pending_and_completed_status_and_completion_scrubs_contac
     (row,) = [r for r in _rows(env) if r["id"] == req_id]
     assert row["status"] == "completed" and row["completed_at"]
     assert row["completion_note"] == "account removed"
+    assert row["resolution"] == "no_account_found"
     assert row["phone"].startswith("***") and phone not in str(row)
     assert row["email"] is None and row["details"] is None
     assert phone[-4:] == row["phone"][-4:]
@@ -398,3 +399,196 @@ def test_public_page_and_post_urls_are_unchanged(env):
     assert page.status_code == 200
     assert 'action="/api/account-deletion-request"' in page.get_data(as_text=True)
     assert c.get(URL).status_code == 405
+
+
+# --------------------------------------------------------------------------
+# "completed" must never falsely imply the account was deleted
+# --------------------------------------------------------------------------
+
+
+def _make_account(env, phone):
+    from kk.models import User
+
+    app, db = env
+    with app.app_context():
+        u = User(
+            username=f"acct_{uuid.uuid4().hex[:8]}",
+            phone_number=phone,
+            first_name="A",
+            last_name="C",
+            is_active=True,
+            public_id=f"pub-{uuid.uuid4().hex[:12]}",
+        )
+        u.set_password(_PASSWORD)
+        db.session.add(u)
+        db.session.commit()
+        return u.id
+
+
+def _complete(env, req_id, headers, **body):
+    app, _db = env
+    return app.test_client().post(
+        f"/api/admin/account-deletion-requests/{req_id}/complete", headers=headers, json=body
+    )
+
+
+def test_cannot_complete_as_deleted_while_the_account_still_exists(env):
+    from kk.models import User
+
+    app, db = env
+    phone = _phone()
+    uid = _make_account(env, phone)
+    headers = _mk_admin(env, "moderator")
+    with patch("kk.email_service.send_email", return_value=True):
+        _post(env, phone)
+    (row,) = _rows(env, phone)
+
+    for resolution in ("account_deleted", "no_account_found"):
+        resp = _complete(env, row["id"], headers, resolution=resolution)
+        assert resp.status_code == 409, resolution
+        assert resp.get_json()["code"] == "account_still_exists"
+    assert _rows(env, phone)[0]["status"] == "pending"
+
+    # The operator list flags it (operator-only; the public response never does).
+    listed = app.test_client().get("/api/admin/account-deletion-requests", headers=headers)
+    mine = [r for r in listed.get_json()["requests"] if r["id"] == row["id"]]
+    assert mine[0]["account_exists"] is True
+
+    # Once the account is really gone the completion is accepted.
+    with app.app_context():
+        db.session.delete(db.session.get(User, uid))
+        db.session.commit()
+    ok = _complete(env, row["id"], headers, resolution="account_deleted")
+    assert ok.status_code == 200
+    assert _rows(env)[[r["id"] for r in _rows(env)].index(row["id"])]["resolution"] == "account_deleted"
+
+
+def test_legacy_zero_prefixed_account_also_blocks_completion(env):
+    phone = "7" + str(uuid.uuid4().int % 10**9).zfill(9)
+    _make_account(env, "0" + phone)  # pre-SEC-003 spelling
+    headers = _mk_admin(env, "moderator")
+    with patch("kk.email_service.send_email", return_value=True):
+        _post(env, phone)
+    (row,) = _rows(env, phone)
+    assert _complete(env, row["id"], headers, resolution="account_deleted").status_code == 409
+
+
+def test_declined_resolution_is_allowed_even_if_the_account_exists(env):
+    phone = _phone()
+    _make_account(env, phone)
+    headers = _mk_admin(env, "moderator")
+    with patch("kk.email_service.send_email", return_value=True):
+        _post(env, phone)
+    (row,) = _rows(env, phone)
+    resp = _complete(env, row["id"], headers, resolution="declined", note="ownership not verified")
+    assert resp.status_code == 200
+    assert resp.get_json()["request"]["resolution"] == "declined"
+
+
+def test_resolution_is_required_and_validated(env):
+    phone = _phone()
+    headers = _mk_admin(env, "moderator")
+    with patch("kk.email_service.send_email", return_value=True):
+        _post(env, phone)
+    (row,) = _rows(env, phone)
+    for body in ({}, {"resolution": ""}, {"resolution": "done"}):
+        resp = _complete(env, row["id"], headers, **body)
+        assert resp.status_code == 400 and resp.get_json()["code"] == "invalid_resolution"
+    assert _rows(env, phone)[0]["status"] == "pending"
+
+
+def test_first_resolution_stands_on_repeat_completion(env):
+    phone = _phone()
+    headers = _mk_admin(env, "moderator")
+    with patch("kk.email_service.send_email", return_value=True):
+        _post(env, phone)
+    (row,) = _rows(env, phone)
+    assert _complete(env, row["id"], headers, resolution="declined").status_code == 200
+    again = _complete(env, row["id"], headers, resolution="no_account_found")
+    assert again.status_code == 200 and again.get_json()["changed"] is False
+    assert again.get_json()["request"]["resolution"] == "declined"
+
+
+def test_public_response_never_reveals_account_state_or_status(env):
+    phone = _phone()
+    _make_account(env, phone)
+    with patch("kk.email_service.send_email", return_value=True):
+        body = _post(env, phone).get_data(as_text=True).lower()
+    for token in ("exists", "no account", "completed", "pending", "resolution", "deleted"):
+        assert token not in body.replace("delete the account", ""), token
+
+
+# --------------------------------------------------------------------------
+# Failed notifications stay visible and recoverable to operators
+# --------------------------------------------------------------------------
+
+
+def test_queue_counts_surface_unnotified_requests_and_retry_clears_them(env):
+    app, _db = env
+    c = app.test_client()
+    phone = _phone()
+    headers = _mk_admin(env, "moderator")
+    with patch("kk.email_service.send_email", return_value=False):
+        _post(env, phone)
+    before = c.get("/api/admin/account-deletion-requests", headers=headers).get_json()
+    assert before["counts"]["pending_unnotified"] >= 1
+    mine = [r for r in before["requests"] if r["phone"] == phone][0]
+    assert mine["notified"] is False and mine["last_notify_error"] == "email_provider_reported_failure"
+
+    with patch("kk.email_service.send_email", return_value=True):
+        r = c.post("/api/admin/account-deletion-requests/retry-notifications", headers=headers)
+    assert r.status_code == 200 and r.get_json()["sent"] >= 1
+    after = c.get("/api/admin/account-deletion-requests", headers=headers).get_json()
+    assert after["counts"]["pending_unnotified"] == 0
+    assert [x for x in after["requests"] if x["phone"] == phone][0]["notified"] is True
+
+
+def test_retry_with_provider_still_down_keeps_request_pending_and_visible(env):
+    app, _db = env
+    c = app.test_client()
+    phone = _phone()
+    headers = _mk_admin(env, "moderator")
+    with patch("kk.email_service.send_email", return_value=False):
+        _post(env, phone)
+        r = c.post("/api/admin/account-deletion-requests/retry-notifications", headers=headers)
+    assert r.status_code == 200 and r.get_json()["failed"] >= 1
+    (row,) = _rows(env, phone)
+    assert row["status"] == "pending" and row["notified"] is False and row["notify_attempts"] >= 2
+
+
+# --------------------------------------------------------------------------
+# Rate limiting (the shared limiter is a no-op under TESTING, so exercise it
+# on a bare app with the real limiter switched on)
+# --------------------------------------------------------------------------
+
+
+def test_public_endpoint_is_rate_limited_per_ip(monkeypatch):
+    from flask import Flask
+
+    import kk.security as security
+    from kk.models import AccountDeletionRequest, db
+    from kk.routes.misc import bp as misc_bp
+
+    monkeypatch.setenv("APP_ENV", "development")
+    monkeypatch.setattr(security, "_redis_client", lambda: None)
+    monkeypatch.setattr(security, "_allow_inmemory_rate_limits", lambda: True)
+    security.rate_limit_storage.clear()
+
+    app = Flask(__name__)
+    app.config["TESTING"] = False
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite://"
+    db.init_app(app)
+    with app.app_context():
+        AccountDeletionRequest.__table__.create(db.engine)
+    app.register_blueprint(misc_bp)
+    c = app.test_client()
+
+    with patch("kk.email_service.send_email", return_value=True):
+        codes = [
+            c.post(URL, json={"phone": f"0770000{i:04d}"}).status_code for i in range(8)
+        ]
+    assert codes[:5] == [200] * 5
+    assert set(codes[5:]) == {429}
+    with app.app_context():
+        assert AccountDeletionRequest.query.count() == 5  # throttled calls store nothing
+    security.rate_limit_storage.clear()

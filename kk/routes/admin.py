@@ -1159,23 +1159,33 @@ def account_deletion_requests_list():
         offset = int(request.args.get("offset", 0))
     except ValueError:
         return jsonify({"message": "limit/offset must be integers"}), 400
+    from ..account_deletion_requests import account_exists_for, queue_counts
+
     rows, total = list_requests(
         status=None if status == "all" else status, limit=limit, offset=offset
     )
-    return jsonify(
-        {"requests": [r.to_admin_dict() for r in rows], "total": total}
-    ), 200
+    items = []
+    for r in rows:
+        d = r.to_admin_dict()
+        # Pending rows only: does an account with this phone still exist?
+        # (Operator-only signal; the public response never reveals it.)
+        d["account_exists"] = account_exists_for(r) if r.status == "pending" else None
+        items.append(d)
+    return jsonify({"requests": items, "total": total, "counts": queue_counts()}), 200
 
 
 @bp.route("/account-deletion-requests/<request_public_id>/complete", methods=["POST"])
 @admin_required
 def account_deletion_request_complete(request_public_id: str):
-    """Mark a web deletion request as processed (idempotent). The requester's
-    contact details are scrubbed from the row on completion."""
+    """Mark a web deletion request as processed (idempotent). Body:
+    ``{"resolution": "account_deleted" | "no_account_found" | "declined",
+    "note": "..."}``. ``completed`` alone never implies the account was deleted:
+    ``account_deleted`` / ``no_account_found`` are refused with 409 while an
+    account with that phone still exists. Contact details are scrubbed."""
     denied = _deny("users.write")
     if denied:
         return denied
-    from ..account_deletion_requests import mark_completed
+    from ..account_deletion_requests import CompletionError, mark_completed
     from ..models import AccountDeletionRequest
 
     row = AccountDeletionRequest.query.filter_by(
@@ -1185,17 +1195,23 @@ def account_deletion_request_complete(request_public_id: str):
         return jsonify({"message": "Request not found"}), 404
     admin_user = get_current_user()
     data = request.get_json(silent=True) or {}
-    changed = mark_completed(
-        row,
-        operator_user_id=admin_user.id if admin_user else None,
-        note=str(data.get("note") or ""),
-    )
+    try:
+        changed = mark_completed(
+            row,
+            operator_user_id=admin_user.id if admin_user else None,
+            note=str(data.get("note") or ""),
+            resolution=str(data.get("resolution") or "").strip().lower(),
+        )
+    except CompletionError as e:
+        status_code = 409 if e.code == "account_still_exists" else 400
+        return jsonify({"message": e.message, "code": e.code}), status_code
     if changed and admin_user:
         log_user_action(
             admin_user,
             "account_deletion_request_complete",
             target_type="account_deletion_request",
             target_id=row.public_id,
+            metadata={"resolution": row.resolution},
         )
     return jsonify({"request": row.to_admin_dict(), "changed": changed}), 200
 

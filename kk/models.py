@@ -1786,6 +1786,9 @@ class AccountDeletionRequest(db.Model):
     Operators work the queue through ``/api/admin/account-deletion-requests``.
 
     * ``status``: ``pending`` -> ``completed`` (set by an authorized operator).
+      ``completed`` is NOT proof the account was deleted: it carries a
+      ``resolution`` and the server refuses ``account_deleted`` /
+      ``no_account_found`` while an account with that phone still exists.
     * At most one ``pending`` row per ``phone_key`` (partial unique index), so
       repeat submissions never create duplicates; the public response is
       identical for new and duplicate submissions (no account enumeration --
@@ -1820,6 +1823,8 @@ class AccountDeletionRequest(db.Model):
         db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True
     )
     completion_note = db.Column(db.String(255), nullable=True)
+    # What 'completed' means: account_deleted | no_account_found | declined.
+    resolution = db.Column(db.String(24), nullable=True)
 
     __table_args__ = (
         db.Index(
@@ -1846,6 +1851,7 @@ class AccountDeletionRequest(db.Model):
             'last_notify_error': self.last_notify_error,
             'completed_at': iso_utc(self.completed_at) if self.completed_at else None,
             'completion_note': self.completion_note,
+            'resolution': self.resolution,
         }
 
     def __repr__(self):

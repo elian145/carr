@@ -107,6 +107,10 @@ def _chat_cred_payload() -> dict[str, str]:
 # to bound the exposure window of a leaked URL (proxy log, screenshot, etc.).
 CHAT_PRESIGN_GET_DEFAULT_EXPIRES_SECONDS = 600
 
+# Prefixes in the private chat bucket that must NEVER be presigned/served as
+# chat media (admin-proxy-only content).
+PRIVATE_ONLY_KEY_PREFIXES = ("dealer_verification/",)
+
 # Lazily created, reused boto3 S3-compatible client for the PRIVATE chat
 # bucket (C-10 perf, Fix B). Keyed by the exact credential tuple used to
 # build it so a credential/config change (e.g. across tests, or a future
@@ -485,6 +489,13 @@ def r2_presign_get(
     is unchanged and remains the sole implementation for every other R2
     operation (uploads, presigned PUT).
     """
+    # Defence in depth: the private bucket also holds dealer-verification photos
+    # (kk/private_media.py). Those are served ONLY by the permission-checked
+    # admin proxy, never through a presigned chat-media URL, even if a message
+    # row were ever (mis)written with such a key.
+    if (key or "").startswith(PRIVATE_ONLY_KEY_PREFIXES) or (key or "").startswith("r2:"):
+        raise RuntimeError("key is not eligible for chat-media presigning")
+
     inprocess_url = _r2_presign_get_inprocess(key=key, expires_in=expires_in)
     if inprocess_url:
         return inprocess_url

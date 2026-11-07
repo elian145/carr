@@ -39,9 +39,23 @@ logger = logging.getLogger(__name__)
 STATUS_PENDING = "pending"
 STATUS_COMPLETED = "completed"
 
+RESOLUTION_ACCOUNT_DELETED = "account_deleted"
+RESOLUTION_NO_ACCOUNT = "no_account_found"
+RESOLUTION_DECLINED = "declined"
+RESOLUTIONS = (RESOLUTION_ACCOUNT_DELETED, RESOLUTION_NO_ACCOUNT, RESOLUTION_DECLINED)
+
 
 class RequestStorageError(RuntimeError):
     """The request could not be durably stored (caller must not report success)."""
+
+
+class CompletionError(ValueError):
+    """The requested completion would misstate the real account state."""
+
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
+        self.message = message
 
 
 def phone_digits(value: str) -> str:
@@ -219,18 +233,49 @@ def list_requests(
     return rows, total
 
 
+def account_exists_for(req: AccountDeletionRequest) -> bool:
+    """True while ANY account (active or not) still uses the request's phone.
+
+    Operator-facing only; never exposed to the public submitter.
+    """
+    from .routes.auth import _find_user_by_phone
+
+    return _find_user_by_phone(req.phone_key or "") is not None
+
+
 def mark_completed(
-    req: AccountDeletionRequest, *, operator_user_id: int | None, note: str | None
+    req: AccountDeletionRequest,
+    *,
+    operator_user_id: int | None,
+    note: str | None,
+    resolution: str,
 ) -> bool:
     """Complete a request and scrub its contact details. Idempotent.
+
+    ``resolution`` states what "completed" means. ``account_deleted`` and
+    ``no_account_found`` are refused (``CompletionError``) while an account with
+    the request's phone still exists, so a request can never be marked as
+    deleted while the account is still there. ``declined`` (e.g. ownership could
+    not be verified) is always allowed.
 
     Returns True if this call changed the row.
     """
     if req.status == STATUS_COMPLETED:
-        return False
+        return False  # idempotent: the first resolution stands
+    if resolution not in RESOLUTIONS:
+        raise CompletionError(
+            "invalid_resolution", "resolution must be one of: " + ", ".join(RESOLUTIONS)
+        )
+    if resolution != RESOLUTION_DECLINED and account_exists_for(req):
+        raise CompletionError(
+            "account_still_exists",
+            "An account with this phone number still exists. Delete it first, or "
+            "complete the request as 'declined'.",
+        )
     digest = hashlib.sha256((req.phone_key or "").encode("utf-8")).hexdigest()
     tail = (req.phone_key or "")[-4:]
     req.status = STATUS_COMPLETED
+    req.resolution = resolution
     req.completed_at = utcnow()
     req.completed_by_user_id = operator_user_id
     req.completion_note = (note or "").strip()[:255] or None
@@ -241,3 +286,11 @@ def mark_completed(
     req.last_notify_error = None
     db.session.commit()
     return True
+
+
+def queue_counts() -> dict[str, int]:
+    pending = AccountDeletionRequest.query.filter_by(status=STATUS_PENDING)
+    return {
+        "pending": pending.count(),
+        "pending_unnotified": pending.filter(AccountDeletionRequest.notified_at.is_(None)).count(),
+    }

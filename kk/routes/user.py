@@ -460,6 +460,16 @@ def _save_dealer_application(user: User, data: dict) -> DealerApplication:
         application is None or not application.verification_photo_filename
     ):
         raise ValueError("A dealership verification photo is required")
+    if submit:
+        # A legacy local-disk photo may have been lost to a deploy (render.yaml
+        # has no persistent disk). Do not let such an application be
+        # (re)submitted on a dangling reference: the applicant must re-upload.
+        from ..private_media import dealer_verification_is_available
+
+        if not dealer_verification_is_available(application.verification_photo_filename):
+            raise ValueError(
+                "Your verification photo is no longer available. Please upload it again."
+            )
     next_status = "submitted" if submit else "draft"
     now = utcnow()
     if application is None:
