@@ -1141,6 +1141,80 @@ def dealer_verification_photo(user_public_id: str):
     return response
 
 
+@bp.route("/account-deletion-requests", methods=["GET"])
+@admin_required
+def account_deletion_requests_list():
+    """Queue of public web account-deletion requests (phone numbers = PII, so
+    the same permission as reading users)."""
+    denied = _deny("users.read")
+    if denied:
+        return denied
+    from ..account_deletion_requests import list_requests
+
+    status = (request.args.get("status") or "pending").strip().lower()
+    if status not in ("pending", "completed", "all"):
+        return jsonify({"message": "status must be pending, completed or all"}), 400
+    try:
+        limit = int(request.args.get("limit", 50))
+        offset = int(request.args.get("offset", 0))
+    except ValueError:
+        return jsonify({"message": "limit/offset must be integers"}), 400
+    rows, total = list_requests(
+        status=None if status == "all" else status, limit=limit, offset=offset
+    )
+    return jsonify(
+        {"requests": [r.to_admin_dict() for r in rows], "total": total}
+    ), 200
+
+
+@bp.route("/account-deletion-requests/<request_public_id>/complete", methods=["POST"])
+@admin_required
+def account_deletion_request_complete(request_public_id: str):
+    """Mark a web deletion request as processed (idempotent). The requester's
+    contact details are scrubbed from the row on completion."""
+    denied = _deny("users.write")
+    if denied:
+        return denied
+    from ..account_deletion_requests import mark_completed
+    from ..models import AccountDeletionRequest
+
+    row = AccountDeletionRequest.query.filter_by(
+        public_id=(request_public_id or "").strip()
+    ).first()
+    if row is None:
+        return jsonify({"message": "Request not found"}), 404
+    admin_user = get_current_user()
+    data = request.get_json(silent=True) or {}
+    changed = mark_completed(
+        row,
+        operator_user_id=admin_user.id if admin_user else None,
+        note=str(data.get("note") or ""),
+    )
+    if changed and admin_user:
+        log_user_action(
+            admin_user,
+            "account_deletion_request_complete",
+            target_type="account_deletion_request",
+            target_id=row.public_id,
+        )
+    return jsonify({"request": row.to_admin_dict(), "changed": changed}), 200
+
+
+@bp.route("/account-deletion-requests/retry-notifications", methods=["POST"])
+@admin_required
+def account_deletion_requests_retry_notifications():
+    """Re-attempt the support email for pending requests whose notification
+    never succeeded (the requests themselves are already stored)."""
+    denied = _deny("users.write")
+    if denied:
+        return denied
+    from ..account_deletion_requests import retry_unnotified
+    from .misc import _trust_config_payload
+
+    result = retry_unnotified(_trust_config_payload().get("support_email") or "")
+    return jsonify(result), 200
+
+
 @bp.route("/dealers/<user_public_id>/approve", methods=["POST"])
 @admin_required
 def dealers_approve(user_public_id: str):

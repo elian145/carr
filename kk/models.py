@@ -1777,6 +1777,81 @@ class SavedSearchAlertJob(db.Model):
         return f'<SavedSearchAlertJob car={self.car_id} outcome={self.outcome}>'
 
 
+class AccountDeletionRequest(db.Model):
+    """Durable record of a PUBLIC web account-deletion request.
+
+    ``POST /api/account-deletion-request`` stores a row here BEFORE it reports
+    success, so a failed/unconfigured email provider can never lose a request
+    (the support email is only a best-effort notification of the row).
+    Operators work the queue through ``/api/admin/account-deletion-requests``.
+
+    * ``status``: ``pending`` -> ``completed`` (set by an authorized operator).
+    * At most one ``pending`` row per ``phone_key`` (partial unique index), so
+      repeat submissions never create duplicates; the public response is
+      identical for new and duplicate submissions (no account enumeration --
+      the submission never looks up whether an account exists).
+    * On completion the contact details are scrubbed (``phone`` masked, ``email``
+      and ``details`` cleared, ``phone_key`` replaced by a one-way digest) so
+      the queue does not itself become a long-term store of the data the user
+      asked us to delete. No retention period is invented for completed rows.
+    """
+    __tablename__ = 'account_deletion_request'
+
+    id = db.Column(db.Integer, primary_key=True)
+    public_id = db.Column(
+        db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
+    )
+    phone = db.Column(db.String(32), nullable=False)
+    # Canonical dedupe key: ``7XXXXXXXXX`` for Iraqi mobiles, else ASCII digits.
+    phone_key = db.Column(db.String(64), nullable=False)
+    email = db.Column(db.String(120), nullable=True)
+    details = db.Column(db.Text, nullable=True)
+    # One-way digest of the submitting IP (abuse correlation only, never the raw IP).
+    ip_hash = db.Column(db.String(64), nullable=True)
+    status = db.Column(db.String(16), nullable=False, default='pending', server_default='pending')
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+    # Support-mailbox notification bookkeeping (best-effort, retried).
+    notify_attempts = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    notified_at = db.Column(db.DateTime, nullable=True)
+    last_notify_error = db.Column(db.String(255), nullable=True)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    completed_by_user_id = db.Column(
+        db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True
+    )
+    completion_note = db.Column(db.String(255), nullable=True)
+
+    __table_args__ = (
+        db.Index(
+            'uq_account_deletion_request_pending_phone',
+            'phone_key',
+            unique=True,
+            postgresql_where=db.text("status = 'pending'"),
+            sqlite_where=db.text("status = 'pending'"),
+        ),
+        db.Index('ix_account_deletion_request_status_created', 'status', 'created_at'),
+    )
+
+    def to_admin_dict(self):
+        return {
+            'id': self.public_id,
+            'status': self.status,
+            'phone': self.phone,
+            'email': self.email,
+            'details': self.details,
+            'created_at': iso_utc(self.created_at),
+            'notified': self.notified_at is not None,
+            'notified_at': iso_utc(self.notified_at) if self.notified_at else None,
+            'notify_attempts': self.notify_attempts or 0,
+            'last_notify_error': self.last_notify_error,
+            'completed_at': iso_utc(self.completed_at) if self.completed_at else None,
+            'completion_note': self.completion_note,
+        }
+
+    def __repr__(self):
+        return f'<AccountDeletionRequest {self.public_id} {self.status}>'
+
+
 class BlockedUser(db.Model):
     __tablename__ = 'blocked_user'
 

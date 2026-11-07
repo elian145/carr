@@ -28,8 +28,16 @@ from kk.routes.misc import bp as misc_bp  # noqa: E402
 
 
 def _client():
+    # B8-2: submissions are now stored durably before success is reported, so
+    # even this lightweight app needs a (throwaway in-memory) database.
+    from kk.models import AccountDeletionRequest, db
+
     app = Flask(__name__)
     app.config["TESTING"] = True
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite://"
+    db.init_app(app)
+    with app.app_context():
+        AccountDeletionRequest.__table__.create(db.engine)
     app.register_blueprint(misc_bp)
     return app.test_client()
 
@@ -152,3 +160,4 @@ def test_account_deletion_request_does_not_require_auth_header():
             json={"phone": "07701234567"},
         )
     assert resp.status_code not in (401, 403)
+

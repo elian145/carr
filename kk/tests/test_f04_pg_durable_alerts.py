@@ -69,6 +69,9 @@ PG_URL = (os.environ.get("CARNET_PG_TEST_URL") or "").strip()
 pytestmark = pytest.mark.skipif(not PG_URL, reason="CARNET_PG_TEST_URL not set (PostgreSQL rehearsal only)")
 
 HEAD = "f04a1b2c3d4e"
+# B8: the account_deletion_request migration is stacked on the F-04 revision;
+# `flask db upgrade` therefore lands on TIP, and the F-04 table is part of it.
+TIP = "a7d3e1c9b5f2"
 PREV_HEAD = "v0w1x2y3z4a5"
 WAIT = 45
 
@@ -380,14 +383,15 @@ def test_pg_deleting_the_car_cascades_to_its_job(app, client, broker, monkeypatc
 # ---------------------------------------------------------------------------
 
 
-def test_single_alembic_head_is_the_f04_revision():
+def test_single_alembic_head_is_stacked_on_the_f04_revision():
     from alembic.config import Config
     from alembic.script import ScriptDirectory
 
     cfg = Config(str(_REPO_ROOT / "migrations" / "alembic.ini"))
     cfg.set_main_option("script_location", str(_REPO_ROOT / "migrations"))
     script = ScriptDirectory.from_config(cfg)
-    assert script.get_heads() == [HEAD]
+    assert script.get_heads() == [TIP]
+    assert script.get_revision(TIP).down_revision == HEAD
     assert script.get_revision(HEAD).down_revision == PREV_HEAD
 
 
@@ -438,7 +442,7 @@ def test_migration_up_down_up_on_a_disposable_database():
 
     try:
         _flask_db(dsn, "upgrade")
-        assert q("select version_num from alembic_version") == [(HEAD,)]
+        assert q("select version_num from alembic_version") == [(TIP,)]
         assert table_exists()
         cols = {r[0]: (r[1], r[2]) for r in q(
             "select column_name, is_nullable, data_type from information_schema.columns "
@@ -461,7 +465,7 @@ def test_migration_up_down_up_on_a_disposable_database():
         cars_before = q("select count(*) from car")[0][0]
 
         _flask_db(dsn, "upgrade")  # idempotent at head
-        assert q("select version_num from alembic_version") == [(HEAD,)]
+        assert q("select version_num from alembic_version") == [(TIP,)]
 
         _flask_db(dsn, "downgrade", PREV_HEAD)
         assert q("select version_num from alembic_version") == [(PREV_HEAD,)]
@@ -470,7 +474,7 @@ def test_migration_up_down_up_on_a_disposable_database():
         assert q("select count(*) from car")[0][0] == cars_before
 
         _flask_db(dsn, "upgrade")
-        assert q("select version_num from alembic_version") == [(HEAD,)]
+        assert q("select version_num from alembic_version") == [(TIP,)]
         assert table_exists()
     finally:
         with psycopg.connect(_admin_dsn(url), autocommit=True) as c:

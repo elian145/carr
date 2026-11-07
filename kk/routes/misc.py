@@ -204,37 +204,44 @@ def account_deletion_request():
     email = str(data.get("email") or "").strip()
     details = str(data.get("details") or data.get("message") or "").strip()[:1000]
 
-    digits = "".join(ch for ch in phone if ch.isdigit())
+    from ..account_deletion_requests import (
+        RequestStorageError,
+        phone_digits,
+        submit_request,
+    )
+
+    digits = phone_digits(phone)
     if len(digits) < 8:
         return jsonify({"message": "A valid account phone number is required"}), 400
 
     trust = _trust_config_payload()
-    # No hardcoded fallback mailbox here: SUPPORT_EMAIL is required in
-    # production (validate_required_secrets() in kk/config.py). If it is
-    # somehow empty (dev/testing only), send_email() below simply no-ops
-    # instead of silently emailing a fake/unreachable address.
+    # No hardcoded fallback mailbox: SUPPORT_EMAIL is required in production
+    # (validate_required_secrets() in kk/config.py). The email is only a
+    # best-effort NOTIFICATION; the request itself is stored durably first.
     support_email = trust.get("support_email") or ""
-    body = (
-        f"Web account deletion request\n"
-        f"Phone: {phone}\n"
-        f"Email: {email or '(none)'}\n"
-        f"Details: {details or '(none)'}\n"
-        f"IP: {request.remote_addr}\n"
-    )
     logger.info("account_deletion_request phone_suffix=%s email=%s", digits[-4:], bool(email))
 
     try:
-        from ..email_service import send_email
-
-        send_email(
-            to_email=support_email,
-            subject="CarNet account deletion request",
-            text_body=body,
-            html_body=None,
+        submit_request(
+            phone=phone,
+            email=email,
+            details=details,
+            ip=request.remote_addr,
+            support_email=support_email,
         )
-    except Exception:
-        logger.exception("account_deletion_request email failed")
+    except RequestStorageError:
+        # Never claim success for a request that was not durably stored.
+        return jsonify(
+            {
+                "message": (
+                    "We could not record your request right now. Please try again "
+                    "in a few minutes or contact support."
+                )
+            }
+        ), 503
 
+    # Identical body for new and duplicate submissions, and independent of
+    # whether any account exists for this phone (no account enumeration).
     return jsonify(
         {
             "message": (
