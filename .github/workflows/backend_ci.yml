@@ -32,6 +32,11 @@ jobs:
       - name: Compile backend
         run: python -m compileall kk
 
+      # F-20: warns while dev/stage still share the prod Firebase project;
+      # switch to --strict once the owner has created separate projects.
+      - name: Firebase dev/stage isolation lint
+        run: python scripts/verify_firebase_isolation.py
+
       - name: Publish preflight (static)
         run: python scripts/verify_preflight.py --skip-host
 
