@@ -4,9 +4,9 @@ Thanks for helping improve CARZO / CarNet. This guide covers local setup, expect
 
 ## Prerequisites
 
-- Flutter (stable) matching CI
-- Python 3.11+ with a venv
-- Optional: Node.js for `admin-web/`
+- Flutter exactly as pinned in `.flutter-version` (same as CI and Codemagic)
+- Python 3.11.9 (`.python-version`) with a venv
+- Optional: Node.js 22 (`admin-web/.nvmrc`) for `admin-web/`
 - Docker only if you prefer the root `Dockerfile` for the API
 
 ## Local setup

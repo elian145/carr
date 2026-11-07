@@ -6,11 +6,12 @@ Committed config files contain API keys that are extractable from APK/IPA builds
 
 | File | Package / bundle |
 |------|------------------|
-| `android/app/src/prod/google-services.json` | `com.carzo.app` |
+| `android/app/src/prod/google-services.json` | `com.carnetiq.app` (prod flavor; file also lists the legacy `com.carzo.app*` clients) |
 | `ios/Runner/GoogleService-Info.plist` | `com.carzo.app` |
 
 **Actions:**
 1. Create a **separate Firebase project** for dev/stage (`com.carzo.app.dev`, `com.carzo.app.stage`) — do not share prod FCM/analytics with dev builds.
+   **Status (F-20): NOT DONE.** `dev`/`stage` still contain the production project `carzo-prod`; only the owner can create the new projects. `python scripts/verify_firebase_isolation.py` warns in CI until fixed; after replacing the files, switch the CI step to `--strict`.
 2. Replace `android/app/src/dev/google-services.json` and `android/app/src/stage/google-services.json` with configs from the dev Firebase project.
 3. In Firebase Console → Project settings → restrict API keys to your Android package + release SHA-1 and iOS bundle ID.
 

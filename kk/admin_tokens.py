@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt as pyjwt
@@ -187,8 +187,11 @@ def issue_admin_token(
         "type": token_type,
         "sub": identity,
     }
-    if ttl:
-        payload["exp"] = now + ttl
+    # F-32: an admin-signed token must always expire (admin-web rejects exp-less
+    # tokens); fall back to conservative defaults if the config disabled expiry.
+    if not ttl:
+        ttl = timedelta(minutes=30) if token_type == "access" else timedelta(days=7)
+    payload["exp"] = now + ttl
     payload.update(claims)
     # Admin-signed tokens always carry both admin claims.
     payload["account_scope"] = "admin"
