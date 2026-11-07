@@ -683,9 +683,9 @@ mixin _CarDetailsPageMedia on _CarDetailsPageOwner {
             color: Colors.black54,
             borderRadius: BorderRadius.circular(4),
           ),
-          child: const Text(
-            'VIDEO',
-            style: TextStyle(
+          child: Text(
+            AppLocalizations.of(context)!.videoBadge,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 11,
               fontWeight: FontWeight.bold,

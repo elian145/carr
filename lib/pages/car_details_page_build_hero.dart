@@ -592,9 +592,9 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
           // indicator -- see `_showProcessingMedia`'s own doc comment for
           // the exact completion rule. Never shown to a non-owner.
           if (_isListingOwner && _showProcessingMedia)
-            Positioned(
+            PositionedDirectional(
               top: 12,
-              left: 12,
+              start: 12,
               child: const IgnorePointer(
                 ignoring: true,
                 child: ProcessingMediaBadge(),

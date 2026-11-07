@@ -2543,7 +2543,7 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get specDatabaseUnavailableRestartTheAppAfterFlutterPubGet =>
-      'بنکەی زانیاری مواسەفات بەردەست نییە. دوای flutter pub get ئەپەکە دووبارە بکەرەوە.';
+      'زانیاری تایبەتمەندی ئۆتۆمبێل ئێستا بەردەست نییە. تکایە ئەپەکە دووبارە بکەرەوە.';
 
   @override
   String get catalogAutoFill => 'پڕکردنەوەی خۆکاری کاتالۆگ';
@@ -2884,4 +2884,30 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get softUpdateFallbackMessage => 'وەشانێکی نوێتری CarNet بەردەستە.';
+
+  @override
+  String get currentPasswordLabel => 'وشەی نهێنی ئێستا';
+
+  @override
+  String get pleaseEnterCurrentPassword => 'تکایە وشەی نهێنی ئێستات بنووسە';
+
+  @override
+  String get passwordChangedSuccessfully => 'وشەی نهێنی بە سەرکەوتوویی گۆڕدرا';
+
+  @override
+  String get unableToChangePasswordCheckCurrent =>
+      'نەتوانرا وشەی نهێنی بگۆڕدرێت. تکایە وشەی نهێنی ئێستا بپشکنە و دووبارە هەوڵ بدەرەوە.';
+
+  @override
+  String get unableToChangePasswordTryLater =>
+      'نەتوانرا وشەی نهێنی بگۆڕدرێت. تکایە دواتر دووبارە هەوڵ بدەرەوە.';
+
+  @override
+  String get sendingEllipsis => 'دەنێردرێت...';
+
+  @override
+  String get videoBadge => 'ڤیدیۆ';
+
+  @override
+  String get viewDetailsButton => 'بینینی وردەکاری';
 }

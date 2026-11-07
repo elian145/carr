@@ -83,7 +83,12 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                     return Row(
                       children: [
                         Expanded(
-                          child: GestureDetector(
+                          child: Semantics(
+                            button: true,
+                            label: loc.homeSearchHeading,
+                            excludeSemantics: true,
+                            onTap: () => _openHomeSearchFiltersPage(context),
+                            child: GestureDetector(
                             onTap: () => _openHomeSearchFiltersPage(context),
                             child: Align(
                               alignment: AlignmentDirectional.centerStart,
@@ -114,6 +119,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                                 ],
                               ),
                             ),
+                          ),
                           ),
                         ),
                         const SizedBox(width: 10),

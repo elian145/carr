@@ -225,9 +225,9 @@ Widget _buildGlobalCarCard(
                                 enableSwipeCarousel: enableImageCarousel,
                               ),
                               if (showVideoCountBadge)
-                                Positioned(
+                                PositionedDirectional(
                                   top: 8,
-                                  right: 8,
+                                  end: 8,
                                   child: _globalListingCardVideoCountBadge(car),
                                 ),
                               if (sold)
@@ -388,9 +388,9 @@ Widget _buildGlobalCarCard(
           else
             cardInner,
           if (!listLayout && showVideoCountBadge)
-            Positioned(
+            PositionedDirectional(
               top: 12,
-              right: 12,
+              end: 12,
               child: _globalListingCardVideoCountBadge(car),
             ),
           if (featured)

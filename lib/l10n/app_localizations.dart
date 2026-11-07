@@ -4732,7 +4732,7 @@ abstract class AppLocalizations {
   /// No description provided for @specDatabaseUnavailableRestartTheAppAfterFlutterPubGet.
   ///
   /// In en, this message translates to:
-  /// **'Spec database unavailable. Restart the app after flutter pub get.'**
+  /// **'Vehicle specifications are unavailable right now. Please restart the app.'**
   String get specDatabaseUnavailableRestartTheAppAfterFlutterPubGet;
 
   /// No description provided for @catalogAutoFill.
@@ -5360,6 +5360,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A newer version of CarNet is available.'**
   String get softUpdateFallbackMessage;
+
+  /// No description provided for @currentPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password'**
+  String get currentPasswordLabel;
+
+  /// No description provided for @pleaseEnterCurrentPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your current password'**
+  String get pleaseEnterCurrentPassword;
+
+  /// No description provided for @passwordChangedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed successfully'**
+  String get passwordChangedSuccessfully;
+
+  /// No description provided for @unableToChangePasswordCheckCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to change password. Please check your current password and try again.'**
+  String get unableToChangePasswordCheckCurrent;
+
+  /// No description provided for @unableToChangePasswordTryLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to change password. Please try again later.'**
+  String get unableToChangePasswordTryLater;
+
+  /// No description provided for @sendingEllipsis.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending...'**
+  String get sendingEllipsis;
+
+  /// No description provided for @videoBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'VIDEO'**
+  String get videoBadge;
+
+  /// No description provided for @viewDetailsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'View Details'**
+  String get viewDetailsButton;
 }
 
 class _AppLocalizationsDelegate

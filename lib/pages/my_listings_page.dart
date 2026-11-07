@@ -839,6 +839,7 @@ class _MyListingsPageState extends State<MyListingsPage>
         leading: Navigator.of(context).canPop()
             ? null
             : IconButton(
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
                   Navigator.of(context).pushNamedAndRemoveUntil(

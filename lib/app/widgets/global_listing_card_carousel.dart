@@ -88,9 +88,9 @@ Widget _buildGlobalCardStaticImage(
     children: [
       image,
       if (slots.length > 1)
-        Positioned(
+        PositionedDirectional(
           bottom: 8,
-          right: 8,
+          end: 8,
           child: _globalListingCardPhotoCountBadge(slots.length),
         ),
     ],

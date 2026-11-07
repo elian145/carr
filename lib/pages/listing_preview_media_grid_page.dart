@@ -182,9 +182,9 @@ class _ListingPreviewMediaGridPageState extends State<ListingPreviewMediaGridPag
               color: Colors.black54,
               borderRadius: BorderRadius.circular(4),
             ),
-            child: const Text(
-              'VIDEO',
-              style: TextStyle(
+            child: Text(
+              AppLocalizations.of(context)!.videoBadge,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 10,
                 fontWeight: FontWeight.w600,

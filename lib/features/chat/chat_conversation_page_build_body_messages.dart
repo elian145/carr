@@ -168,8 +168,8 @@ mixin _ChatConversationPageBuildBodyMessages on _ChatConversationPageLifecycle {
                                           if (message.editedAt != null &&
                                               !message.isDeleted)
                                             Padding(
-                                              padding: const EdgeInsets.only(
-                                                right: 6,
+                                              padding: const EdgeInsetsDirectional.only(
+                                                end: 6,
                                               ),
                                               child: Text(
                                                 _chatEditedLabel(context),
@@ -205,8 +205,8 @@ mixin _ChatConversationPageBuildBodyMessages on _ChatConversationPageLifecycle {
                                       if (message.editedAt != null &&
                                           !message.isDeleted)
                                         Padding(
-                                          padding: const EdgeInsets.only(
-                                            right: 6,
+                                          padding: const EdgeInsetsDirectional.only(
+                                            end: 6,
                                           ),
                                           child: Text(
                                             _chatEditedLabel(context),
@@ -273,8 +273,8 @@ mixin _ChatConversationPageBuildBodyMessages on _ChatConversationPageLifecycle {
                             );
                             return Align(
                               alignment: isMe
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft,
+                                  ? AlignmentDirectional.centerEnd
+                                  : AlignmentDirectional.centerStart,
                               child: bubble,
                             );
                           },
