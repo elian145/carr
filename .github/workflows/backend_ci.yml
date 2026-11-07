@@ -164,6 +164,7 @@ jobs:
           kk/tests/test_reset_token_invalidation.py
           kk/tests/test_phone_inventory_cli.py
           kk/tests/test_b8_account_deletion_pg.py
+          kk/tests/test_f17_admin_audit_pg.py
 
   migrations:
     name: Migration smoke (Postgres)
