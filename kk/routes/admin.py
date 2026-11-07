@@ -8,7 +8,7 @@ from flask import Blueprint, current_app, jsonify, request, send_from_directory
 from sqlalchemy import asc, desc, func, not_, or_
 from sqlalchemy.orm import joinedload, selectinload
 
-from ..auth import admin_required, get_current_user, log_user_action
+from ..auth import admin_required, get_current_user, log_admin_action
 from ..extensions import socketio
 from ..push import send_push
 from ..admin_roles import (
@@ -773,7 +773,7 @@ def delete_image(image_id: int):
         db.session.commit()
 
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_delete_image",
                 target_type="car_image",
@@ -1207,7 +1207,7 @@ def account_deletion_request_complete(request_public_id: str):
         status_code = 409 if e.code == "account_still_exists" else 400
         return jsonify({"message": e.message, "code": e.code}), status_code
     if changed and admin_user:
-        log_user_action(
+        log_admin_action(
             admin_user,
             "account_deletion_request_complete",
             target_type="account_deletion_request",
@@ -1288,7 +1288,7 @@ def dealers_approve(user_public_id: str):
                 target.public_id,
             )
 
-        log_user_action(
+        log_admin_action(
             admin_user,
             "dealer_approve",
             target_type="user",
@@ -1335,7 +1335,7 @@ def dealers_reject(user_public_id: str):
         )
         db.session.commit()
 
-        log_user_action(
+        log_admin_action(
             admin_user,
             "dealer_reject",
             target_type="user",
@@ -1378,7 +1378,7 @@ def dealers_review(user_public_id: str):
             reason,
         )
         db.session.commit()
-        log_user_action(
+        log_admin_action(
             admin_user,
             f"dealer_{action}",
             target_type="dealer_application",
@@ -1426,7 +1426,7 @@ def dealers_set_featured(user_public_id: str):
         target.updated_at = utcnow()
         db.session.commit()
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_dealer_featured",
                 target_type="user",
@@ -1583,7 +1583,7 @@ def update_user_report(report_id: int):
         _apply_report_status(report, status, admin_notes)
         db.session.commit()
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_user_report",
                 target_type="user_report",
@@ -1629,7 +1629,7 @@ def update_listing_report(report_id: int):
         _apply_report_status(report, status, admin_notes)
         db.session.commit()
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_listing_report",
                 target_type="listing_report",
@@ -1865,7 +1865,7 @@ def update_car_status(car_id: str):
         if alert_car_id is not None:
             dispatch_saved_search_alerts_for_activated([alert_car_id])
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_listing",
                 target_type="car",
@@ -2025,7 +2025,7 @@ def bulk_update_car_status():
             _deliver_listing_moderation_notification(notif, seller)
         dispatch_saved_search_alerts_for_activated(bulk_alert_car_ids)
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_bulk_update_listings",
                 target_type="car",
@@ -2110,7 +2110,7 @@ def broadcast_notification():
                 created_by_user_id=admin_user.id if admin_user else None,
             )
             if admin_user:
-                log_user_action(
+                log_admin_action(
                     admin_user,
                     "admin_schedule_notification",
                     target_type="scheduled_notification",
@@ -2169,7 +2169,7 @@ def broadcast_notification():
             )
 
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_broadcast_notification",
                 target_type="scheduled_notification",
@@ -2257,7 +2257,7 @@ def cancel_scheduled_notification(item_id: int):
         row.updated_at = utcnow()
         db.session.commit()
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_cancel_scheduled_notification",
                 target_type="scheduled_notification",
@@ -2376,7 +2376,7 @@ def update_user_status(user_id: str):
         user.updated_at = utcnow()
         db.session.commit()
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_user",
                 target_type="user",
@@ -2433,7 +2433,7 @@ def update_user_admin_role(user_id: str):
 
         user.updated_at = utcnow()
         db.session.commit()
-        log_user_action(
+        log_admin_action(
             admin_user,
             "admin_update_user_role",
             target_type="user",
@@ -2710,7 +2710,7 @@ def delete_car(car_id: str):
             _deliver_listing_moderation_notification(moderation_notification, moderation_seller)
 
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_delete_listing",
                 target_type="car",
@@ -2751,7 +2751,7 @@ def delete_user(user_id: str):
         )
         db.session.commit()
 
-        log_user_action(
+        log_admin_action(
             admin_user,
             "admin_delete_user",
             target_type="user",
@@ -2809,7 +2809,7 @@ def purge_car(car_id: str):
         invalidate_filter_facets_cache()
 
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_purge_listing",
                 target_type="car",
@@ -3027,7 +3027,7 @@ def approve_listing_revision(revision_id: str):
             except Exception:
                 logger.exception("price-drop dispatch after revision approval failed")
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_approve_listing_revision",
                 target_type="car",
@@ -3094,7 +3094,7 @@ def reject_listing_revision(revision_id: str):
         if notification is not None and seller is not None:
             _deliver_listing_moderation_notification(notification, seller)
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_reject_listing_revision",
                 target_type="car",
@@ -3158,7 +3158,7 @@ def purge_user(user_id: str):
             )
         )
         db.session.commit()
-        log_user_action(
+        log_admin_action(
             admin_user,
             "admin_purge_user",
             target_type="user",
@@ -3308,7 +3308,7 @@ def update_settings():
             db.session.rollback()
             return jsonify({"message": exc.message, "field": exc.field}), 400
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_settings",
                 target_type="settings",

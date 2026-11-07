@@ -71,7 +71,8 @@ pytestmark = pytest.mark.skipif(not PG_URL, reason="CARNET_PG_TEST_URL not set (
 HEAD = "f04a1b2c3d4e"
 # B8: the account_deletion_request migration is stacked on the F-04 revision;
 # `flask db upgrade` therefore lands on TIP, and the F-04 table is part of it.
-TIP = "a7d3e1c9b5f2"
+B8 = "a7d3e1c9b5f2"
+TIP = "b8e4f2a6c1d3"  # F-17 admin_audit_log, stacked on B8
 PREV_HEAD = "v0w1x2y3z4a5"
 WAIT = 45
 
@@ -391,7 +392,8 @@ def test_single_alembic_head_is_stacked_on_the_f04_revision():
     cfg.set_main_option("script_location", str(_REPO_ROOT / "migrations"))
     script = ScriptDirectory.from_config(cfg)
     assert script.get_heads() == [TIP]
-    assert script.get_revision(TIP).down_revision == HEAD
+    assert script.get_revision(TIP).down_revision == B8
+    assert script.get_revision(B8).down_revision == HEAD
     assert script.get_revision(HEAD).down_revision == PREV_HEAD
 
 

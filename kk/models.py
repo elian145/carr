@@ -1654,6 +1654,47 @@ class UserAction(db.Model):
     def __repr__(self):
         return f'<UserAction {self.action_type}>'
 
+class AdminAuditLog(db.Model):
+    """Append-only record of administrator actions (F-17).
+
+    Deliberately NOT linked to ``user`` by a foreign key: ``UserAction`` rows
+    cascade-delete with their user, which would erase the admin audit trail
+    whenever an admin or the affected account is deleted/purged. The actor is
+    kept as a plain id plus a username snapshot; the target is a free-form
+    (type, id) pair. Rows are never updated or deleted by application code
+    (enforced by the ORM guard below and, on PostgreSQL, by a trigger).
+    """
+
+    __tablename__ = 'admin_audit_log'
+
+    id = db.Column(db.Integer, primary_key=True)
+    admin_user_id = db.Column(db.Integer, nullable=True, index=True)  # no FK on purpose
+    admin_username = db.Column(db.String(80), nullable=True)
+    action_type = db.Column(db.String(50), nullable=False, index=True)
+    target_type = db.Column(db.String(50), nullable=True)
+    target_id = db.Column(db.String(50), nullable=True)
+    action_metadata = db.Column(db.JSON, nullable=True)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'admin_user_id': self.admin_user_id,
+            'admin_username': self.admin_username,
+            'action_type': self.action_type,
+            'target_type': self.target_type,
+            'target_id': self.target_id,
+            'action_metadata': self.action_metadata,
+            'created_at': iso_utc(self.created_at),
+        }
+
+
+@db.event.listens_for(AdminAuditLog, 'before_update')
+@db.event.listens_for(AdminAuditLog, 'before_delete')
+def _admin_audit_log_is_append_only(_mapper, _connection, _target):
+    raise RuntimeError('admin_audit_log is append-only')
+
+
 class PasswordReset(db.Model):
     __tablename__ = 'password_reset'
     

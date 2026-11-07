@@ -364,6 +364,42 @@ def log_user_action(user, action_type, target_type=None, target_id=None, metadat
         db.session.rollback()
         current_app.logger.error(f"Error logging user action: {str(e)}")
 
+def log_admin_action(admin_user, action_type, target_type=None, target_id=None, metadata=None):
+    """Record an administrator action (F-17).
+
+    Writes the durable, append-only ``AdminAuditLog`` row (survives deletion of
+    the admin / target user) and also the legacy ``UserAction`` row that
+    existing admin UI/tests read. Failures are logged, never raised.
+    """
+    try:
+        from .models import AdminAuditLog, UserAction
+
+        db.session.add(
+            AdminAuditLog(
+                admin_user_id=getattr(admin_user, "id", None),
+                admin_username=(getattr(admin_user, "username", None) or None),
+                action_type=action_type,
+                target_type=target_type,
+                target_id=target_id,
+                action_metadata=metadata,
+            )
+        )
+        if getattr(admin_user, "id", None) is not None:
+            db.session.add(
+                UserAction(
+                    user_id=admin_user.id,
+                    action_type=action_type,
+                    target_type=target_type,
+                    target_id=target_id,
+                    action_metadata=metadata,
+                )
+            )
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error logging admin action: {str(e)}")
+
+
 def validate_user_input(data, required_fields=None):
     """Validate user input data"""
     errors = []
