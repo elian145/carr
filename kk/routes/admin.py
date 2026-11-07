@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request, send_from_directory
 from sqlalchemy import asc, desc, func, not_, or_
@@ -1440,6 +1441,8 @@ def dealers_set_featured(user_public_id: str):
 
 
 _VALID_REPORT_STATUSES = frozenset({"pending", "reviewed", "resolved", "dismissed"})
+# Upper bound on page*per_page for GET /reports (F-18); keeps the merge window small.
+_REPORTS_MAX_WINDOW = 10000
 
 
 def _apply_report_status(report, status: str, admin_notes: str | None):
@@ -1470,38 +1473,72 @@ def list_reports():
             user_q = user_q.filter_by(status=status)
             listing_q = listing_q.filter_by(status=status)
 
-        user_reports = []
-        listing_reports = []
-        if report_type in ("all", "user"):
-            user_reports = (
-                user_q.options(
+        # F-18: server-side pagination over the union of both report types.
+        # Nothing is capped at a fixed 200 any more: each type is counted in
+        # SQL, only the (created_at, id) keys of the first `end` rows of each
+        # stream are read to merge-sort the page, and only the rows on the
+        # requested page are loaded in full. Cost is bounded by
+        # _REPORTS_MAX_WINDOW regardless of table size.
+        start = (page - 1) * per_page
+        end = start + per_page
+        if end > _REPORTS_MAX_WINDOW:
+            return (
+                jsonify({"message": "Page too deep; narrow with status/type filters"}),
+                400,
+            )
+
+        _epoch = datetime(1970, 1, 1)
+
+        def _keys(model, query, rank):
+            if report_type not in ("all", rank_name[rank]):
+                return 0, []
+            total_n = query.order_by(None).count()
+            rows = (
+                query.order_by(model.created_at.desc(), model.id.desc())
+                .with_entities(model.created_at, model.id)
+                .limit(end)
+                .all()
+            )
+            return total_n, [(c or _epoch, rank, i) for c, i in rows]
+
+        rank_name = {0: "user", 1: "listing"}
+        user_total, user_keys = _keys(UserReport, user_q, 0)
+        listing_total, listing_keys = _keys(ListingReport, listing_q, 1)
+
+        merged = sorted(user_keys + listing_keys, key=lambda k: (k[0], k[2], -k[1]), reverse=True)
+        page_keys = merged[start:end]
+        user_ids = [i for _c, rank, i in page_keys if rank == 0]
+        listing_ids = [i for _c, rank, i in page_keys if rank == 1]
+
+        user_rows = {}
+        if user_ids:
+            user_rows = {
+                r.id: r
+                for r in UserReport.query.options(
                     joinedload(UserReport.reporter),
                     joinedload(UserReport.reported),
                 )
-                .order_by(UserReport.created_at.desc())
-                .limit(200)
+                .filter(UserReport.id.in_(user_ids))
                 .all()
-            )
-        if report_type in ("all", "listing"):
-            listing_reports = (
-                listing_q.options(
+            }
+        listing_rows = {}
+        if listing_ids:
+            listing_rows = {
+                r.id: r
+                for r in ListingReport.query.options(
                     joinedload(ListingReport.reporter),
                     joinedload(ListingReport.car).joinedload(Car.seller),
                 )
-                .order_by(ListingReport.created_at.desc())
-                .limit(200)
+                .filter(ListingReport.id.in_(listing_ids))
                 .all()
-            )
+            }
+        items = []
+        for _c, rank, rid in page_keys:
+            row = (user_rows if rank == 0 else listing_rows).get(rid)
+            if row is not None:
+                items.append(row.to_admin_dict())
 
-        combined = [r.to_admin_dict() for r in user_reports] + [
-            r.to_admin_dict() for r in listing_reports
-        ]
-        combined.sort(key=lambda x: x.get("created_at") or "", reverse=True)
-
-        total = len(combined)
-        start = (page - 1) * per_page
-        end = start + per_page
-        items = combined[start:end]
+        total = user_total + listing_total
         pages = max(1, (total + per_page - 1) // per_page)
 
         return (
