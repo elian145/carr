@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import logging
 import os
+from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request, send_from_directory
 from sqlalchemy import asc, desc, func, not_, or_
 from sqlalchemy.orm import joinedload, selectinload
 
-from ..auth import admin_required, get_current_user, log_user_action
+from ..auth import admin_required, get_current_user, log_admin_action
 from ..extensions import socketio
 from ..push import send_push
 from ..admin_roles import (
@@ -772,7 +773,7 @@ def delete_image(image_id: int):
         db.session.commit()
 
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_delete_image",
                 target_type="car_image",
@@ -1206,7 +1207,7 @@ def account_deletion_request_complete(request_public_id: str):
         status_code = 409 if e.code == "account_still_exists" else 400
         return jsonify({"message": e.message, "code": e.code}), status_code
     if changed and admin_user:
-        log_user_action(
+        log_admin_action(
             admin_user,
             "account_deletion_request_complete",
             target_type="account_deletion_request",
@@ -1287,7 +1288,7 @@ def dealers_approve(user_public_id: str):
                 target.public_id,
             )
 
-        log_user_action(
+        log_admin_action(
             admin_user,
             "dealer_approve",
             target_type="user",
@@ -1334,7 +1335,7 @@ def dealers_reject(user_public_id: str):
         )
         db.session.commit()
 
-        log_user_action(
+        log_admin_action(
             admin_user,
             "dealer_reject",
             target_type="user",
@@ -1377,7 +1378,7 @@ def dealers_review(user_public_id: str):
             reason,
         )
         db.session.commit()
-        log_user_action(
+        log_admin_action(
             admin_user,
             f"dealer_{action}",
             target_type="dealer_application",
@@ -1425,7 +1426,7 @@ def dealers_set_featured(user_public_id: str):
         target.updated_at = utcnow()
         db.session.commit()
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_dealer_featured",
                 target_type="user",
@@ -1440,6 +1441,8 @@ def dealers_set_featured(user_public_id: str):
 
 
 _VALID_REPORT_STATUSES = frozenset({"pending", "reviewed", "resolved", "dismissed"})
+# Upper bound on page*per_page for GET /reports (F-18); keeps the merge window small.
+_REPORTS_MAX_WINDOW = 10000
 
 
 def _apply_report_status(report, status: str, admin_notes: str | None):
@@ -1470,38 +1473,72 @@ def list_reports():
             user_q = user_q.filter_by(status=status)
             listing_q = listing_q.filter_by(status=status)
 
-        user_reports = []
-        listing_reports = []
-        if report_type in ("all", "user"):
-            user_reports = (
-                user_q.options(
+        # F-18: server-side pagination over the union of both report types.
+        # Nothing is capped at a fixed 200 any more: each type is counted in
+        # SQL, only the (created_at, id) keys of the first `end` rows of each
+        # stream are read to merge-sort the page, and only the rows on the
+        # requested page are loaded in full. Cost is bounded by
+        # _REPORTS_MAX_WINDOW regardless of table size.
+        start = (page - 1) * per_page
+        end = start + per_page
+        if end > _REPORTS_MAX_WINDOW:
+            return (
+                jsonify({"message": "Page too deep; narrow with status/type filters"}),
+                400,
+            )
+
+        _epoch = datetime(1970, 1, 1)
+
+        def _keys(model, query, rank):
+            if report_type not in ("all", rank_name[rank]):
+                return 0, []
+            total_n = query.order_by(None).count()
+            rows = (
+                query.order_by(model.created_at.desc(), model.id.desc())
+                .with_entities(model.created_at, model.id)
+                .limit(end)
+                .all()
+            )
+            return total_n, [(c or _epoch, rank, i) for c, i in rows]
+
+        rank_name = {0: "user", 1: "listing"}
+        user_total, user_keys = _keys(UserReport, user_q, 0)
+        listing_total, listing_keys = _keys(ListingReport, listing_q, 1)
+
+        merged = sorted(user_keys + listing_keys, key=lambda k: (k[0], k[2], -k[1]), reverse=True)
+        page_keys = merged[start:end]
+        user_ids = [i for _c, rank, i in page_keys if rank == 0]
+        listing_ids = [i for _c, rank, i in page_keys if rank == 1]
+
+        user_rows = {}
+        if user_ids:
+            user_rows = {
+                r.id: r
+                for r in UserReport.query.options(
                     joinedload(UserReport.reporter),
                     joinedload(UserReport.reported),
                 )
-                .order_by(UserReport.created_at.desc())
-                .limit(200)
+                .filter(UserReport.id.in_(user_ids))
                 .all()
-            )
-        if report_type in ("all", "listing"):
-            listing_reports = (
-                listing_q.options(
+            }
+        listing_rows = {}
+        if listing_ids:
+            listing_rows = {
+                r.id: r
+                for r in ListingReport.query.options(
                     joinedload(ListingReport.reporter),
                     joinedload(ListingReport.car).joinedload(Car.seller),
                 )
-                .order_by(ListingReport.created_at.desc())
-                .limit(200)
+                .filter(ListingReport.id.in_(listing_ids))
                 .all()
-            )
+            }
+        items = []
+        for _c, rank, rid in page_keys:
+            row = (user_rows if rank == 0 else listing_rows).get(rid)
+            if row is not None:
+                items.append(row.to_admin_dict())
 
-        combined = [r.to_admin_dict() for r in user_reports] + [
-            r.to_admin_dict() for r in listing_reports
-        ]
-        combined.sort(key=lambda x: x.get("created_at") or "", reverse=True)
-
-        total = len(combined)
-        start = (page - 1) * per_page
-        end = start + per_page
-        items = combined[start:end]
+        total = user_total + listing_total
         pages = max(1, (total + per_page - 1) // per_page)
 
         return (
@@ -1546,7 +1583,7 @@ def update_user_report(report_id: int):
         _apply_report_status(report, status, admin_notes)
         db.session.commit()
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_user_report",
                 target_type="user_report",
@@ -1592,7 +1629,7 @@ def update_listing_report(report_id: int):
         _apply_report_status(report, status, admin_notes)
         db.session.commit()
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_listing_report",
                 target_type="listing_report",
@@ -1828,7 +1865,7 @@ def update_car_status(car_id: str):
         if alert_car_id is not None:
             dispatch_saved_search_alerts_for_activated([alert_car_id])
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_listing",
                 target_type="car",
@@ -1988,7 +2025,7 @@ def bulk_update_car_status():
             _deliver_listing_moderation_notification(notif, seller)
         dispatch_saved_search_alerts_for_activated(bulk_alert_car_ids)
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_bulk_update_listings",
                 target_type="car",
@@ -2073,7 +2110,7 @@ def broadcast_notification():
                 created_by_user_id=admin_user.id if admin_user else None,
             )
             if admin_user:
-                log_user_action(
+                log_admin_action(
                     admin_user,
                     "admin_schedule_notification",
                     target_type="scheduled_notification",
@@ -2132,7 +2169,7 @@ def broadcast_notification():
             )
 
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_broadcast_notification",
                 target_type="scheduled_notification",
@@ -2220,7 +2257,7 @@ def cancel_scheduled_notification(item_id: int):
         row.updated_at = utcnow()
         db.session.commit()
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_cancel_scheduled_notification",
                 target_type="scheduled_notification",
@@ -2339,7 +2376,7 @@ def update_user_status(user_id: str):
         user.updated_at = utcnow()
         db.session.commit()
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_user",
                 target_type="user",
@@ -2396,7 +2433,7 @@ def update_user_admin_role(user_id: str):
 
         user.updated_at = utcnow()
         db.session.commit()
-        log_user_action(
+        log_admin_action(
             admin_user,
             "admin_update_user_role",
             target_type="user",
@@ -2673,7 +2710,7 @@ def delete_car(car_id: str):
             _deliver_listing_moderation_notification(moderation_notification, moderation_seller)
 
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_delete_listing",
                 target_type="car",
@@ -2714,7 +2751,7 @@ def delete_user(user_id: str):
         )
         db.session.commit()
 
-        log_user_action(
+        log_admin_action(
             admin_user,
             "admin_delete_user",
             target_type="user",
@@ -2772,7 +2809,7 @@ def purge_car(car_id: str):
         invalidate_filter_facets_cache()
 
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_purge_listing",
                 target_type="car",
@@ -2990,7 +3027,7 @@ def approve_listing_revision(revision_id: str):
             except Exception:
                 logger.exception("price-drop dispatch after revision approval failed")
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_approve_listing_revision",
                 target_type="car",
@@ -3057,7 +3094,7 @@ def reject_listing_revision(revision_id: str):
         if notification is not None and seller is not None:
             _deliver_listing_moderation_notification(notification, seller)
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_reject_listing_revision",
                 target_type="car",
@@ -3121,7 +3158,7 @@ def purge_user(user_id: str):
             )
         )
         db.session.commit()
-        log_user_action(
+        log_admin_action(
             admin_user,
             "admin_purge_user",
             target_type="user",
@@ -3271,7 +3308,7 @@ def update_settings():
             db.session.rollback()
             return jsonify({"message": exc.message, "field": exc.field}), 400
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_settings",
                 target_type="settings",

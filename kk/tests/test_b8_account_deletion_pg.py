@@ -34,7 +34,8 @@ pytestmark = pytest.mark.skipif(
     not PG_URL, reason="CARNET_PG_TEST_URL not set (PostgreSQL rehearsal only)"
 )
 
-TIP = "a7d3e1c9b5f2"
+B8 = "a7d3e1c9b5f2"
+TIP = "b8e4f2a6c1d3"  # F-17 admin_audit_log, stacked on B8
 F04 = "f04a1b2c3d4e"
 PREV = "v0w1x2y3z4a5"
 TABLE = "account_deletion_request"
@@ -155,7 +156,8 @@ def test_single_head_stacked_on_f04():
     cfg.set_main_option("script_location", str(_REPO_ROOT / "migrations"))
     script = ScriptDirectory.from_config(cfg)
     assert script.get_heads() == [TIP]
-    assert script.get_revision(TIP).down_revision == F04
+    assert script.get_revision(TIP).down_revision == B8
+    assert script.get_revision(B8).down_revision == F04
     assert script.get_revision(F04).down_revision == PREV
 
 

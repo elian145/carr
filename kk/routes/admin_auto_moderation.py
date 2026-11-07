@@ -11,7 +11,7 @@ import logging
 from flask import Blueprint, jsonify, request
 
 from ..admin_roles import assert_permission
-from ..auth import admin_required, get_current_user, log_user_action
+from ..auth import admin_required, get_current_user, log_admin_action
 from ..auto_moderation import admin_actions, config, stats
 from ..auto_moderation import reasons as reason_mod
 from ..auto_moderation.triggers import request_moderation
@@ -192,7 +192,7 @@ def update_settings():
                 )
         new = config.save_settings(patch)
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_auto_moderation_settings",
                 target_type="settings",
@@ -224,7 +224,7 @@ def kill_switch():
         reason = str(body.get("reason") or "")
         new = config.set_kill_switch(enabled, actor=_admin_name(admin_user), reason=reason)
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_auto_moderation_kill_switch",
                 target_type="settings",
@@ -374,7 +374,7 @@ def override_run(run_id: str):
         else:
             return jsonify({"message": "Unknown action", "code": "invalid_action"}), 400
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 f"admin_auto_moderation_{action}",
                 target_type="car",

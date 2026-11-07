@@ -8,6 +8,7 @@ import os
 import urllib.error
 import urllib.request
 from typing import Any
+from urllib.parse import quote, urlparse
 
 from flask import current_app
 
@@ -179,13 +180,22 @@ def send_account_email_change_code(to_email: str, code: str) -> bool:
 def send_account_email_verification(to_email: str, token: str) -> bool:
     """Send the account email verification magic link."""
     public_base = (os.environ.get("PUBLIC_BASE_URL") or "").strip().rstrip("/")
-    if public_base:
-        link = f"{public_base}/verify-email?token={token}"
-    else:
-        # Must match the app's registered `carzo://auth` intent-filter/URL
-        # scheme host (see AndroidManifest.xml); `carzo://verify-email` is
-        # unclaimed by any app and silently does nothing when tapped (S9).
-        link = f"carzo://auth/verify-email?token={token}"
+    parsed = urlparse(public_base) if public_base else None
+    is_local_http = bool(
+        parsed
+        and parsed.scheme == "http"
+        and (parsed.hostname or "") in ("localhost", "127.0.0.1", "10.0.2.2")
+    )
+    if not parsed or not parsed.netloc or not (parsed.scheme == "https" or is_local_http):
+        # F-28: never fall back to the custom `carzo://` scheme -- any app on
+        # the device can register it and intercept the token. Refuse to send.
+        logger.error(
+            "Account verification email NOT sent: PUBLIC_BASE_URL must be set to "
+            "an https URL (got %s)",
+            "unset" if not public_base else "a non-https value",
+        )
+        return False
+    link = f"{public_base}/verify-email?token={quote(token, safe='')}"
     subject = "Verify your Carzo email"
     text_body = (
         "Verify your Carzo email address by opening this link:\n\n"
