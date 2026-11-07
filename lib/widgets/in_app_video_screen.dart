@@ -301,9 +301,9 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
             ),
           ),
         ),
-        Positioned(
+        PositionedDirectional(
           top: 14,
-          right: 14,
+          end: 14,
           child: IgnorePointer(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

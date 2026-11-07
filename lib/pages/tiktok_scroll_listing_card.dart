@@ -177,9 +177,9 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
           ),
 
           // Back button
-          Positioned(
+          PositionedDirectional(
             top: MediaQuery.of(context).padding.top + 8,
-            left: 8,
+            start: 8,
             child: IconButton(
               tooltip: AppLocalizations.of(context)!.backAction,
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
