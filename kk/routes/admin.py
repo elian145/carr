@@ -1112,16 +1112,29 @@ def dealer_verification_photo(user_public_id: str):
     filename = application.verification_photo_filename if application else None
     if not filename:
         return jsonify({"message": "Verification photo not found"}), 404
-    folder = os.path.join(
-        current_app.config["PRIVATE_UPLOAD_FOLDER"],
-        "dealer_verification",
+    from ..private_media import (
+        PrivateMediaError,
+        PrivateMediaNotFound,
+        read_dealer_verification,
     )
-    response = send_from_directory(
-        folder,
-        os.path.basename(filename),
-        as_attachment=False,
-        max_age=0,
-    )
+
+    try:
+        body, content_type = read_dealer_verification(filename)
+    except PrivateMediaNotFound:
+        return jsonify(
+            {"message": "Verification photo not found", "code": "photo_missing"}
+        ), 404
+    except PrivateMediaError:
+        return jsonify(
+            {
+                "message": "Verification photo storage is temporarily unavailable",
+                "code": "photo_storage_unavailable",
+            }
+        ), 503
+    # Bytes are proxied server-side after the permission check above; no
+    # public or presigned URL is ever issued for this photo.
+    response = current_app.response_class(body, mimetype=content_type)
+    response.headers["Content-Disposition"] = "inline"
     response.headers["Cache-Control"] = "no-store, private"
     response.headers["Pragma"] = "no-cache"
     response.headers["X-Content-Type-Options"] = "nosniff"

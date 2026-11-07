@@ -339,6 +339,59 @@ def r2_chat_put_bytes(
             pass
 
 
+def r2_chat_head_object(*, key: str, timeout: float = 30) -> dict[str, Any] | None:
+    """Metadata-only existence check in the PRIVATE chat bucket.
+
+    Returns ``{"exists": bool, "size": int | None, "content_type": str | None}``
+    (a missing key is a normal outcome, not an error) or ``None`` for an empty
+    key. Raises on a real storage/credential/network failure.
+    """
+    if not key:
+        return None
+    payload: dict[str, Any] = {**_chat_cred_payload(), "op": "head_object", "key": key}
+    result = _run_r2_op(payload, timeout=timeout)
+    return {
+        "exists": bool(result.get("exists")),
+        "size": result.get("size"),
+        "content_type": result.get("content_type"),
+    }
+
+
+def r2_chat_get_bytes(*, key: str, timeout: float = 120) -> bytes:
+    """Download one object from the PRIVATE chat bucket and return its bytes.
+
+    Intended for small, server-proxied private files (e.g. dealer verification
+    photos, capped at 8 MB at upload). Never builds a URL.
+    """
+    if not key:
+        raise RuntimeError("Missing key")
+    fd, path = tempfile.mkstemp(prefix="r2_chat_get_", suffix=".bin")
+    os.close(fd)
+    try:
+        payload: dict[str, Any] = {
+            **_chat_cred_payload(),
+            "op": "get_object",
+            "key": key,
+            "dest_path": path,
+        }
+        _run_r2_op(payload, timeout=timeout)
+        with open(path, "rb") as fp:
+            return fp.read()
+    finally:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+
+def r2_chat_delete_object(*, key: str, timeout: float = 30) -> None:
+    """Delete one object from the PRIVATE chat bucket (idempotent)."""
+    if not key:
+        return
+    payload: dict[str, Any] = {**_chat_cred_payload(), "op": "delete_object", "key": key}
+    _run_r2_op(payload, timeout=timeout)
+
+
 def _get_chat_boto3_client(creds: dict[str, str]):
     """Lazily create and reuse one boto3 S3-compatible client scoped to the
     PRIVATE chat-media bucket credentials (C-10 perf, Fix B).

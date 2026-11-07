@@ -1507,34 +1507,22 @@ def _scrub_dealer_records_for_deletion(
 
 
 def _delete_dealer_verification_file(filename: str) -> None:
-    """Best-effort delete of a private dealer-verification photo from local
-    disk (mirrors ``kk/routes/media.py::_delete_media_storage_object()``'s
-    fail-safe posture -- an already-missing file or a filesystem hiccup must
-    never raise, since this always runs *after* the DB delete already
-    committed).
+    """Best-effort delete of a private dealer-verification photo (mirrors
+    ``kk/routes/media.py::_delete_media_storage_object()``'s fail-safe posture
+    -- an already-missing file/object or a storage hiccup must never raise,
+    since this always runs *after* the DB delete already committed).
 
-    Not folded into ``_delete_media_storage_object()`` because verification
-    photos are stored by bare filename under
-    ``PRIVATE_UPLOAD_FOLDER/dealer_verification/`` (private disk, never R2,
-    never a public ``uploads/...`` URL -- see
-    ``kk/routes/user.py::upload_dealer_verification_photo()``), a different
-    layout than every other media type that helper already understands.
+    The value is either a private-R2 reference (``r2:dealer_verification/..``)
+    or a legacy bare filename on the private disk; see ``kk/private_media.py``.
     """
-    name = (filename or "").strip()
-    if not name:
-        return
-    try:
-        folder = os.path.join(
-            current_app.config["PRIVATE_UPLOAD_FOLDER"], "dealer_verification"
-        )
-        path = os.path.join(folder, os.path.basename(name))
-        if os.path.isfile(path):
-            os.remove(path)
-    except OSError as e:
+    from ..private_media import delete_dealer_verification
+
+    # Handles both a private-R2 reference ("r2:dealer_verification/...") and a
+    # legacy bare local-disk filename. Never raises.
+    if not delete_dealer_verification(filename):
         current_app.logger.warning(
-            "delete_account: failed to delete dealer verification photo "
-            "(best-effort): %s",
-            e,
+            "delete_account: dealer verification photo not fully deleted "
+            "(best-effort)"
         )
 
 

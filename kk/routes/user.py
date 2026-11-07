@@ -1088,24 +1088,46 @@ def upload_dealer_verification_photo():
 
         safe_name = generate_secure_filename(file.filename)
         extension = os.path.splitext(safe_name)[1].lower() or ".jpg"
-        filename = f"{secrets.token_hex(24)}{extension}"
-        folder = os.path.join(
-            current_app.config["PRIVATE_UPLOAD_FOLDER"],
-            "dealer_verification",
+
+        # Durable private storage (private R2 bucket in production; see
+        # kk/private_media.py). The photo is stored BEFORE the DB row points
+        # at it, and a storage failure leaves the DB untouched (503) -- there
+        # is no silent fallback to ephemeral local disk.
+        from ..private_media import (
+            PrivateMediaError,
+            delete_dealer_verification,
+            store_dealer_verification,
         )
-        os.makedirs(folder, exist_ok=True)
-        file.save(os.path.join(folder, filename))
+
+        try:
+            file.stream.seek(0)
+            payload = file.stream.read()
+        except Exception:
+            payload = b""
+        try:
+            filename = store_dealer_verification(payload, extension)
+        except PrivateMediaError:
+            return jsonify(
+                {
+                    "message": "Photo storage is temporarily unavailable. "
+                    "Please try again shortly.",
+                    "code": "photo_storage_unavailable",
+                }
+            ), 503
 
         previous = application.verification_photo_filename
         application.verification_photo_filename = filename
         application.updated_at = utcnow()
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            # Do not leave an orphan private object behind.
+            delete_dealer_verification(filename)
+            raise
 
         if previous and previous != filename:
-            try:
-                os.remove(os.path.join(folder, os.path.basename(previous)))
-            except OSError:
-                pass
+            delete_dealer_verification(previous)
 
         log_user_action(
             current_user,
