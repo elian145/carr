@@ -68,6 +68,7 @@ services:
   - type: web
     runtime: python
     name: carr
+    autoDeployTrigger: 'off'  # manual deploys only: no automatic deploy on commit
     # Inline command avoids Windows CRLF in .sh files breaking `bash build_render.sh` on Linux (exit 1, no logs).
     # If the dashboard overrides Build Command, paste this same line there.
     buildCommand: echo "=== pip upgrade ===" && pip install --upgrade pip setuptools wheel && echo "=== pip install ===" && pip install --no-cache-dir -r kk/requirements.txt && echo "=== build OK ==="
@@ -97,6 +98,7 @@ services:
   - type: web
     runtime: node
     name: carr-admin
+    autoDeployTrigger: 'off'  # manual deploys only: no automatic deploy on commit
     rootDir: admin-web
     buildCommand: npm ci && npm run build
     startCommand: npm start
@@ -144,6 +146,7 @@ services:
   - type: worker
     runtime: python
     name: carr-worker-fra
+    autoDeployTrigger: 'off'  # manual deploys only: no automatic deploy on commit
     region: frankfurt
     numInstances: 1
     # Operational hardening: static-ffmpeg==3.0 (kk/requirements.txt) does NOT
@@ -211,6 +214,7 @@ services:
   - type: worker
     runtime: python
     name: carr-beat-fra
+    autoDeployTrigger: 'off'  # manual deploys only: no automatic deploy on commit
     region: frankfurt
     numInstances: 1
     buildCommand: echo "=== pip upgrade ===" && pip install --upgrade pip setuptools wheel && echo "=== pip install ===" && pip install --no-cache-dir -r kk/requirements.txt && echo "=== build OK ==="
