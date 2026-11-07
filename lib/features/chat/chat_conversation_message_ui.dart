@@ -304,15 +304,15 @@ mixin _ChatConversationMessageUi on _ChatConversationMessageUiNav {
                   color: Colors.black38,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Center(
+                child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(strokeWidth: 2),
-                      SizedBox(height: 10),
+                      const CircularProgressIndicator(strokeWidth: 2),
+                      const SizedBox(height: 10),
                       Text(
-                        'Sending...',
-                        style: TextStyle(
+                        AppLocalizations.of(context)!.sendingEllipsis,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
                         ),

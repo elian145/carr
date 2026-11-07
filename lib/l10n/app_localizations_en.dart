@@ -2536,7 +2536,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get specDatabaseUnavailableRestartTheAppAfterFlutterPubGet =>
-      'Spec database unavailable. Restart the app after flutter pub get.';
+      'Vehicle specifications are unavailable right now. Please restart the app.';
 
   @override
   String get catalogAutoFill => 'Catalog auto-fill';
@@ -2879,4 +2879,30 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get softUpdateFallbackMessage =>
       'A newer version of CarNet is available.';
+
+  @override
+  String get currentPasswordLabel => 'Current password';
+
+  @override
+  String get pleaseEnterCurrentPassword => 'Please enter your current password';
+
+  @override
+  String get passwordChangedSuccessfully => 'Password changed successfully';
+
+  @override
+  String get unableToChangePasswordCheckCurrent =>
+      'Unable to change password. Please check your current password and try again.';
+
+  @override
+  String get unableToChangePasswordTryLater =>
+      'Unable to change password. Please try again later.';
+
+  @override
+  String get sendingEllipsis => 'Sending...';
+
+  @override
+  String get videoBadge => 'VIDEO';
+
+  @override
+  String get viewDetailsButton => 'View Details';
 }

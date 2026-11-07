@@ -863,7 +863,7 @@
   "specsAppliedYearSetStep2FieldsPreFilled": "مواسەفات جێبەجێ کرا؛ ساڵ دانرا و خانەکانی هەنگاو 2 پڕکرانەوە.",
   "search": "گەڕان...",
   "loadingVehicleSpecs": "مواسەفاتی ئۆتۆمبێل بار دەکرێت…",
-  "specDatabaseUnavailableRestartTheAppAfterFlutterPubGet": "بنکەی زانیاری مواسەفات بەردەست نییە. دوای flutter pub get ئەپەکە دووبارە بکەرەوە.",
+  "specDatabaseUnavailableRestartTheAppAfterFlutterPubGet": "زانیاری تایبەتمەندی ئۆتۆمبێل ئێستا بەردەست نییە. تکایە ئەپەکە دووبارە بکەرەوە.",
   "catalogAutoFill": "پڕکردنەوەی خۆکاری کاتالۆگ",
   "selectAModelYearToLoadMatchingSpecs": "ساڵی مۆدێل هەڵبژێرە بۆ بارکردنی مواسەفاتی گونجاو.",
   "modelYear": "ساڵی مۆدێل",
@@ -974,5 +974,13 @@
   "notNowButton": "ئێستا نا",
   "tryAgainButton": "دووبارە هەوڵبدەرەوە",
   "forceUpdateFallbackMessage": "تکایە CarNet نوێ بکەرەوە بۆ بەردەوامبوون.",
-  "softUpdateFallbackMessage": "وەشانێکی نوێتری CarNet بەردەستە."
+  "softUpdateFallbackMessage": "وەشانێکی نوێتری CarNet بەردەستە.",
+  "currentPasswordLabel": "وشەی نهێنی ئێستا",
+  "pleaseEnterCurrentPassword": "تکایە وشەی نهێنی ئێستات بنووسە",
+  "passwordChangedSuccessfully": "وشەی نهێنی بە سەرکەوتوویی گۆڕدرا",
+  "unableToChangePasswordCheckCurrent": "نەتوانرا وشەی نهێنی بگۆڕدرێت. تکایە وشەی نهێنی ئێستا بپشکنە و دووبارە هەوڵ بدەرەوە.",
+  "unableToChangePasswordTryLater": "نەتوانرا وشەی نهێنی بگۆڕدرێت. تکایە دواتر دووبارە هەوڵ بدەرەوە.",
+  "sendingEllipsis": "دەنێردرێت...",
+  "videoBadge": "ڤیدیۆ",
+  "viewDetailsButton": "بینینی وردەکاری"
 }

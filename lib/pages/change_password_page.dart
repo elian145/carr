@@ -56,8 +56,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password changed successfully'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.passwordChangedSuccessfully),
           backgroundColor: Colors.green,
         ),
       );
@@ -71,8 +71,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             userErrorText(
               context,
               e,
-              fallback:
-                  'Unable to change password. Please check your current password and try again.',
+              fallback: AppLocalizations.of(context)!
+                  .unableToChangePasswordCheckCurrent,
             ),
           ),
           backgroundColor: Colors.red,
@@ -88,7 +88,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               context,
               e,
               fallback:
-                  'Unable to change password. Please try again later.',
+                  AppLocalizations.of(context)!.unableToChangePasswordTryLater,
             ),
           ),
           backgroundColor: Colors.red,
@@ -104,7 +104,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Change password'),
+        title: Text(loc.changePasswordTitle),
         actions: const [ThemeToggleWidget()],
       ),
       body: SingleChildScrollView(
@@ -123,7 +123,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 textInputAction: TextInputAction.next,
                 onFieldSubmitted: (_) => _newFocus.requestFocus(),
                 decoration: InputDecoration(
-                  labelText: 'Current password',
+                  labelText: loc.currentPasswordLabel,
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     tooltip: _obscureCurrent
@@ -135,7 +135,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 ),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) {
-                    return 'Please enter your current password';
+                    return loc.pleaseEnterCurrentPassword;
                   }
                   return null;
                 },
@@ -148,7 +148,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 textInputAction: TextInputAction.next,
                 onFieldSubmitted: (_) => _confirmFocus.requestFocus(),
                 decoration: InputDecoration(
-                  labelText: 'New password',
+                  labelText: loc.newPasswordLabel,
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     tooltip: _obscureNew
@@ -160,22 +160,22 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 ),
                 validator: (v) {
                   if (v == null || v.isEmpty) {
-                    return 'Please enter a new password';
+                    return loc.pleaseEnterNewPassword;
                   }
                   if (v.length < 8) {
-                    return 'Password must be at least 8 characters';
+                    return loc.passwordMin8;
                   }
                   if (!RegExp(r'[A-Z]').hasMatch(v)) {
-                    return 'Password must contain at least one uppercase letter';
+                    return loc.passwordUppercase;
                   }
                   if (!RegExp(r'[a-z]').hasMatch(v)) {
-                    return 'Password must contain at least one lowercase letter';
+                    return loc.passwordLowercase;
                   }
                   if (!RegExp(r'\d').hasMatch(v)) {
-                    return 'Password must contain at least one number';
+                    return loc.passwordNumber;
                   }
                   if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(v)) {
-                    return 'Password must contain at least one special character';
+                    return loc.passwordSpecialChar;
                   }
                   return null;
                 },
@@ -188,7 +188,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _submit(),
                 decoration: InputDecoration(
-                  labelText: 'Confirm new password',
+                  labelText: loc.confirmNewPasswordLabel,
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     tooltip: _obscureConfirm
@@ -200,7 +200,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 ),
                 validator: (v) {
                   if (v != _newController.text) {
-                    return 'Passwords do not match';
+                    return loc.passwordsDoNotMatch;
                   }
                   return null;
                 },
@@ -214,7 +214,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         width: 24,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Change password'),
+                    : Text(loc.changePasswordTitle),
               ),
             ],
           ),

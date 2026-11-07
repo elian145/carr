@@ -316,9 +316,9 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
                         const Icon(Icons.touch_app,
                             color: Colors.white, size: 16),
                         const SizedBox(width: 6),
-                        const Text(
-                          'View Details',
-                          style: TextStyle(
+                        Text(
+                          AppLocalizations.of(context)!.viewDetailsButton,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,

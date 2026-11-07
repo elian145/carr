@@ -863,7 +863,7 @@
   "specsAppliedYearSetStep2FieldsPreFilled": "تم تطبيق المواصفات — تم ضبط السنة وملء حقول الخطوة 2 مسبقا.",
   "search": "بحث...",
   "loadingVehicleSpecs": "جاري تحميل مواصفات السيارة…",
-  "specDatabaseUnavailableRestartTheAppAfterFlutterPubGet": "قاعدة بيانات المواصفات غير متاحة. أعد تشغيل التطبيق بعد flutter pub get.",
+  "specDatabaseUnavailableRestartTheAppAfterFlutterPubGet": "مواصفات المركبات غير متاحة حاليًا. يرجى إعادة تشغيل التطبيق.",
   "catalogAutoFill": "تعبئة تلقائية من الكتالوج",
   "selectAModelYearToLoadMatchingSpecs": "اختر سنة الموديل لتحميل المواصفات المطابقة.",
   "modelYear": "سنة الموديل",
@@ -974,5 +974,13 @@
   "notNowButton": "ليس الآن",
   "tryAgainButton": "حاول مرة أخرى",
   "forceUpdateFallbackMessage": "يرجى تحديث CarNet للمتابعة.",
-  "softUpdateFallbackMessage": "يتوفر إصدار أحدث من CarNet."
+  "softUpdateFallbackMessage": "يتوفر إصدار أحدث من CarNet.",
+  "currentPasswordLabel": "كلمة المرور الحالية",
+  "pleaseEnterCurrentPassword": "يرجى إدخال كلمة المرور الحالية",
+  "passwordChangedSuccessfully": "تم تغيير كلمة المرور بنجاح",
+  "unableToChangePasswordCheckCurrent": "تعذر تغيير كلمة المرور. يرجى التحقق من كلمة المرور الحالية والمحاولة مرة أخرى.",
+  "unableToChangePasswordTryLater": "تعذر تغيير كلمة المرور. يرجى المحاولة لاحقًا.",
+  "sendingEllipsis": "جارٍ الإرسال...",
+  "videoBadge": "فيديو",
+  "viewDetailsButton": "عرض التفاصيل"
 }

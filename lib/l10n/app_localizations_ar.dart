@@ -2542,7 +2542,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get specDatabaseUnavailableRestartTheAppAfterFlutterPubGet =>
-      'قاعدة بيانات المواصفات غير متاحة. أعد تشغيل التطبيق بعد flutter pub get.';
+      'مواصفات المركبات غير متاحة حاليًا. يرجى إعادة تشغيل التطبيق.';
 
   @override
   String get catalogAutoFill => 'تعبئة تلقائية من الكتالوج';
@@ -2880,4 +2880,30 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get softUpdateFallbackMessage => 'يتوفر إصدار أحدث من CarNet.';
+
+  @override
+  String get currentPasswordLabel => 'كلمة المرور الحالية';
+
+  @override
+  String get pleaseEnterCurrentPassword => 'يرجى إدخال كلمة المرور الحالية';
+
+  @override
+  String get passwordChangedSuccessfully => 'تم تغيير كلمة المرور بنجاح';
+
+  @override
+  String get unableToChangePasswordCheckCurrent =>
+      'تعذر تغيير كلمة المرور. يرجى التحقق من كلمة المرور الحالية والمحاولة مرة أخرى.';
+
+  @override
+  String get unableToChangePasswordTryLater =>
+      'تعذر تغيير كلمة المرور. يرجى المحاولة لاحقًا.';
+
+  @override
+  String get sendingEllipsis => 'جارٍ الإرسال...';
+
+  @override
+  String get videoBadge => 'فيديو';
+
+  @override
+  String get viewDetailsButton => 'عرض التفاصيل';
 }

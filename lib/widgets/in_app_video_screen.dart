@@ -311,9 +311,9 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
                 color: Colors.black54,
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: const Text(
-                'VIDEO',
-                style: TextStyle(
+              child: Text(
+                AppLocalizations.of(context)!.videoBadge,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
@@ -436,7 +436,7 @@ class _InAppVideoScreenState extends State<InAppVideoScreen> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: const Text('Video'),
+        title: Text(AppLocalizations.of(context)!.videoBadge),
       ),
       body: SafeArea(
         child: Center(

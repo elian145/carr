@@ -901,7 +901,7 @@
   "specsAppliedYearSetStep2FieldsPreFilled": "Specs applied — year set; step 2 fields pre-filled.",
   "search": "Search...",
   "loadingVehicleSpecs": "Loading vehicle specs…",
-  "specDatabaseUnavailableRestartTheAppAfterFlutterPubGet": "Spec database unavailable. Restart the app after flutter pub get.",
+  "specDatabaseUnavailableRestartTheAppAfterFlutterPubGet": "Vehicle specifications are unavailable right now. Please restart the app.",
   "catalogAutoFill": "Catalog auto-fill",
   "selectAModelYearToLoadMatchingSpecs": "Select a model year to load matching specs.",
   "modelYear": "Model year",
@@ -1020,5 +1020,13 @@
   "notNowButton": "Not now",
   "tryAgainButton": "Try again",
   "forceUpdateFallbackMessage": "Please update CarNet to continue.",
-  "softUpdateFallbackMessage": "A newer version of CarNet is available."
+  "softUpdateFallbackMessage": "A newer version of CarNet is available.",
+  "currentPasswordLabel": "Current password",
+  "pleaseEnterCurrentPassword": "Please enter your current password",
+  "passwordChangedSuccessfully": "Password changed successfully",
+  "unableToChangePasswordCheckCurrent": "Unable to change password. Please check your current password and try again.",
+  "unableToChangePasswordTryLater": "Unable to change password. Please try again later.",
+  "sendingEllipsis": "Sending...",
+  "videoBadge": "VIDEO",
+  "viewDetailsButton": "View Details"
 }
