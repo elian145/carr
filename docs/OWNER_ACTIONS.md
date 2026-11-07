@@ -28,4 +28,6 @@ Finding IDs refer to the CarNet audit plan (F-xx) and `PRODUCTION_AUDIT.md` (C-x
 - [ ] Privacy disclosures: Play Data Safety, Apple App Privacy, in-app and web privacy policy consistent with actual data handling (see F-29).
 - [ ] R2 lifecycle: apply the private-bucket lifecycle/retention rules per `docs/R2_PRIVATE_BUCKET_LIFECYCLE.md` in the Cloudflare dashboard; verify uploads work from the deployed image.
 - [ ] Backup/restore: confirm Neon backups/PITR, perform and record a restore drill; record R2 backup approach.
+- [ ] **Build numbering:** look up the highest iOS build in App Store Connect and Android versionCode in Play, set Codemagic variables `BUILD_NUMBER_OFFSET` (above both) and `USE_MONOTONIC_BUILD_NUMBER=1` (`scripts/compute_build_number.py`). Until then iOS uses the legacy `CM_BUILD_ID` derivation.
+- [ ] **Toolchain:** confirm Flutter `3.47.5` (`.flutter-version`, pinned in CI/Codemagic) is the version you ship with; Python is pinned to Render's `.python-version` (3.11.9) in Docker/CI.
 - [ ] Physical-device tests: Android and iOS, App Links/Universal Links, push delivery (dev/stage/prod), chat incoming/outgoing, Maps/Places, photo upload on slow mobile data, Kurdish/Arabic RTL, call button (`tel:` with stored phone formats).

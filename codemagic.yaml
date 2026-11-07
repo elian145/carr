@@ -5,7 +5,7 @@ workflows:
     max_build_duration: 90
     instance_type: mac_mini_m1
     environment:
-      flutter: stable
+      flutter: 3.47.5
       xcode: latest
       cocoapods: default
       groups:
@@ -143,7 +143,7 @@ workflows:
     integrations:
       app_store_connect: App Store Connect
     environment:
-      flutter: stable
+      flutter: 3.47.5
       xcode: latest
       cocoapods: default
       groups:
@@ -221,10 +221,19 @@ workflows:
           /usr/libexec/PlistBuddy -c 'Print :provisioningProfiles' "$EXPORT_PLIST" 2>/dev/null || true
           # Apple requires CFBundleVersion to increase on every upload and be ≤18 chars.
           # CM_BUILD_ID is unique per build but can exceed Apple's 18-character limit.
-          RAW_BUILD_ID="${CM_BUILD_ID:-${CM_BUILD_NUMBER:-2}}"
-          BUILD_NUM="${RAW_BUILD_ID: -18}"
-          BUILD_NUM="${BUILD_NUM#"${BUILD_NUM%%[!0]*}"}"
-          BUILD_NUM="${BUILD_NUM:-1}"
+          if [ "${USE_MONOTONIC_BUILD_NUMBER:-}" = "1" ]; then
+            # Preferred: BUILD_NUMBER_OFFSET + sequential CI counter (never below
+            # the pubspec build number). Owner must set BUILD_NUMBER_OFFSET above
+            # the highest build already in App Store Connect (docs/OWNER_ACTIONS.md).
+            BUILD_NUM="$(python3 scripts/compute_build_number.py)"
+          else
+            # LEGACY (default until the owner opts in): last 18 chars of CM_BUILD_ID,
+            # which is not guaranteed numeric or monotonic.
+            RAW_BUILD_ID="${CM_BUILD_ID:-${CM_BUILD_NUMBER:-2}}"
+            BUILD_NUM="${RAW_BUILD_ID: -18}"
+            BUILD_NUM="${BUILD_NUM#"${BUILD_NUM%%[!0]*}"}"
+            BUILD_NUM="${BUILD_NUM:-1}"
+          fi
           if [ "${#BUILD_NUM}" -gt 18 ]; then
             echo "ERROR: CFBundleVersion exceeds 18 chars: $BUILD_NUM"
             exit 1
@@ -274,7 +283,7 @@ workflows:
   android_release_unsigned:
     name: Android APK (release, UNSIGNED - CI test artifact only)
     environment:
-      flutter: stable
+      flutter: 3.47.5
       vars:
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
         # Release builds enforce HTTPS. Override in Codemagic UI.
@@ -320,7 +329,7 @@ workflows:
     max_build_duration: 60
     instance_type: linux_x2
     environment:
-      flutter: stable
+      flutter: 3.47.5
       groups:
         - a
       vars:
@@ -363,7 +372,7 @@ workflows:
     max_build_duration: 90
     instance_type: linux_x2
     environment:
-      flutter: stable
+      flutter: 3.47.5
       groups:
         - a
       vars:

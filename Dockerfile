@@ -5,7 +5,7 @@
 # Required production env: APP_ENV, SECRET_KEY, JWT_SECRET_KEY, DATABASE_URL
 # (see DEPLOYMENT.md). PORT defaults to 5000 inside the container.
 
-FROM python:3.12-slim-bookworm
+FROM python:3.11.9-slim-bookworm
 
 WORKDIR /app
 
