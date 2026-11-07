@@ -1,0 +1,5 @@
+/* Permission prompts shown by iOS. Keep keys in sync with Info.plist and the other *.lproj files. */
+"NSCameraUsageDescription" = "نحتاج إلى الوصول إلى الكاميرا لالتقاط صور السيارات وإرسال الصور في المحادثة.";
+"NSPhotoLibraryUsageDescription" = "نحتاج إلى الوصول إلى مكتبة الصور لاختيار صور السيارات.";
+"NSPhotoLibraryAddUsageDescription" = "نحتاج إلى إذن لحفظ صور السيارات.";
+"NSMicrophoneUsageDescription" = "نحتاج إلى الوصول إلى الميكروفون لإرسال الرسائل الصوتية في المحادثة وتسجيل الفيديو عند إضافة إعلان.";
