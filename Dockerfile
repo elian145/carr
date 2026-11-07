@@ -21,6 +21,8 @@ RUN pip install --no-cache-dir -r /app/kk/requirements.txt
 COPY gunicorn.conf.py /app/gunicorn.conf.py
 COPY migrations /app/migrations
 COPY kk /app/kk
+# F-31 / C-08: kk/r2_ops.py resolves ../tools/r2_s3_op.py relative to kk/.
+COPY tools/r2_s3_op.py /app/tools/r2_s3_op.py
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \

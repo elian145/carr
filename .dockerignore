@@ -24,7 +24,9 @@ build/
 test/
 integration_test/
 docs/
-tools/
+# F-31 / C-08: kk/r2_ops.py runs tools/r2_s3_op.py; keep only that file.
+tools/*
+!tools/r2_s3_op.py
 scripts/
 *.apk
 *.ipa
