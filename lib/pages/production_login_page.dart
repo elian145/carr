@@ -539,9 +539,15 @@ class _LoginPageState extends State<LoginPage> {
       );
     }
 
-    Widget link(String label, LegalDocument doc) => GestureDetector(
+    Widget link(String label, LegalDocument doc) => Semantics(
+          link: true,
+          label: label,
+          excludeSemantics: true,
           onTap: () => openLegal(doc),
-          child: Text(label, style: linkStyle),
+          child: GestureDetector(
+            onTap: () => openLegal(doc),
+            child: Text(label, style: linkStyle),
+          ),
         );
 
     return Wrap(
