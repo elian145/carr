@@ -63,6 +63,7 @@ def make_celery() -> Celery:
             "kk.tasks.video_tasks",
             "kk.tasks.media_readiness_tasks",
             "kk.tasks.moderation_tasks",
+            "kk.tasks.retention_tasks",
         ],
     )
     c.Task = FlaskContextTask
@@ -170,6 +171,12 @@ def make_celery() -> Celery:
             "clear-expired-featured-listings": {
                 "task": "kk.tasks.listing_tasks.clear_expired_featured_listings",
                 "schedule": 3600.0,  # hourly
+            },
+            # F-16: opt-in retention cleanup. A no-op unless RETENTION_*
+            # env vars are set (see kk/retention.py, docs/RETENTION_CLEANUP.md).
+            "retention-cleanup": {
+                "task": "kk.tasks.retention_tasks.run_retention_cleanup",
+                "schedule": 86400.0,  # daily
             },
             # OOM-fix follow-up: backstop sweep for R2 async-image-staging
             # objects abandoned by a lost/crashed job (see
