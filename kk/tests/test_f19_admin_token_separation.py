@@ -686,3 +686,25 @@ def test_pem_with_escaped_newlines_is_accepted(keys, monkeypatch):
 def test_hunk_status_info():
     """Documents (does not assert) whether the auth.py hunk is already applied."""
     assert isinstance(_hunk_present(), bool)
+
+
+def test_issued_admin_tokens_always_carry_exp_even_if_config_disables_expiry(dual):
+    """F-32: admin-web rejects exp-less tokens, so the API must never mint one."""
+    from kk.admin_tokens import issue_admin_token
+
+    claims = {"is_admin": True, "account_scope": "admin"}
+    with dual.app.app_context():
+        saved = {
+            k: dual.app.config[k]
+            for k in ("JWT_ACCESS_TOKEN_EXPIRES", "JWT_REFRESH_TOKEN_EXPIRES")
+        }
+        try:
+            for k in saved:
+                dual.app.config[k] = False
+            for kind in ("access", "refresh"):
+                tok = issue_admin_token("x", kind, claims)
+                payload = pyjwt.decode(tok, options={"verify_signature": False})
+                assert isinstance(payload.get("exp"), int)
+                assert payload["exp"] > int(datetime.now(timezone.utc).timestamp())
+        finally:
+            dual.app.config.update(saved)
