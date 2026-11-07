@@ -161,3 +161,12 @@ def test_account_deletion_request_does_not_require_auth_header():
         )
     assert resp.status_code not in (401, 403)
 
+
+def test_delete_account_page_states_chat_media_retention_and_request_storage():
+    """B8-3: matches the real behaviour (chat messages AND chat media kept,
+    no fixed retention period) and discloses that web requests are stored."""
+    body = _client().get("/delete-account").get_data(as_text=True)
+    assert "chat media (photos, videos and voice notes)" in body
+    assert "no fixed retention period and no automatic expiry" in body
+    assert "We store your request" in body
+    assert "erased from the request record" in body
