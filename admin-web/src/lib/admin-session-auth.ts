@@ -15,7 +15,27 @@ export function apiUpstreamBase(): string {
   ).replace(/\/+$/, "");
 }
 
+function isProductionRuntime(): boolean {
+  return (
+    (process.env.NODE_ENV || "").trim() === "production" ||
+    (process.env.APP_ENV || "").trim().toLowerCase() === "production"
+  );
+}
+
+/**
+ * F-32: in production the session cookies are ALWAYS `Secure`; the flag no
+ * longer depends on a client/proxy-supplied `x-forwarded-proto`. Plain-HTTP
+ * production-mode runs (e.g. `next start` on localhost) must opt out
+ * explicitly with ADMIN_COOKIE_ALLOW_HTTP=1. Outside production the scheme is
+ * derived from the request as before.
+ */
 export function cookieSecureFromRequest(request: Request): boolean {
+  if (
+    isProductionRuntime() &&
+    (process.env.ADMIN_COOKIE_ALLOW_HTTP || "").trim() !== "1"
+  ) {
+    return true;
+  }
   const proto = request.headers.get("x-forwarded-proto");
   if (proto) return proto.split(",")[0].trim() === "https";
   try {
@@ -39,10 +59,7 @@ function adminPublicKey(): string {
 
 /** Production fails closed unless the edge can actually verify signatures. */
 function requireSecretInProd(): boolean {
-  const isProd =
-    (process.env.NODE_ENV || "").trim() === "production" ||
-    (process.env.APP_ENV || "").trim().toLowerCase() === "production";
-  return isProd && !jwtSecret() && !adminPublicKey();
+  return isProductionRuntime() && !jwtSecret() && !adminPublicKey();
 }
 
 type CookieJar = {
@@ -176,7 +193,12 @@ export async function resolveAdminAccessToken(
   const publicKey = adminPublicKey();
   const accessRaw = jar.get(ADMIN_JWT_COOKIE)?.value || "";
   if (accessRaw) {
-    const check = await verifyAdminAccessJwt(accessRaw, secret, publicKey);
+    const check = await verifyAdminAccessJwt(accessRaw, secret, publicKey, {
+      // F-32: unsigned claims only with an explicit, non-production opt-in.
+      allowUnsignedDev:
+        !isProductionRuntime() &&
+        (process.env.ADMIN_ALLOW_UNSIGNED_DEV || "").trim() === "1",
+    });
     if (check.ok) return accessRaw;
   }
 

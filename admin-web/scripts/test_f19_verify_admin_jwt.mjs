@@ -88,8 +88,9 @@ test("legacy HS256 behaviour is unchanged when only JWT_SECRET_KEY is configured
   const hs = mintHs256("s3cret", adminPayload());
   assert.equal((await verifyAdminAccessJwt(hs, "s3cret")).ok, true);
   assert.equal((await verifyAdminAccessJwt(hs, "wrong")).reason, "signature");
-  // dev fallback (no secret, no key): structure only, exactly as before
-  assert.equal((await verifyAdminAccessJwt(hs, "")).ok, true);
+  // F-32: no secret, no key => fail closed unless the dev opt-in is explicit
+  assert.equal((await verifyAdminAccessJwt(hs, "")).reason, "unverifiable");
+  assert.equal((await verifyAdminAccessJwt(hs, "", "", { allowUnsignedDev: true })).ok, true);
   const es = mintEs256(good.privateKey, adminPayload());
   assert.equal((await verifyAdminAccessJwt(es, "s3cret")).reason, "no_public_key");
 });
@@ -123,5 +124,49 @@ test("production legacy (secret only) still works; dual (secret + public key) ac
     const es = mintEs256(good.privateKey, adminPayload());
     assert.equal(await resolveAdminAccessToken(jarOf(hs)), hs);
     assert.equal(await resolveAdminAccessToken(jarOf(es)), es);
+  });
+});
+
+// ---- F-32 ------------------------------------------------------------------------
+test("F-32: tokens without a numeric exp are rejected (HS256 and ES256)", async () => {
+  const { exp: _drop, ...noExp } = adminPayload();
+  assert.equal((await verifyAdminAccessJwt(mintHs256("s3cret", noExp), "s3cret")).reason, "no_exp");
+  assert.equal((await verifyAdminAccessJwt(mintEs256(good.privateKey, noExp), "", good.pem)).reason, "no_exp");
+  assert.equal(
+    (await verifyAdminAccessJwt(mintHs256("s3cret", adminPayload({ exp: "9999999999" })), "s3cret")).reason,
+    "no_exp",
+  );
+});
+
+test("F-32: dev without secret accepts unsigned claims ONLY with explicit non-production opt-in", async () => {
+  const hs = mintHs256("whatever", adminPayload());
+  await withEnv({ NODE_ENV: "development", APP_ENV: undefined, JWT_SECRET_KEY: undefined, ADMIN_JWT_PUBLIC_KEY: undefined, ADMIN_ALLOW_UNSIGNED_DEV: undefined }, async () => {
+    assert.equal(await resolveAdminAccessToken(jarOf(hs)), null);
+  });
+  await withEnv({ NODE_ENV: "development", APP_ENV: undefined, JWT_SECRET_KEY: undefined, ADMIN_JWT_PUBLIC_KEY: undefined, ADMIN_ALLOW_UNSIGNED_DEV: "1" }, async () => {
+    assert.equal(await resolveAdminAccessToken(jarOf(hs)), hs);
+  });
+  // the opt-in is ignored in production (which also fails closed without any key)
+  await withEnv({ NODE_ENV: "production", JWT_SECRET_KEY: undefined, ADMIN_JWT_PUBLIC_KEY: undefined, ADMIN_ALLOW_UNSIGNED_DEV: "1" }, async () => {
+    assert.equal(await resolveAdminAccessToken(jarOf(hs)), null);
+  });
+  await withEnv({ NODE_ENV: "production", JWT_SECRET_KEY: "s3cret", ADMIN_JWT_PUBLIC_KEY: undefined, ADMIN_ALLOW_UNSIGNED_DEV: "1" }, async () => {
+    assert.equal(await resolveAdminAccessToken(jarOf(hs)), null); // wrong signature still rejected
+  });
+});
+
+test("F-32: cookie Secure flag is forced on in production regardless of x-forwarded-proto", async () => {
+  const { cookieSecureFromRequest } = loader.load("src/lib/admin-session-auth.ts");
+  const req = (headers, url = "http://admin.example.com/x") => new Request(url, { headers });
+  await withEnv({ NODE_ENV: "production", APP_ENV: undefined, ADMIN_COOKIE_ALLOW_HTTP: undefined }, async () => {
+    assert.equal(cookieSecureFromRequest(req({})), true);
+    assert.equal(cookieSecureFromRequest(req({ "x-forwarded-proto": "http" })), true);
+  });
+  await withEnv({ NODE_ENV: "production", ADMIN_COOKIE_ALLOW_HTTP: "1" }, async () => {
+    assert.equal(cookieSecureFromRequest(req({ "x-forwarded-proto": "http" })), false);
+  });
+  await withEnv({ NODE_ENV: "development", APP_ENV: undefined }, async () => {
+    assert.equal(cookieSecureFromRequest(req({})), false);
+    assert.equal(cookieSecureFromRequest(req({ "x-forwarded-proto": "https" })), true);
   });
 });

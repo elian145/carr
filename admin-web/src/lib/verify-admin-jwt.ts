@@ -79,8 +79,9 @@ export type AdminJwtCheck =
  *    without a configured public key the token is rejected (never trusted
  *    unverified) and the token must carry `account_scope=admin`.
  *  - alg HS256 (legacy): when `secret` is set the signature must match. When
- *    `secret` is empty AND no `publicKey` is configured, only structure + exp
- *    are checked (dev fallback; callers refuse this in production). When a
+ *    `secret` is empty AND no `publicKey` is configured the token is rejected
+ *    ("unverifiable") unless `options.allowUnsignedDev` is true (explicit
+ *    non-production dev opt-in; F-32). When a
  *    `publicKey` is configured but `secret` is empty (the post-migration state)
  *    HS256 tokens are rejected: admin-web cannot verify them.
  * Requires `is_admin` / `account_scope=admin` claim so a normal user JWT
@@ -90,6 +91,7 @@ export async function verifyAdminAccessJwt(
   token: string,
   secret: string,
   publicKey: string = "",
+  options: { allowUnsignedDev?: boolean } = {},
 ): Promise<AdminJwtCheck> {
   const trimmed = (token || "").trim();
   if (!trimmed) return { ok: false, reason: "empty" };
@@ -114,7 +116,11 @@ export async function verifyAdminAccessJwt(
   if (payload.type && payload.type !== "access") {
     return { ok: false, reason: "type" };
   }
-  if (typeof payload.exp === "number" && payload.exp * 1000 <= Date.now()) {
+  // F-32: a token without a numeric `exp` would never expire; reject it.
+  if (typeof payload.exp !== "number" || !Number.isFinite(payload.exp)) {
+    return { ok: false, reason: "no_exp" };
+  }
+  if (payload.exp * 1000 <= Date.now()) {
     return { ok: false, reason: "expired" };
   }
   const sub = payload.sub != null ? String(payload.sub) : "";
@@ -158,7 +164,10 @@ export async function verifyAdminAccessJwt(
     // Public key configured, no shared secret: the migrated state. A
     // structure-only pass here would accept ANY forged HS256 token.
     if (publicKey) return { ok: false, reason: "hs256_unverifiable" };
-    return { ok: true, sub };
+    // F-32: unsigned claims are only trusted when the caller explicitly opted
+    // in (non-production local dev); otherwise fail closed.
+    if (options.allowUnsignedDev === true) return { ok: true, sub };
+    return { ok: false, reason: "unverifiable" };
   }
 
   try {
