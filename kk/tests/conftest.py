@@ -28,6 +28,18 @@ import pytest
 for _key in ("DATABASE_URL", "REDIS_URL"):
     os.environ.pop(_key, None)
 
+# C-1 (socket resource caps): Flask-SocketIO test clients are almost never
+# disconnected, so the production caps (kk/realtime_limits.py) would count
+# every leaked client from earlier tests and refuse later ones. Lift them for
+# the suite; the C-1 tests exercise the caps with explicit limits instead.
+for _key in (
+    "SOCKETIO_MAX_CONNECTIONS",
+    "SOCKETIO_MAX_GUEST_CONNECTIONS",
+    "SOCKETIO_MAX_GUESTS_PER_IP",
+    "SOCKETIO_MAX_CONNECTIONS_PER_USER",
+):
+    os.environ.setdefault(_key, "1000000")
+
 # Skip reasons emitted by the PostgreSQL-only modules when no server is wired.
 _PG_SKIP_MARKERS = (
     "CARNET_PG_TEST_URL not set",

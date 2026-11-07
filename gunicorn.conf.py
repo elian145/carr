@@ -30,7 +30,21 @@ workers = _resolve_workers(
     redis_url=os.environ.get("REDIS_URL"),
     socketio_message_queue=os.environ.get("SOCKETIO_MESSAGE_QUEUE"),
 )
-threads = int(os.environ.get("GUNICORN_THREADS", "4"))
+# C-1: each open WebSocket pins one thread of this single gthread worker, so the
+# default must leave room for sockets AND REST traffic (was 4: four sockets
+# starved the API). kk/realtime_limits.py caps sockets so that at least half of
+# these threads (min 8) always remain for HTTP.
+try:
+    from kk.socketio_deploy import resolve_gunicorn_threads as _resolve_threads
+except Exception:  # pragma: no cover
+    def _resolve_threads(raw=None):  # type: ignore[misc]
+        try:
+            n = int((raw or "").strip() or "32")
+            return n if n > 0 else 32
+        except Exception:
+            return 32
+
+threads = _resolve_threads(os.environ.get("GUNICORN_THREADS"))
 if workers > 1 and not _mq:
     print(
         "WARNING: WEB_CONCURRENCY=%s without REDIS_URL/SOCKETIO_MESSAGE_QUEUE; "

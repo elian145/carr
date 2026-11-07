@@ -36,7 +36,7 @@ Recommended for scale:
 | Variable | Recommended value | Notes |
 |----------|-------------------|--------|
 | `WEB_CONCURRENCY` | `1` | Default in `gunicorn.conf.py`. Do **not** raise without sticky sessions. |
-| `GUNICORN_THREADS` | `4` (or higher if CPU allows) | Scale concurrent HTTP/API work here. |
+| `GUNICORN_THREADS` | unset (default `32`) | Scale concurrent HTTP/API work here. Default raised from 4 (C-1): see "Socket resource limits". |
 | `REDIS_URL` | set (Celery / rate limit / JWT blocklist) | Also used as Socket.IO message queue in production. |
 | `SOCKETIO_ASYNC_MODE` | unset / `threading` | Must match `gthread`. |
 | `SOCKETIO_ALLOW_EVENTLET` | unset | Eventlet break-glass only; causes Render 502s. |
@@ -56,6 +56,35 @@ If you later run `WEB_CONCURRENCY>1` you need **all** of:
 1. `REDIS_URL` / `SOCKETIO_MESSAGE_QUEUE` (broadcast fan-out)
 2. Sticky sessions for `/socket.io/*` at the load balancer
 3. Explicit ops opt-in via `WEB_CONCURRENCY`
+
+### Socket resource limits (C-1)
+
+With `gthread` + threading Socket.IO, **every open socket (and every Engine.IO
+long-poll request) pins one Gunicorn thread**. With the former default of 4
+threads, four sockets froze the whole REST API. `kk/realtime_limits.py` now
+bounds this (per process; the deployment is one worker). All values are
+optional environment variables:
+
+| Variable | Default | Effect |
+|----------|---------|--------|
+| `GUNICORN_THREADS` | `32` | Threads in the single gthread worker. |
+| `SOCKETIO_MAX_CONNECTIONS` | `threads - max(8, threads/2)` (= 16 at 32 threads) | Sockets in total; new ones are refused (`server_busy`) so HTTP always keeps >= half the threads. The app falls back to HTTP polling for chat. |
+| `SOCKETIO_MAX_CONNECTIONS_PER_USER` | `5` | Per account; the OLDEST socket is evicted (`connection_replaced`) so a reconnect never locks a user out. |
+| `SOCKETIO_MAX_GUEST_CONNECTIONS` | `max(1, total/4)` | Credential-less sockets in total. |
+| `SOCKETIO_MAX_GUESTS_PER_IP` | `2` | Credential-less sockets per address (authenticated users are not limited per IP: carrier NAT). |
+| `SOCKETIO_MAX_HTTP_BUFFER_SIZE` | `65536` | Largest Socket.IO message (engine.io default was 1 MB). |
+| `JSON_MAX_CONTENT_LENGTH` | `1048576` | Largest `application/json` request body (413 `payload_too_large`). Multipart uploads keep `MAX_CONTENT_LENGTH`. |
+
+Socket events are rate limited too: `send_message` 20 per 10 s per socket and
+120 per 10 min per user (same budget as `POST /api/chat/<id>/send`),
+`join_chat` 30/min, `typing_*` 20 per 10 s, `leave_chat` 60/min; over-limit
+`send_message`/`join_chat` get an `error` event with `code: rate_limited` and
+`retry_after`.
+
+**Capacity note:** 16 concurrent realtime sockets is what one 32-thread gthread
+worker can safely carry. Real scale needs an async worker (eventlet/gevent,
+currently blocked on Render, see below) or a separate realtime service; load
+test before raising `SOCKETIO_MAX_CONNECTIONS`.
 
 ### Recommended production async mode
 

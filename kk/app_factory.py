@@ -17,6 +17,10 @@ from .logging_utils import configure_logging, install_api_error_handlers, instal
 from .monitoring import init_monitoring
 from .routes import register_blueprints
 from .routes.auth import init_jwt_callbacks
+from .socketio_deploy import (
+    resolve_json_max_content_length,
+    resolve_socketio_max_http_buffer_size,
+)
 from .socketio_handlers import register_socketio_handlers
 
 
@@ -125,6 +129,43 @@ def _parse_cors_origins() -> list[str]:
     if not raw:
         return []
     return [o.strip() for o in raw.split(",") if o.strip()]
+
+def _install_json_body_cap(app: Flask) -> None:
+    """C-1: cap ``application/json`` request bodies.
+
+    ``MAX_CONTENT_LENGTH`` (250 MB by default) exists for photo/video uploads,
+    but it also applied to every JSON endpoint, where Flask buffers the whole
+    body in memory: a few concurrent large JSON posts could exhaust a worker's
+    RAM. Multipart/binary uploads are untouched (they keep their own limits).
+    """
+    from flask import jsonify, request
+
+    limit = resolve_json_max_content_length(os.environ.get("JSON_MAX_CONTENT_LENGTH"))
+    app.config["JSON_MAX_CONTENT_LENGTH"] = limit
+
+    @app.before_request
+    def _cap_json_body():
+        if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
+            return None
+        mimetype = (request.mimetype or "").lower()
+        if mimetype != "application/json" and not mimetype.endswith("+json"):
+            return None
+        length = request.content_length
+        if length is not None and length > limit:
+            return (
+                jsonify(
+                    {
+                        "message": "Request body too large",
+                        "code": "payload_too_large",
+                        "max_bytes": limit,
+                    }
+                ),
+                413,
+            )
+        # Chunked bodies carry no Content-Length: enforce while reading.
+        request.max_content_length = limit
+        return None
+
 
 def _socketio_async_mode(env_name: str, has_message_queue: bool) -> str | None:
     """
@@ -357,6 +398,10 @@ def create_app():
     cors_origins = _parse_cors_origins()
     sio_mq = _socketio_message_queue_url(env_name)
     sio_async = _socketio_async_mode(env_name, has_message_queue=bool(sio_mq))
+    # C-1: bound a single Socket.IO message (engine.io default is 1 MB).
+    sio_max_buffer = resolve_socketio_max_http_buffer_size(
+        os.environ.get("SOCKETIO_MAX_HTTP_BUFFER_SIZE")
+    )
     if env_name == "production":
         # When running behind a reverse proxy (Cloudflare/Nginx/etc), trust one hop of
         # X-Forwarded-* so URL generation, request.remote_addr, and scheme work correctly.
@@ -367,6 +412,7 @@ def create_app():
             cors_allowed_origins=cors_origins,
             message_queue=sio_mq,
             async_mode=sio_async,
+            max_http_buffer_size=sio_max_buffer,
         )
         if not sio_mq:
             workers = _detect_worker_count()
@@ -385,6 +431,7 @@ def create_app():
             cors_allowed_origins=cors_origins or "*",
             message_queue=sio_mq,
             async_mode=sio_async,
+            max_http_buffer_size=sio_max_buffer,
         )
         CORS(app, origins=cors_origins or "*")
 
@@ -544,6 +591,8 @@ def create_app():
         log_fcm_startup_status()
     except Exception:
         pass
+
+    _install_json_body_cap(app)
 
     @app.after_request
     def _security_headers(response):

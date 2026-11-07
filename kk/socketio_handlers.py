@@ -27,8 +27,9 @@ from .chat_realtime import (
     user_can_access_chat_room,
 )
 from .models import Message, Notification, User, db
+from .realtime_limits import ConnectionRegistry, EventRateLimiter, load_limits
 from .push import send_push
-from .security import validate_input_sanitization
+from .security import _client_ip, validate_input_sanitization
 from .time_utils import utcnow
 
 
@@ -63,6 +64,86 @@ def _allow_socket_query_token() -> bool:
 # so the client can refresh its token and reconnect -- the moment its token
 # expires.
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# C-1: resource limits (see kk/realtime_limits.py for the rationale).
+#
+# Replaced by every register_socketio_handlers() call, so each Flask app (and
+# each test app) starts with an empty registry. Per-process by design.
+# ---------------------------------------------------------------------------
+_REGISTRY: ConnectionRegistry = ConnectionRegistry(load_limits())
+_LIMITER: EventRateLimiter = EventRateLimiter()
+
+# (max events, window seconds). send_message mirrors the REST limit
+# (kk/routes/chat.py: 120 per 10 minutes per user) plus a short per-socket burst
+# limit; the rest only stop one socket from hammering DB-backed handlers.
+_LIMIT_SEND_BURST = (20, 10.0)
+_LIMIT_SEND_USER = (120, 600.0)
+_LIMIT_JOIN = (30, 60.0)
+_LIMIT_LEAVE = (60, 60.0)
+_LIMIT_TYPING = (20, 10.0)
+# A listing preview is display metadata; refuse anything bigger than this.
+_MAX_LISTING_PREVIEW_BYTES = 4096
+
+
+def _payload_dict(payload) -> dict:
+    """Event payloads are client controlled: only a JSON object is meaningful."""
+    return payload if isinstance(payload, dict) else {}
+
+
+def _listing_preview_ok(preview) -> bool:
+    if not isinstance(preview, dict):
+        return False
+    try:
+        import json
+
+        return len(json.dumps(preview, ensure_ascii=False, default=str)) <= _MAX_LISTING_PREVIEW_BYTES
+    except Exception:
+        return False
+
+
+def _throttled(
+    event: str,
+    limit: tuple[int, float],
+    *,
+    user_public_id: str | None = None,
+    silent: bool = False,
+) -> bool:
+    """True (after telling the client, unless ``silent``) when the event must be dropped."""
+    sid = getattr(request, "sid", None) or "?"
+    key = f"user:{user_public_id}:{event}" if user_public_id else f"sid:{sid}:{event}"
+    ok, retry_after = _LIMITER.allow(key, limit[0], limit[1])
+    if ok:
+        return False
+    if not silent:
+        try:
+            emit(
+                "error",
+                {
+                    "message": "Too many requests. Please slow down.",
+                    "code": "rate_limited",
+                    "event": event,
+                    "retry_after": retry_after,
+                },
+            )
+        except Exception:
+            logger.debug("rate_limited emit failed", exc_info=True)
+    return True
+
+
+def _evict_socket(socketio, sid: str) -> None:
+    """Drop an older socket of a user who is over their connection cap."""
+    _unbind_socket(sid)
+    _LIMITER.forget_prefix(f"sid:{sid}:")
+    try:
+        socketio.emit("connection_replaced", {"code": "too_many_connections"}, to=sid)
+    except Exception:
+        logger.debug("connection_replaced emit failed", exc_info=True)
+    try:
+        socketio.server.disconnect(sid, namespace="/")
+    except Exception:
+        logger.debug("evicted socket disconnect failed", exc_info=True)
+
+
 _SOCKET_AUTH: dict[str, dict] = {}
 _SOCKET_AUTH_LOCK = threading.Lock()
 _EXPIRY_POLL_SECONDS = 30.0
@@ -260,6 +341,9 @@ def register_socketio_handlers(socketio) -> None:
         return
     if app_id is not None:
         setattr(socketio, "_kk_handlers_app_id", app_id)
+    global _REGISTRY, _LIMITER
+    _REGISTRY = ConnectionRegistry(load_limits())
+    _LIMITER = EventRateLimiter()
 
     @socketio.on("connect")
     def _connect(auth=None):  # type: ignore[no-redef]
@@ -280,6 +364,12 @@ def register_socketio_handlers(socketio) -> None:
                 # the client as a guest; no credentials at all stay a guest.
                 logger.info("Socket.IO connect refused: token_in_query")
                 raise ConnectionRefusedError("token_in_query")
+            # C-1: a guest holds a worker thread but can do nothing useful, so
+            # guests are capped per address and in total.
+            admission = _REGISTRY.admit(request.sid, _client_ip(), None)
+            if admission.refused:
+                logger.info("Socket.IO guest refused: %s", admission.refused)
+                raise ConnectionRefusedError(admission.refused)
             emit("connected", {"authenticated": False, "user_id": None})
             return
         claims, err = _verify_access_token(raw)
@@ -289,6 +379,14 @@ def register_socketio_handlers(socketio) -> None:
             logger.info("Socket.IO connect refused: %s", code)
             raise ConnectionRefusedError(code)
         sid = request.sid
+        # C-1: per-user cap (oldest socket is evicted) and a global ceiling that
+        # always leaves worker threads for HTTP.
+        admission = _REGISTRY.admit(sid, _client_ip(), user.public_id)
+        if admission.refused:
+            logger.info("Socket.IO connect refused: %s", admission.refused)
+            raise ConnectionRefusedError(admission.refused)
+        for old_sid in admission.evict:
+            _evict_socket(socketio, old_sid)
         _bind_socket(sid, user, claims, raw)
         join_room(f"user:{user.public_id}")
         emit(
@@ -303,17 +401,23 @@ def register_socketio_handlers(socketio) -> None:
 
     @socketio.on("disconnect")
     def _disconnect(*_args):  # type: ignore[no-redef]
-        _unbind_socket(getattr(request, "sid", None))
+        sid = getattr(request, "sid", None)
+        _unbind_socket(sid)
+        _REGISTRY.release(sid)
+        if sid:
+            _LIMITER.forget_prefix(f"sid:{sid}:")
         return
 
     @socketio.on("join_chat")
     def _join_chat(payload):  # type: ignore[no-redef]
+        if _throttled("join_chat", _LIMIT_JOIN):
+            return
         me = _socket_current_user(optional=False)
         if not me:
             emit("error", {"message": "Unauthorized"})
             return
 
-        data = validate_input_sanitization(payload or {})
+        data = validate_input_sanitization(_payload_dict(payload))
         car_id_raw = str(data.get("car_id") or "").strip()
         peer_public = str(data.get("peer_id") or data.get("receiver_id") or "").strip()
         if not car_id_raw:
@@ -381,8 +485,10 @@ def register_socketio_handlers(socketio) -> None:
 
     @socketio.on("leave_chat")
     def _leave_chat(payload):  # type: ignore[no-redef]
+        if _throttled("leave_chat", _LIMIT_LEAVE, silent=True):
+            return
         _socket_current_user(optional=True)
-        data = validate_input_sanitization(payload or {})
+        data = validate_input_sanitization(_payload_dict(payload))
         room = str(data.get("room") or "").strip()
         if room:
             leave_room(room)
@@ -392,10 +498,12 @@ def register_socketio_handlers(socketio) -> None:
         """F-25: a typing indicator goes ONLY to the other participant of the
         (listing, seller, buyer) conversation it belongs to -- never to every
         socket that joined the listing."""
+        if _throttled("typing", _LIMIT_TYPING, silent=True):
+            return
         me = _socket_current_user(optional=False)
         if not me:
             return
-        data = validate_input_sanitization(payload or {})
+        data = validate_input_sanitization(_payload_dict(payload))
         car_id_raw = str(data.get("car_id") or "").strip()
         peer_public = str(data.get("peer_id") or data.get("receiver_id") or "").strip()
         if not car_id_raw:
@@ -430,9 +538,16 @@ def register_socketio_handlers(socketio) -> None:
 
     @socketio.on("send_message")
     def _send_message(payload):  # type: ignore[no-redef]
+        # C-1: per-socket burst limit BEFORE any token/DB work ...
+        if _throttled("send_message", _LIMIT_SEND_BURST):
+            return
         me = _socket_current_user(optional=False)
         if not me:
             emit("error", {"message": "Unauthorized"})
+            return
+        # ... and the same per-user budget as the REST send endpoint, shared
+        # across all of that user's sockets.
+        if _throttled("send_message", _LIMIT_SEND_USER, user_public_id=me.public_id):
             return
 
         verify_err = phone_verification_error_payload(me)
@@ -440,11 +555,13 @@ def register_socketio_handlers(socketio) -> None:
             emit("error", verify_err)
             return
 
-        data = validate_input_sanitization(payload or {})
+        data = validate_input_sanitization(_payload_dict(payload))
         car_id_raw = str(data.get("car_id") or "").strip()
         content = str(data.get("content") or "").strip()
         receiver_public = str(data.get("receiver_id") or "").strip()
         listing_preview = data.get("listing_preview")
+        if not _listing_preview_ok(listing_preview):
+            listing_preview = None
         reply_to_public = str(data.get("reply_to_message_id") or "").strip()
 
         if not car_id_raw:
