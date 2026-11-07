@@ -741,25 +741,9 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     );
   }
 
-  String _normalizeTel(String raw) {
-    final s = raw.trim();
-    if (s.isEmpty) return '';
-    final buf = StringBuffer();
-    for (var i = 0; i < s.length; i++) {
-      final c = s[i];
-      if (c == '+' && buf.isEmpty) {
-        buf.write(c);
-      } else if (RegExp(r'[0-9]').hasMatch(c)) {
-        buf.write(c);
-      }
-    }
-    return buf.toString();
-  }
-
   Future<void> _callDealer(String rawPhone) async {
-    final phone = _normalizeTel(rawPhone);
-    if (phone.isEmpty) return;
-    final uri = Uri.parse('tel:$phone');
+    final uri = telUriFor(rawPhone);
+    if (uri == null) return;
 
     bool launched = await launchUrl(
       uri,

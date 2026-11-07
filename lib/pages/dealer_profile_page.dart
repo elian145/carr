@@ -18,6 +18,7 @@ import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../shared/maps/dealer_map_coords.dart';
 import '../shared/maps/open_google_maps.dart';
+import '../shared/phone/tel_uri.dart';
 import '../shared/i18n/opening_hours_time_parse.dart';
 import '../shared/media/media_url.dart';
 import '../app/widgets/listing_network_image.dart';

@@ -40,6 +40,7 @@ import '../shared/ui/processing_media_badge.dart';
 import '../shared/i18n/listing_value_labels.dart';
 import '../shared/i18n/locale_formatting.dart';
 import '../shared/listings/listing_identity.dart';
+import '../shared/phone/tel_uri.dart';
 import '../shared/listings/listing_management.dart'
     show
         confirmAndDeleteListing,
