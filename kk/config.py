@@ -337,6 +337,27 @@ def admin_jwt_public_key_pem() -> str:
     return _pem_from_env("ADMIN_JWT_PUBLIC_KEY")
 
 
+#: Public, non-secret defaults for the ``iss`` / ``aud`` claims of admin-signed
+#: (ES256) tokens. admin-web uses the same defaults, so an existing F-19
+#: deployment needs no new variable; set ``ADMIN_JWT_ISSUER`` /
+#: ``ADMIN_JWT_AUDIENCE`` identically on BOTH services to override.
+ADMIN_JWT_DEFAULT_ISSUER = "carnet-api"
+ADMIN_JWT_DEFAULT_AUDIENCE = "carnet-admin-web"
+
+
+def admin_jwt_issuer() -> str:
+    """``ADMIN_JWT_ISSUER``: ``iss`` of admin-signed tokens (default ``carnet-api``)."""
+    return (os.environ.get("ADMIN_JWT_ISSUER") or "").strip() or ADMIN_JWT_DEFAULT_ISSUER
+
+
+def admin_jwt_audience() -> str:
+    """``ADMIN_JWT_AUDIENCE``: ``aud`` of admin-signed tokens (default ``carnet-admin-web``)."""
+    return (
+        (os.environ.get("ADMIN_JWT_AUDIENCE") or "").strip()
+        or ADMIN_JWT_DEFAULT_AUDIENCE
+    )
+
+
 def admin_jwt_enforce_enabled() -> bool:
     """``ADMIN_JWT_ENFORCE=1``: stop accepting HS256 tokens that carry admin claims.
 

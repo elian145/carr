@@ -191,14 +191,23 @@ export async function resolveAdminAccessToken(
   if (requireSecretInProd()) return null;
   const secret = jwtSecret();
   const publicKey = adminPublicKey();
+  const verifyOptions = {
+    // F-32: unsigned claims only with an explicit, non-production opt-in.
+    allowUnsignedDev:
+      !isProductionRuntime() &&
+      (process.env.ADMIN_ALLOW_UNSIGNED_DEV || "").trim() === "1",
+    // Optional overrides; must equal the API's ADMIN_JWT_ISSUER/AUDIENCE.
+    issuer: (process.env.ADMIN_JWT_ISSUER || "").trim(),
+    audience: (process.env.ADMIN_JWT_AUDIENCE || "").trim(),
+  };
   const accessRaw = jar.get(ADMIN_JWT_COOKIE)?.value || "";
   if (accessRaw) {
-    const check = await verifyAdminAccessJwt(accessRaw, secret, publicKey, {
-      // F-32: unsigned claims only with an explicit, non-production opt-in.
-      allowUnsignedDev:
-        !isProductionRuntime() &&
-        (process.env.ADMIN_ALLOW_UNSIGNED_DEV || "").trim() === "1",
-    });
+    const check = await verifyAdminAccessJwt(
+      accessRaw,
+      secret,
+      publicKey,
+      verifyOptions,
+    );
     if (check.ok) return accessRaw;
   }
 
@@ -206,6 +215,16 @@ export async function resolveAdminAccessToken(
   if (!refreshRaw) return null;
   const rotated = await refreshAccessWithRefreshToken(refreshRaw);
   if (!rotated) return null;
+  // A freshly rotated access token goes through the same checks (signature,
+  // iss/aud, admin scope, exp) instead of being trusted because it came from
+  // the upstream refresh endpoint.
+  const rotatedCheck = await verifyAdminAccessJwt(
+    rotated.access,
+    secret,
+    publicKey,
+    verifyOptions,
+  );
+  if (!rotatedCheck.ok) return null;
   onRotated?.(rotated.access, rotated.refresh);
   return rotated.access;
 }

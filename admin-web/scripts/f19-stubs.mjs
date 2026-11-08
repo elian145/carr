@@ -33,12 +33,17 @@ export function mintHs256(secret, payload) {
   return `${data}.${createHmac("sha256", secret).update(data).digest("base64url")}`;
 }
 
+export const ADMIN_ISS = "carnet-api";
+export const ADMIN_AUD = "carnet-admin-web";
+
 export function adminPayload(extra = {}) {
   return {
     sub: "admin-public-id",
     type: "access",
     is_admin: true,
     account_scope: "admin",
+    iss: ADMIN_ISS,
+    aud: ADMIN_AUD,
     exp: Math.floor(Date.now() / 1000) + 3600,
     ...extra,
   };

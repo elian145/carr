@@ -69,6 +69,22 @@ function importAdminPublicKey(pem: string): Promise<CryptoKey | null> {
   return cached;
 }
 
+/**
+ * Public (non-secret) defaults for the `iss` / `aud` of admin-signed ES256
+ * tokens. They MUST equal the API's `ADMIN_JWT_ISSUER` / `ADMIN_JWT_AUDIENCE`
+ * defaults (kk/config.py); override both services identically via env.
+ */
+export const ADMIN_JWT_DEFAULT_ISSUER = "carnet-api";
+export const ADMIN_JWT_DEFAULT_AUDIENCE = "carnet-admin-web";
+
+function audienceMatches(claim: unknown, expected: string): boolean {
+  if (typeof claim === "string") return claim === expected;
+  if (Array.isArray(claim)) {
+    return claim.some((a) => typeof a === "string" && a === expected);
+  }
+  return false;
+}
+
 export type AdminJwtCheck =
   | { ok: true; sub: string }
   | { ok: false; reason: string };
@@ -86,12 +102,21 @@ export type AdminJwtCheck =
  *    HS256 tokens are rejected: admin-web cannot verify them.
  * Requires `is_admin` / `account_scope=admin` claim so a normal user JWT
  * cannot pass the admin edge gate.
+ * ES256 (admin-signed) tokens must additionally carry `iss` equal to
+ * `options.issuer` and `aud` containing `options.audience` (defaults above);
+ * a missing or different value is rejected. Legacy HS256 tokens are minted by
+ * flask-jwt-extended without `iss`/`aud`, so the legacy path cannot require
+ * them (it disappears with the F-19 migration).
  */
 export async function verifyAdminAccessJwt(
   token: string,
   secret: string,
   publicKey: string = "",
-  options: { allowUnsignedDev?: boolean } = {},
+  options: {
+    allowUnsignedDev?: boolean;
+    issuer?: string;
+    audience?: string;
+  } = {},
 ): Promise<AdminJwtCheck> {
   const trimmed = (token || "").trim();
   if (!trimmed) return { ok: false, reason: "empty" };
@@ -105,6 +130,8 @@ export async function verifyAdminAccessJwt(
     exp?: number;
     sub?: string;
     type?: string;
+    iss?: unknown;
+    aud?: unknown;
     is_admin?: boolean;
     account_scope?: string;
   }>(payloadB64);
@@ -138,6 +165,13 @@ export async function verifyAdminAccessJwt(
       return { ok: false, reason: "not_admin" };
     }
     if (!publicKey) return { ok: false, reason: "no_public_key" };
+    const issuer = (options.issuer || "").trim() || ADMIN_JWT_DEFAULT_ISSUER;
+    const audience =
+      (options.audience || "").trim() || ADMIN_JWT_DEFAULT_AUDIENCE;
+    if (payload.iss !== issuer) return { ok: false, reason: "issuer" };
+    if (!audienceMatches(payload.aud, audience)) {
+      return { ok: false, reason: "audience" };
+    }
     try {
       const key = await importAdminPublicKey(publicKey);
       if (!key) return { ok: false, reason: "bad_public_key" };
