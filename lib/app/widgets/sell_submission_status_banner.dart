@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../features/sell/pending_sell_submission_service.dart';
+import '../../features/sell/sell_cancel_refused_feedback.dart';
+import '../../theme/app_colors.dart';
 import '../../l10n/app_localizations.dart';
 import '../carzo_shared.dart' show productionNavigatorKey;
 
@@ -63,7 +65,9 @@ class _SellSubmissionStatusBannerState
               'Your listing was submitted and is pending review.')
           : (loc?.listingSubmittedSuccess ??
               'Your listing was submitted successfully.');
-      background = event.pendingReview ? const Color(0xFFF57C00) : Colors.green;
+      background = event.pendingReview
+          ? AppColors.warningSnackBarBackground
+          : Colors.green.shade800;
     } else if (event.needsAttention) {
       // Permanent failure (req. #11): never auto-retried. The backend
       // listing may already exist (its id survives on the failed record
@@ -81,7 +85,7 @@ class _SellSubmissionStatusBannerState
           : (loc?.sellSubmissionNeedsAttentionNoListing ??
               "We couldn't finish creating your listing. Open My Listings to "
                   'find and fix the draft.');
-      background = Colors.red;
+      background = Colors.red.shade700;
     } else {
       // Transient failure — a background retry is already scheduled
       // automatically (connectivity restore / app resume / next
@@ -93,7 +97,12 @@ class _SellSubmissionStatusBannerState
     try {
       messenger.showSnackBar(
         SnackBar(
-          content: Text(message),
+          // A coloured background needs an explicit white foreground (the theme's
+          // default text colour follows the inverse surface, not this colour).
+          content: Text(
+            message,
+            style: background == null ? null : AppColors.warningSnackBarTextStyle,
+          ),
           backgroundColor: background,
           duration: Duration(seconds: event.needsAttention ? 8 : 4),
           action: event.needsAttention
@@ -155,10 +164,15 @@ class _SellSubmissionStatusBannerState
     if (ok != true) return;
     final outcome =
         await PendingSellSubmissionService.instance.cancelSubmission(draftId);
-    if (outcome == SellCancelOutcome.draftKept && mounted) {
+    if (!mounted) return;
+    if (outcome == SellCancelOutcome.draftKept) {
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         SnackBar(content: Text(loc.a11yUploadCancelledDraftKept)),
       );
+    } else if (outcome == null) {
+      // Refused (too late: everything is uploaded and the listing is being
+      // published). Say so instead of silently doing nothing.
+      showSellCancelTooLateFeedback(ScaffoldMessenger.maybeOf(context), loc);
     }
   }
   String _phaseLabel(

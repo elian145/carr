@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/api_service.dart';
+import '../../theme/app_colors.dart';
 import '../../services/auth_service.dart';
 import '../errors/user_error_text.dart';
 import '../phone/phone_normalizer.dart';
@@ -131,8 +132,8 @@ Future<bool> showPhoneVerificationDialog(
                   if (code.length != 6) {
                     ScaffoldMessenger.of(ctx2).showSnackBar(
                       SnackBar(
-                        content: Text(locDialog.pleaseEnter6DigitCode),
-                        backgroundColor: Colors.orange,
+                        content: WarningSnackBarText(locDialog.pleaseEnter6DigitCode),
+                        backgroundColor: AppColors.warningSnackBarBackground,
                       ),
                     );
                     return;
@@ -312,8 +313,8 @@ Future<bool> showContactPhoneVerificationDialog(
                   if (code.length != 6) {
                     ScaffoldMessenger.of(ctx2).showSnackBar(
                       SnackBar(
-                        content: Text(locDialog.pleaseEnter6DigitCode),
-                        backgroundColor: Colors.orange,
+                        content: WarningSnackBarText(locDialog.pleaseEnter6DigitCode),
+                        backgroundColor: AppColors.warningSnackBarBackground,
                       ),
                     );
                     return;

@@ -17,10 +17,11 @@ abstract final class AppColors {
   /// Lighter companion used in gradients / secondary accents.
   static const Color brandOrangeSoft = Color(0xFFFF8C42);
 
-  /// Accessible darker orange (F-24): ~4.8:1 against white, so it can be the
-  /// fill behind white normal-size text, or the colour of normal-size orange
-  /// text on a light surface. Same hue as [brandOrange].
-  static const Color brandOrangeStrong = Color(0xFFC24E00);
+  /// Accessible darker orange (F-24): ~5.1:1 against white (and >= 4.5:1 on the
+  /// #F4F4F4 / #F3F3F3 / #F2F2F7 light greys the app paints text on), so it can
+  /// be the fill behind white normal-size text, or the colour of normal-size
+  /// orange text on a light surface. Same hue as [brandOrange].
+  static const Color brandOrangeStrong = Color(0xFFBC4B00);
 
   /// Orange for ICONS, borders, focus rings, spinners and large / bold text
   /// (WCAG 3:1) that works on light AND dark surfaces without needing a
@@ -44,6 +45,40 @@ abstract final class AppColors {
     brandOrangeDeep,
   ];
 
+  /// Text / icon colour ON a filled bright [brandOrange] surface in the DARK
+  /// theme (`ColorScheme.onPrimary`): white on [brandOrange] is only ~2.86:1,
+  /// near-black is ~6.1:1. The light theme keeps white on [brandOrangeStrong].
+  static const Color onBrandOrange = Color(0xFF1A1A1A);
+
+  /// Muted / secondary grey text on LIGHT surfaces (replaces the old
+  /// `0xFF8E8E93`, ~3.3:1 on white): >= 4.5:1 on white, #FFF7F0, the
+  /// #F4F4F4 / #F3F3F3 / #F2F2F7 greys and #E0E0E0.
+  static const Color mutedText = Color(0xFF636366);
+
+  /// Muted grey text on DARK surfaces (#1E1E1E, #2A211C, #121212): the iOS
+  /// system grey, >= 4.5:1 there (but NOT on light surfaces: use [mutedText]).
+  static const Color mutedTextOnDark = Color(0xFF8E8E93);
+
+  /// Muted grey for the given theme brightness ([mutedText] on light,
+  /// [mutedTextOnDark] on dark).
+  static Color mutedTextFor(Brightness brightness) =>
+      brightness == Brightness.light ? mutedText : mutedTextOnDark;
+
+  /// Background of "warning" SnackBars (replaces `Colors.orange`, which is
+  /// only ~2:1 against any text): [brandOrangeStrong] with
+  /// [warningSnackBarTextStyle] (white) is >= 4.5:1. Use both together.
+  static const Color warningSnackBarBackground = brandOrangeStrong;
+
+  /// Foreground of [warningSnackBarBackground].
+  static const Color onWarningSnackBar = Color(0xFFFFFFFF);
+
+  /// Text style for content painted on [warningSnackBarBackground] (a
+  /// SnackBar's default text colour follows the theme's inverse surface, not
+  /// its `backgroundColor`; see [WarningSnackBarText]).
+  static const TextStyle warningSnackBarTextStyle = TextStyle(
+    color: onWarningSnackBar,
+  );
+
   /// Orange for normal-size TEXT that must stay readable on the current
   /// surface: [brandOrangeStrong] on light backgrounds (4.5:1+ on white),
   /// the bright brand orange on dark backgrounds (7:1+ on near-black, where
@@ -62,4 +97,16 @@ abstract final class AppColors {
       Theme.of(context).brightness == Brightness.light
       ? brandOrangeDeep
       : brandOrangeSoft;
+}
+
+/// SnackBar text for a SnackBar whose ackgroundColor is
+/// [AppColors.warningSnackBarBackground]: white (>= 4.5:1) in both themes.
+class WarningSnackBarText extends StatelessWidget {
+  const WarningSnackBarText(this.data, {super.key});
+
+  final String data;
+
+  @override
+  Widget build(BuildContext context) =>
+      Text(data, style: AppColors.warningSnackBarTextStyle);
 }

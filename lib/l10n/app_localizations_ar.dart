@@ -2974,4 +2974,8 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get a11yUploadCancelledDraftKept =>
       'تم إلغاء الرفع. تم الاحتفاظ بالمسودة.';
+
+  @override
+  String get a11yUploadCancelTooLate =>
+      'فات أوان الإلغاء: يتم نشر إعلانك الآن.';
 }

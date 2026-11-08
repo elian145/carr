@@ -30,14 +30,14 @@ mixin _EditDealerPageSave on _EditDealerPageEmailVerification {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: WarningSnackBarText(
             _tr(
               'Verify every phone number before saving.',
               ar: 'تحقق من كل رقم هاتف قبل الحفظ.',
               ku: 'پێش پاشەکەوتکردن هەموو ژمارەکانی تەلەفۆن پشتڕاست بکەرەوە.',
             ),
           ),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warningSnackBarBackground,
         ),
       );
       return;
@@ -71,14 +71,14 @@ mixin _EditDealerPageSave on _EditDealerPageEmailVerification {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: WarningSnackBarText(
             _tr(
               'Verify every email before saving.',
               ar: 'تحقق من كل بريد إلكتروني قبل الحفظ.',
               ku: 'پێش پاشەکەوتکردن هەموو ئیمەیلەکان پشتڕاست بکەرەوە.',
             ),
           ),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warningSnackBarBackground,
         ),
       );
       return;
@@ -97,10 +97,10 @@ mixin _EditDealerPageSave on _EditDealerPageEmailVerification {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
+            content: WarningSnackBarText(
               '${_tr('Please select both From and To for', ar: 'يرجى اختيار وقت من وإلى ليوم', ku: 'تکایە کاتی لە و بۆ هەڵبژێرە بۆ')} ${_dayLabel(d.key)}.',
             ),
-            backgroundColor: Colors.orange,
+            backgroundColor: AppColors.warningSnackBarBackground,
           ),
         );
         return;
@@ -155,14 +155,14 @@ mixin _EditDealerPageSave on _EditDealerPageEmailVerification {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
+            content: WarningSnackBarText(
               _tr(
                 'Enter a valid ${DealerSocials.label(network)} username.',
                 ar: 'أدخل اسم مستخدم ${DealerSocials.label(network)} صالحاً.',
                 ku: 'ناوی بەکارهێنەری دروستی ${DealerSocials.label(network)} بنووسە.',
               ),
             ),
-            backgroundColor: Colors.orange,
+            backgroundColor: AppColors.warningSnackBarBackground,
           ),
         );
         return;

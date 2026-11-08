@@ -499,10 +499,10 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
               if (_useBlurredPlates == true && blurring) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(
+                    content: WarningSnackBarText(
                       AppLocalizations.of(context)!.pleaseWaitForPlateBlurringToFinish,
                     ),
-                    backgroundColor: Colors.orange,
+                    backgroundColor: AppColors.warningSnackBarBackground,
                   ),
                 );
                 return;

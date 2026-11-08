@@ -98,7 +98,7 @@ Widget carListingSpecsDetailRow(
     const brandOrange = AppColors.brandOrangeIcon;
     const iconCircleFillLight = Color(0xFFFFF0E6);
     const iconCircleFillDark = Color(0xFFFFE8D6);
-    const labelGrey = Color(0xFF8E8E93);
+    final labelGrey = AppColors.mutedTextFor(Theme.of(context).brightness);
     final cardBg = onTap != null
         ? (isLight
             ? const Color(0xFFFFF7F0)
@@ -242,7 +242,6 @@ Widget carListingSpecsDetailRow(
 
 Widget carListingSpecsCard(ListingSpecItem item, {required double scale}) {
   const brandOrange = AppColors.brandOrangeIcon;
-  const labelGrey = Color(0xFF8E8E93);
   final radius = _specsDim(_specsDesignRadius, scale);
 
   return Semantics(
@@ -250,6 +249,7 @@ Widget carListingSpecsCard(ListingSpecItem item, {required double scale}) {
     child: Builder(
       builder: (context) {
         final isLight = Theme.of(context).brightness == Brightness.light;
+        final labelGrey = AppColors.mutedTextFor(Theme.of(context).brightness);
         final cardBg = isLight ? Colors.white : const Color(0xFF1E1E1E);
         final iconCircleFill =
             isLight ? const Color(0xFFFFF0E6) : const Color(0xFFFFE8D6);

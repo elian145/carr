@@ -668,9 +668,9 @@ mixin _HomePageFetchCore on _HomePageFields {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(homeFeedSortDisabledText(context)),
+              content: WarningSnackBarText(homeFeedSortDisabledText(context)),
               duration: Duration(seconds: 3),
-              backgroundColor: Colors.orange,
+              backgroundColor: AppColors.warningSnackBarBackground,
             ),
           );
         }
