@@ -35,6 +35,11 @@ REDIS_URL=redis://localhost:6379/0
 # Firebase Configuration (for push notifications)
 FIREBASE_SERVER_KEY=your-firebase-server-key
 FIREBASE_PROJECT_ID=your-firebase-project-id
+# F-20 isolation guard (push is disabled, fail-closed, if violated). Set per environment:
+#   FIREBASE_EXPECTED_PROJECT_ID=<the one Firebase project this deployment may use>
+#   FIREBASE_PRODUCTION_PROJECT_ID=<the production project; refused when APP_ENV is not production>
+FIREBASE_EXPECTED_PROJECT_ID=
+FIREBASE_PRODUCTION_PROJECT_ID=
 
 # AWS Configuration (for file storage)
 AWS_ACCESS_KEY_ID=your-aws-access-key

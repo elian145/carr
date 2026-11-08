@@ -32,10 +32,20 @@ jobs:
       - name: Compile backend
         run: python -m compileall kk
 
-      # F-20: warns while dev/stage still share the prod Firebase project;
-      # switch to --strict once the owner has created separate projects.
+      # F-20: warns while dev/stage still share the prod Firebase project. Once
+      # the owner has created separate projects, set the repository variable
+      # CARNET_FIREBASE_STRICT=1 (Settings > Variables) to make this fail.
+      # Expected project IDs: scripts/firebase_expected_projects.json (or the
+      # CARNET_FIREBASE_*_PROJECT_ID variables). A pinned-ID mismatch always fails.
       - name: Firebase dev/stage isolation lint
+        env:
+          CARNET_FIREBASE_STRICT: ${{ vars.CARNET_FIREBASE_STRICT }}
         run: python scripts/verify_firebase_isolation.py
+
+      # Fail-closed release check of the prod Firebase configs (also part of
+      # the static publish preflight below, which every release workflow runs).
+      - name: Firebase prod release guard
+        run: python scripts/verify_firebase_isolation.py --release --flavor prod --platform all
 
       - name: Publish preflight (static)
         run: python scripts/verify_preflight.py --skip-host

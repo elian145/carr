@@ -10,6 +10,7 @@ Run from repo root:
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -52,6 +53,27 @@ def _check_ios_firebase() -> None:
     if "com.carzo.app" not in text:
         _fail("GoogleService-Info.plist should reference bundle id com.carzo.app")
     _ok("iOS Firebase plist references com.carzo.app")
+
+
+def _check_firebase_release_guard() -> None:
+    """Fail-closed F-20 guard: prod android + iOS Firebase configs match the expected prod project."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "verify_firebase_isolation.py"),
+            "--release",
+            "--flavor",
+            "prod",
+            "--platform",
+            "all",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        _fail("Firebase release guard failed:\n" + (result.stdout + result.stderr).rstrip())
+    _ok("Firebase prod configs match the expected production project (release guard)")
 
 
 def _check_app_icon() -> None:
@@ -164,6 +186,7 @@ def main() -> None:
     _check_app_icon()
     _check_prod_firebase()
     _check_ios_firebase()
+    _check_firebase_release_guard()
     _check_splash_assets()
     _check_signing_example()
     _check_local_signing()
