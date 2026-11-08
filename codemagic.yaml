@@ -308,11 +308,11 @@ workflows:
           flutter pub get
       - name: Verify Android release-signing safeguards
         script: python scripts/verify_android_release_signing.py
-      - name: Analyze
-        script: flutter analyze --no-fatal-warnings --no-fatal-infos
       # F-20: fails if the prod Firebase config is not the configured expected project.
       - name: Firebase release guard (fail-closed)
         script: python scripts/verify_firebase_isolation.py --release --flavor prod --platform android
+      - name: Analyze
+        script: flutter analyze --no-fatal-warnings --no-fatal-infos
       - name: Build APK
         script: |
           flutter build apk --release --flavor prod \

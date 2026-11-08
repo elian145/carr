@@ -61,15 +61,17 @@ def _fake_firebase_admin(monkeypatch):
     return calls
 
 
-def test_ensure_firebase_refuses_prod_project_in_development_and_does_not_initialize(monkeypatch, caplog):
+def test_ensure_firebase_refuses_prod_project_in_development_and_does_not_initialize(monkeypatch):
     calls = _fake_firebase_admin(monkeypatch)
     monkeypatch.setenv("APP_ENV", "development")
     monkeypatch.setenv("FIREBASE_PRODUCTION_PROJECT_ID", "p-prod")
     monkeypatch.setenv("FIREBASE_SERVICE_ACCOUNT", json.dumps({"project_id": "p-prod"}))
-    with caplog.at_level("ERROR"):
-        assert push._ensure_firebase() is None
+    logged = []
+    # Not caplog: other modules in the suite reconfigure logging globally.
+    monkeypatch.setattr(push.logger, "error", lambda msg, *a, **k: logged.append(msg % a))
+    assert push._ensure_firebase() is None
     assert calls == []
-    assert "isolation guard" in caplog.text
+    assert any("isolation guard" in m for m in logged)
     assert push.fcm_is_configured() is False
 
 

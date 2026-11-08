@@ -116,11 +116,17 @@ def test_without_require_pg_the_same_skips_stay_skips(tmp_path):
     assert (tests, bad, len(skips)) == (len(_PG_SKIP_REASONS) + 1, 0, len(_PG_SKIP_REASONS) + 1)
 
 
+def _conftest_pg_markers() -> tuple[str, ...]:
+    spec = importlib.util.spec_from_file_location("_carnet_conftest_probe", ROOT / "kk" / "tests" / "conftest.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return tuple(mod._PG_SKIP_MARKERS)
+
+
 def test_every_repo_pg_skip_reason_is_covered_by_the_require_hook():
     """Any new 'PostgreSQL ... not set / needs ...' skip reason must be added to conftest."""
-    conftest = (ROOT / "kk" / "tests" / "conftest.py").read_text(encoding="utf-8")
     for reason in _PG_SKIP_REASONS:
-        assert any(m in reason for m in re.findall(r'^\s+"([^"]+)",$', conftest, re.M)), reason
+        assert any(m in reason for m in _conftest_pg_markers()), reason
 
 
 # ----------------------------------------------------------------- workflow structure
@@ -176,8 +182,11 @@ def test_workflow_tool_versions_match_repo_pins():
 
 def test_codemagic_flutter_version_matches_pin():
     flutter = (ROOT / ".flutter-version").read_text(encoding="utf-8").strip()
-    versions = set(re.findall(r"^\s+flutter:\s*([\d.]+)\s*$", (ROOT / "codemagic.yaml").read_text(encoding="utf-8"), re.M))
-    assert versions == {flutter}, versions
+    for name in ("codemagic.yaml", "ios-codemagic.yaml"):
+        text = (ROOT / name).read_text(encoding="utf-8")
+        # Any `flutter:` under `environment:` must be the pinned version (never `stable`).
+        versions = set(re.findall(r"^\s+flutter:\s*(\S+)\s*$", text, re.M))
+        assert versions == {flutter}, (name, versions)
 
 
 def test_guard_script_is_documented_usage_example_runs(tmp_path):
@@ -187,3 +196,14 @@ def test_guard_script_is_documented_usage_example_runs(tmp_path):
         capture_output=True, text=True, check=False,
     )
     assert proc.returncode == 0, textwrap.dedent(proc.stdout + proc.stderr)
+
+
+def test_sqlite_job_only_tolerates_pg_and_documented_skips():
+    text = _wf("backend_ci.yml")
+    allowed = re.findall(r"--allow-skip \"([^\"]+)\"", text)
+    markers = _conftest_pg_markers()
+    # Every skip reason the require-PG hook knows must be tolerated by the SQLite job ...
+    assert set(markers) <= set(allowed), set(markers) - set(allowed)
+    # ... and nothing else except the two documented optional/capability cases.
+    assert set(allowed) - set(markers) == {"CARNET_REAL_DOLBY_REPRO_PATH", "This ffmpeg build"}
+    assert "sqlite-tests.xml" in text and "--min-tests 3500" in text

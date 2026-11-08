@@ -59,7 +59,23 @@ jobs:
       # need a real PostgreSQL server skip here with an explicit reason and are
       # executed by the "backend-postgres-tests" job below.
       - name: Run backend test suite (SQLite)
-        run: python -m pytest kk/tests -ra
+        run: python -m pytest kk/tests -ra --junitxml="$RUNNER_TEMP/sqlite-tests.xml"
+
+      # Any skip other than the PostgreSQL-only ones (and two documented
+      # optional/capability cases) fails the job: a missing cv2/pillow-heif/git
+      # must not turn into a silently smaller suite. ~3900 tests ran at the time.
+      - name: Assert only PostgreSQL-only tests were skipped
+        if: always()
+        run: >-
+          python scripts/ci_assert_no_skips.py "$RUNNER_TEMP/sqlite-tests.xml"
+          --min-tests 3500
+          --allow-skip "CARNET_PG_TEST_URL not set"
+          --allow-skip "No disposable Postgres"
+          --allow-skip "PHONE_INVENTORY_TEST_PG_URL not set"
+          --allow-skip "needs the disposable local PostgreSQL"
+          --allow-skip "needs the production-head template"
+          --allow-skip "CARNET_REAL_DOLBY_REPRO_PATH"
+          --allow-skip "This ffmpeg build"
 
   backend-postgres-tests:
     name: Backend tests (Postgres)
