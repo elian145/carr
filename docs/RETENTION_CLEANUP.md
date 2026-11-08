@@ -3,8 +3,16 @@
 ## What is implemented
 
 `kk/retention.py`, run daily by Celery beat (`retention-cleanup`,
-`kk/tasks/retention_tasks.py`). **Every job is a no-op until its env var is set**;
-no retention period is built in or assumed.
+`kk/tasks/retention_tasks.py`). **Safe by default - three gates must all be open
+before a row is deleted, and no retention period is built in or assumed:**
+
+1. `RETENTION_ENABLED=1` - master switch, **default OFF** (the whole job is a no-op).
+2. `RETENTION_DRY_RUN=0` - **dry-run is the default**. Without exactly this
+   (`0`/`false`/`no`/`off`) an enabled run only *counts* what it would delete;
+   unset, empty or a typo keeps dry-run on.
+3. The individual job below must be configured. A period that is unset, zero,
+   negative or not an integer is **skipped (never defaulted)** and listed under
+   `skipped_unconfigured` in the audit record.
 
 | Env var | Effect when set |
 |---|---|
@@ -13,7 +21,19 @@ no retention period is built in or assumed.
 | `RETENTION_USER_ACTION_DAYS=<n>` | Delete `user_action` analytics rows older than *n* days. `admin_*` actions are never deleted. |
 | `RETENTION_READ_NOTIFICATION_DAYS=<n>` | Delete **read** notifications older than *n* days. Unread are never deleted. |
 
-Deletes run in batches of 1000 (max 100 batches per table per run).
+Recommended rollout once the owner has chosen periods: set `RETENTION_ENABLED=1`
+(leave dry-run on), read the `retention_run` audit rows / logs for a few days, and
+only then set `RETENTION_DRY_RUN=0`. The beat schedule exists but is inert until
+`RETENTION_ENABLED=1`.
+
+Limits: batches of 1000 rows, at most 100 batches per table per run (100k rows);
+the next daily run continues. Dry-run counts are capped the same way.
+
+Audit: every enabled run (dry or real, and a failed one with its partial counts and
+the exception *class* only) writes one append-only `admin_audit_log` row,
+`action_type=retention_run`, metadata `{mode, jobs:[{job, rows}], skipped_unconfigured,
+batch_size, max_batches[, error]}` (no row contents), plus a log line. A failure stops
+the run, is re-raised (task marked failed) and leaves already-committed batches in place.
 
 ## Never touched by the job
 
@@ -26,7 +46,7 @@ media (privacy policy: no automatic expiry, no stated period), reports, listings
 1. Retention period for `user_action` (analytics: views, logins) and whether the
    privacy policy should state it.
 2. Period for read notifications (and whether unread ones should ever expire).
-3. Whether to enable `RETENTION_TOKEN_BLACKLIST_PURGE` and `RETENTION_AUTH_TOKEN_PURGE` now (both
+3. Whether and when to set `RETENTION_ENABLED=1` (then, after reviewing dry-run counts, `RETENTION_DRY_RUN=0`) and whether to enable `RETENTION_TOKEN_BLACKLIST_PURGE` and `RETENTION_AUTH_TOKEN_PURGE` (both
    are behaviour-neutral: they only remove already-dead rows; neither is on by default).
 4. Any retention for `admin_audit_log` (none implemented; append-only by design).
 5. Chat messages/media expiry remains a published-policy decision
