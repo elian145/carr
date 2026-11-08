@@ -70,10 +70,22 @@ def app_ctx():
     os.environ["APP_ENV"] = "testing"
     os.environ["SMS_PROVIDER"] = "console"
     os.environ["DB_PATH"] = os.path.join(tmp.name, "be07.db")
+    # These tests deliberately post pathologically large filter blobs to prove the
+    # DB-level bounds. The route-level JSON body cap (C-1, default 1 MiB, covered
+    # by test_c1_realtime_exhaustion.py) would 413 them first, so raise it for
+    # this module's app only and restore afterwards.
+    _prev_cap = os.environ.get("JSON_MAX_CONTENT_LENGTH")
+    os.environ["JSON_MAX_CONTENT_LENGTH"] = str(128 * 1024 * 1024)  # test_d1 posts ~75 MB
 
     from kk.app_factory import create_app
 
-    app, _socketio, *_ = create_app()
+    try:
+        app, _socketio, *_ = create_app()
+    finally:
+        if _prev_cap is None:
+            os.environ.pop("JSON_MAX_CONTENT_LENGTH", None)
+        else:
+            os.environ["JSON_MAX_CONTENT_LENGTH"] = _prev_cap
     from kk.models import db
 
     with app.app_context():
