@@ -105,8 +105,8 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                                     ),
                             ),
                           ),
-                          Positioned(
-                            right: 0,
+                          PositionedDirectional(
+                            end: 0,
                             top: 0,
                             child: SellMediaOverlayButton(
                               icon: Icons.close,

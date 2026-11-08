@@ -186,8 +186,8 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                             ),
                           ),
                           if (isPrimary)
-                            Positioned(
-                              left: 6,
+                            PositionedDirectional(
+                              start: 6,
                               bottom: 6,
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
@@ -220,8 +220,8 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                               ),
                             )
                           else
-                            Positioned(
-                              left: 0,
+                            PositionedDirectional(
+                              start: 0,
                               bottom: 0,
                               child: SellMediaOverlayButton(
                                 icon: Icons.star_border,
@@ -230,8 +230,8 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                                 onTap: () => _setPrimaryImage(index),
                               ),
                             ),
-                          Positioned(
-                            right: 0,
+                          PositionedDirectional(
+                            end: 0,
                             top: 0,
                             child: SellMediaOverlayButton(
                               icon: Icons.close,

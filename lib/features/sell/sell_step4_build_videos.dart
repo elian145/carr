@@ -89,8 +89,8 @@ mixin _SellStep4BuildVideos on _SellStep4BuildDamage {
                                 ),
                               ),
                       ),
-                      Positioned(
-                        right: 0,
+                      PositionedDirectional(
+                        end: 0,
                         top: 0,
                         child: SellMediaOverlayButton(
                           icon: Icons.close,
@@ -181,8 +181,8 @@ mixin _SellStep4BuildVideos on _SellStep4BuildDamage {
                           ),
                         ),
                       ),
-                      Positioned(
-                        right: 0,
+                      PositionedDirectional(
+                        end: 0,
                         top: 0,
                         child: SellMediaOverlayButton(
                           icon: Icons.close,
@@ -291,8 +291,8 @@ mixin _SellStep4BuildVideos on _SellStep4BuildDamage {
                           ),
                         ),
                       ),
-                      Positioned(
-                        right: 0,
+                      PositionedDirectional(
+                        end: 0,
                         top: 0,
                         child: SellMediaOverlayButton(
                           icon: Icons.close,

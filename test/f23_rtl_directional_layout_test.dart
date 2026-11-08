@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:car_listing_app/features/sell/sell_media_overlay_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -150,5 +151,96 @@ void main() {
     expect(border.dimensions.resolve(TextDirection.ltr).left, 3);
     expect(border.dimensions.resolve(TextDirection.rtl).left, 0);
     expect(border.dimensions.resolve(TextDirection.rtl).right, 3);
+  });
+
+  group('round 3: sell step 4 media badges', () {
+    const step4 = [
+      'lib/features/sell/sell_step4_build_photos.dart',
+      'lib/features/sell/sell_step4_build_videos.dart',
+      'lib/features/sell/sell_step4_build_damage.dart',
+    ];
+    final oneSided = RegExp(
+      r'\bPositioned\(\s*(?:(?:top|bottom): [^,\n]+,\s*)?(?:left|right): [^,\n]+,\s*(?:(?:top|bottom): [^,\n]+,\s*)?child:',
+    );
+
+    test('photo/video/damage thumbnails pin badges with PositionedDirectional',
+        () {
+      for (final rel in step4) {
+        final s = _src(rel);
+        expect(oneSided.hasMatch(s), isFalse, reason: rel);
+        expect(RegExp(r'\bPositioned\(\s*(?:left|right):').hasMatch(s), isFalse,
+            reason: rel);
+        expect(s, contains('PositionedDirectional('), reason: rel);
+      }
+    });
+
+    test('preview phone row is forced LTR (digit order kept in RTL)', () {
+      final s = _src('lib/features/sell/sell_step4_preview_helpers.dart');
+      expect(s, contains('ltrValue: true'));
+      expect(s, contains('ui.TextDirection.ltr'));
+    });
+
+    // The exact structure used by the step-4 thumbnails: cover star on the
+    // leading-bottom corner, remove "x" on the trailing-top corner.
+    for (final entry in {
+      'en': TextDirection.ltr,
+      'ar': TextDirection.rtl,
+      'ku': TextDirection.rtl,
+    }.entries) {
+      testWidgets('real overlay buttons mirror for ${entry.key}', (t) async {
+        final dir = entry.value;
+        await t.pumpWidget(
+          MaterialApp(
+            locale: Locale(entry.key),
+            builder: (context, child) =>
+                Directionality(textDirection: dir, child: child!),
+            home: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: Stack(
+                    key: const ValueKey('tile'),
+                    children: [
+                      PositionedDirectional(
+                        start: 0,
+                        bottom: 0,
+                        child: SellMediaOverlayButton(
+                          key: const ValueKey('cover'),
+                          icon: Icons.star_border,
+                          label: 'cover',
+                          onTap: () {},
+                        ),
+                      ),
+                      PositionedDirectional(
+                        end: 0,
+                        top: 0,
+                        child: SellMediaOverlayButton(
+                          key: const ValueKey('remove'),
+                          icon: Icons.close,
+                          label: 'remove',
+                          onTap: () {},
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        final tile = t.getRect(find.byKey(const ValueKey('tile')));
+        final cover = t.getRect(find.byKey(const ValueKey('cover')));
+        final remove = t.getRect(find.byKey(const ValueKey('remove')));
+        final rtl = dir == TextDirection.rtl;
+        // 48dp targets sit fully inside the tile on the correct edge.
+        expect(cover.size, const Size(48, 48));
+        expect(remove.size, const Size(48, 48));
+        expect(rtl ? cover.right : cover.left, rtl ? tile.right : tile.left);
+        expect(rtl ? remove.left : remove.right, rtl ? tile.left : tile.right);
+        expect(tile.contains(cover.center), isTrue);
+        expect(tile.contains(remove.center), isTrue);
+      });
+    }
   });
 }
