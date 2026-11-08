@@ -1513,6 +1513,19 @@ class Message(db.Model):
             'is_deleted': parent.is_deleted,
         }
 
+    def _safe_listing_preview(self):
+        """N-1: never return the stored client-era JSON as-is.
+
+        Rows written before the fix may hold a forged title/price/external
+        image URL; the preview is re-derived from the message's own listing
+        (or dropped). See kk/chat_payload.py::sanitize_stored_listing_preview.
+        """
+        if not self.listing_preview:
+            return None
+        from .chat_payload import sanitize_stored_listing_preview
+
+        return sanitize_stored_listing_preview(self.listing_preview, self.car)
+
     def to_dict(self):
         reply_parent = self.reply_to
         if reply_parent is None and self.reply_to_id:
@@ -1540,7 +1553,7 @@ class Message(db.Model):
             # know about it yet (see kk/routes/chat.py:edit_chat_message).
             'attachment_key': None if self.is_deleted else self.attachment_url,
             'attachments': [] if self.is_deleted else _resolve_chat_attachments_list(self.attachments),
-            'listing_preview': None if self.is_deleted else self.listing_preview,
+            'listing_preview': None if self.is_deleted else self._safe_listing_preview(),
             'is_read': self.is_read,
             'is_deleted': self.is_deleted,
             'edited_at': iso_utc(self.edited_at),

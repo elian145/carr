@@ -688,7 +688,9 @@ class WebSocketService {
       messageData['receiver_id'] = receiverId;
     }
     if (listingPreview != null && listingPreview.isNotEmpty) {
-      messageData['listing_preview'] = listingPreview;
+      messageData['listing_preview'] = chatListingPreviewRefForSend(
+        listingPreview,
+      );
     }
     if (replyToMessageId != null && replyToMessageId.trim().isNotEmpty) {
       messageData['reply_to_message_id'] = replyToMessageId.trim();

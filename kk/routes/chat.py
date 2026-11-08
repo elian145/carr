@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-import json
 import os
 import secrets
 
@@ -21,6 +20,7 @@ from ..chat_realtime import (
     mark_messages_read_for_viewer,
     resolve_allowed_chat_receiver,
 )
+from .. import chat_payload
 from ..idempotency import (
     begin_request,
     in_progress_response,
@@ -743,14 +743,23 @@ def send_message(conversation_id: str):
         if idem_state == "busy":
             return in_progress_response()
 
+        # N-1: one shared cap for the whole JSON body, checked before parsing.
+        try:
+            chat_payload.check_json_body_size(request.content_length)
+            chat_payload.check_json_body_size(None, len(request.get_data(cache=True)))
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
+
         data = validate_input_sanitization(request.get_json(silent=True) or {})
         content = str(data.get("content") or "").strip()
-        listing_preview = data.get("listing_preview")
+        raw_listing_preview = data.get("listing_preview")
         reply_to_public = str(data.get("reply_to_message_id") or "").strip()
         if not content:
             return jsonify({"message": "content required"}), 400
-        if len(content) > 4000:
-            return jsonify({"message": "content too long"}), 400
+        try:
+            chat_payload.check_content(content)
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
 
         car = _get_car_by_any_id(str(conversation_id))
         if not car:
@@ -766,6 +775,14 @@ def send_message(conversation_id: str):
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
 
+        # N-1: the preview is derived from the Car row; client fields ignored.
+        try:
+            listing_preview = chat_payload.resolve_listing_preview(
+                raw_listing_preview, me=me, receiver=receiver, conversation_car=car
+            )
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
+
         msg = Message(
             sender_id=me.id,
             receiver_id=receiver.id,
@@ -774,7 +791,7 @@ def send_message(conversation_id: str):
             reply_to=reply_to,
             content=content,
             message_type="text",
-            listing_preview=listing_preview if isinstance(listing_preview, dict) else None,
+            listing_preview=listing_preview,
             is_read=False,
         )
         db.session.add(msg)
@@ -863,6 +880,12 @@ def send_image_message(conversation_id: str):
         reply_to = _resolve_reply_target(me, car, reply_to_public, receiver)
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
+
+        # N-1: same text limits as JSON/socket, before any upload work.
+        try:
+            chat_payload.check_multipart_text(request.form)
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
 
         try:
             attachment_url = _upload_chat_attachment(
@@ -987,6 +1010,12 @@ def send_video_message(conversation_id: str):
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
 
+        # N-1: same text limits as JSON/socket, before any upload work.
+        try:
+            chat_payload.check_multipart_text(request.form)
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
+
         try:
             attachment_url = _upload_chat_attachment(
                 file,
@@ -1109,6 +1138,12 @@ def send_audio_message(conversation_id: str):
         reply_to = _resolve_reply_target(me, car, reply_to_public, receiver)
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
+
+        # N-1: same text limits as JSON/socket, before any upload work.
+        try:
+            chat_payload.check_multipart_text(request.form)
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
 
         try:
             attachment_url = _upload_chat_attachment(
@@ -1245,15 +1280,22 @@ def send_media_group_message(conversation_id: str):
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
 
-        listing_preview = None
-        listing_preview_raw = (request.form.get("listing_preview") or "").strip()
-        if listing_preview_raw:
-            try:
-                parsed = json.loads(listing_preview_raw)
-                if isinstance(parsed, dict):
-                    listing_preview = parsed
-            except Exception:
-                listing_preview = None
+        # N-1: same text limits as JSON/socket, before any upload work.
+        try:
+            chat_payload.check_multipart_text(request.form)
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
+
+        # N-1: the preview is derived from the Car row; client fields ignored.
+        try:
+            listing_preview = chat_payload.resolve_listing_preview(
+                chat_payload.parse_preview_form_field(request.form.get("listing_preview")),
+                me=me,
+                receiver=receiver,
+                conversation_car=car,
+            )
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
 
         attachments = []
         for file in files:
