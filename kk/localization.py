@@ -256,42 +256,42 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
     # kk/email_service.py -- send_dealer_email_verification_code (MI-03
     # cited path).
     "dealer_email_verification_subject": {
-        "en": "Your Carzo verification code",
-        "ar": "رمز التحقق الخاص بك في Carzo",
-        "ku": "کۆدی پشتڕاستکردنەوەی تۆ لە Carzo",
+        "en": "Your CarNet verification code",
+        "ar": "رمز التحقق الخاص بك في CarNet",
+        "ku": "کۆدی پشتڕاستکردنەوەی تۆ لە CarNet",
     },
     "dealer_email_verification_text": {
         "en": (
-            "Your Carzo verification code is: {code}\n\n"
+            "Your CarNet verification code is: {code}\n\n"
             "Enter this code in the app to verify your dealership contact "
             "email. It expires in 10 minutes."
         ),
         "ar": (
-            "رمز التحقق الخاص بك في Carzo هو: {code}\n\n"
+            "رمز التحقق الخاص بك في CarNet هو: {code}\n\n"
             "أدخل هذا الرمز في التطبيق لتأكيد البريد الإلكتروني الخاص "
             "بمعرض السيارات. تنتهي صلاحيته خلال 10 دقائق."
         ),
         "ku": (
-            "کۆدی پشتڕاستکردنەوەی تۆ لە Carzo ئەمەیە: {code}\n\n"
+            "کۆدی پشتڕاستکردنەوەی تۆ لە CarNet ئەمەیە: {code}\n\n"
             "ئەم کۆدە لە ئەپەکەدا بنووسە بۆ پشتڕاستکردنەوەی ئیمەیلی پەیوەندی "
             "شوکەکەت. ئەم کۆدە لە ماوەی 10 خولەکدا بەسەردەچێت."
         ),
     },
     "dealer_email_verification_html": {
         "en": (
-            "<p>Your Carzo verification code is:</p>"
+            "<p>Your CarNet verification code is:</p>"
             "<p style='font-size:24px;font-weight:700;letter-spacing:2px'>{code}</p>"
             "<p>Enter this code in the app to verify your dealership contact "
             "email. It expires in 10 minutes.</p>"
         ),
         "ar": (
-            "<p>رمز التحقق الخاص بك في Carzo هو:</p>"
+            "<p>رمز التحقق الخاص بك في CarNet هو:</p>"
             "<p style='font-size:24px;font-weight:700;letter-spacing:2px'>{code}</p>"
             "<p>أدخل هذا الرمز في التطبيق لتأكيد البريد الإلكتروني الخاص "
             "بمعرض السيارات. تنتهي صلاحيته خلال 10 دقائق.</p>"
         ),
         "ku": (
-            "<p>کۆدی پشتڕاستکردنەوەی تۆ لە Carzo ئەمەیە:</p>"
+            "<p>کۆدی پشتڕاستکردنەوەی تۆ لە CarNet ئەمەیە:</p>"
             "<p style='font-size:24px;font-weight:700;letter-spacing:2px'>{code}</p>"
             "<p>ئەم کۆدە لە ئەپەکەدا بنووسە بۆ پشتڕاستکردنەوەی ئیمەیلی "
             "پەیوەندی شوکەکەت. ئەم کۆدە لە ماوەی 10 خولەکدا بەسەردەچێت.</p>"

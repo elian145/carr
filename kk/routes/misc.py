@@ -645,7 +645,7 @@ def verify_email_landing():
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Verify your Carzo email</title>
+  <title>Verify your CarNet email</title>
   <style>
     * {{ box-sizing: border-box; }}
     body {{
@@ -685,9 +685,9 @@ def verify_email_landing():
   </style>
 </head>
 <body>
-  <p>Tap below to verify your email in the Carzo app.</p>
-  <a class="btn" id="carzo-open" href="{esc_deep}">Open in Carzo app</a>
-  <p class="token">App not opening? Paste this code in Carzo &rarr; Verify email:<br/>{esc_token}</p>
+  <p>Tap below to verify your email in the CarNet app.</p>
+  <a class="btn" id="carzo-open" href="{esc_deep}">Open in CarNet app</a>
+  <p class="token">App not opening? Paste this code in CarNet &rarr; Verify email:<br/>{esc_token}</p>
   <script>
     setTimeout(function () {{ window.location.href = {json.dumps(deep)}; }}, 120);
   </script>
