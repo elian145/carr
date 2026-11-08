@@ -46,5 +46,20 @@ def test_dockerignore_does_not_exclude_helper():
 
 def test_dockerfile_copies_helper_next_to_kk():
     df = _read("Dockerfile")
-    assert re.search(r"^COPY\s+tools/r2_s3_op\.py\s+/app/tools/r2_s3_op\.py\s*$", df, re.M)
-    assert re.search(r"^COPY\s+kk\s+/app/kk\s*$", df, re.M)
+    chown = r"(?:--chown=\S+\s+)?"
+    assert re.search(
+        rf"^COPY\s+{chown}tools/r2_s3_op\.py\s+/app/tools/r2_s3_op\.py\s*$", df, re.M
+    )
+    assert re.search(rf"^COPY\s+{chown}kk\s+/app/kk\s*$", df, re.M)
+
+
+def test_dockerfile_runs_as_non_root_and_has_healthcheck():
+    df = _read("Dockerfile")
+    users = re.findall(r"^USER\s+(\S+)\s*$", df, re.M)
+    assert users, "image would run as root (no USER instruction)"
+    assert users[-1] not in ("root", "0", "0:0", "root:root")
+    # USER must come before the process is started.
+    assert df.index(f"USER {users[-1]}") < df.index("CMD [")
+    assert re.search(r"^HEALTHCHECK\s", df, re.M)
+    assert "/health" in df.split("HEALTHCHECK", 1)[1]
+
