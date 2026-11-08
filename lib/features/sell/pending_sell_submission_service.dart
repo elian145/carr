@@ -488,6 +488,15 @@ class PendingSellSubmissionService {
 
   bool isCancelRequested(String draftId) => _cancelRequested.contains(draftId);
 
+  /// F-41: draft ids whose worker has already confirmed ALL media with the
+  /// server and is only finalising (verify, list refresh, record removal).
+  /// There is nothing left to cancel at that point: [cancelSubmission]
+  /// refuses (returns null) instead of accepting a cancel the worker would
+  /// then ignore -- accepting it and still reporting success is a lie to the
+  /// user. Set synchronously right after the last cancel checkpoint, cleared
+  /// when the run ends.
+  final Set<String> _pastCancelPoint = <String>{};
+
   void _throwIfCancelled(String draftId) {
     if (_cancelRequested.contains(draftId)) {
       throw const SellSubmissionCancelledException();
@@ -518,6 +527,10 @@ class PendingSellSubmissionService {
   Future<SellCancelOutcome?> cancelSubmission(String draftId) async {
     final id = draftId.trim().isEmpty ? 'default' : draftId.trim();
     final record = await SellSubmissionStatePrefs.load(id);
+    // Every media item is already confirmed and the worker is finalising:
+    // too late to cancel (checked AFTER the await above -- the worker may
+    // have crossed the point of no return while the record was loading).
+    if (_pastCancelPoint.contains(id)) return null;
     // Submit was pressed but the intent record is not written yet (the
     // first awaits of [_prepareSubmissionRecord]): this used to be a silent
     // no-op. Record the intent; the prepare step applies it deterministically
@@ -1395,6 +1408,7 @@ class PendingSellSubmissionService {
         .whenComplete(() {
       _activeRuns.remove(draftId);
       _cancelRequested.remove(draftId);
+      _pastCancelPoint.remove(draftId);
     });
     _activeRuns[draftId] = future;
     return future;
@@ -2283,6 +2297,14 @@ class PendingSellSubmissionService {
         },
       );
 
+      // Last cancel checkpoint. A cancel that was ACCEPTED while the final
+      // media item was being confirmed must still win (never report success
+      // after the user was told the upload was cancelled); from here on every
+      // media item is confirmed, so later cancels are refused instead (see
+      // [_pastCancelPoint]). No await between the check and the add.
+      _throwIfCancelled(draftId);
+      _pastCancelPoint.add(draftId);
+
       if (imagesCount > 0 && !listingMediaConfirmed) {
         var hasMedia = await SellListingMediaUpload.listingAlreadyHasMedia(carId);
         for (var attempt = 0; !hasMedia && attempt < 4; attempt++) {
@@ -2392,8 +2414,9 @@ class PendingSellSubmissionService {
       }
       unawaited(AppHaptics.success());
       statusNotifier.value = null;
-      // A cancel that arrived after the last checkpoint is moot: all media is
-      // already confirmed. Drop it so it cannot leak into a later run.
+      // Defensive: cancel is refused past the last checkpoint (see
+      // [_pastCancelPoint]), so nothing can be pending here; drop any upload
+      // cancel flag so it cannot leak into a later run.
       SellListingMediaUpload.clearCancelFor(carId);
       if (record.isEdit && !editSubmittedForReview) {
         // A resumed edit no longer holds the PUT response: ask the server.
