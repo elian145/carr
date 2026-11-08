@@ -284,6 +284,7 @@ class _SellSubmissionStatusBannerState
                             label: loc.a11yCancelUpload,
                             child: IconButton(
                               key: kSellSubmissionBannerCancelKey,
+                              // a11y-exempt-no-overlay (see f24 tooltip guard)
                               constraints: const BoxConstraints(
                                 minWidth: 48,
                                 minHeight: 48,
