@@ -31,8 +31,12 @@ media (privacy policy: no automatic expiry, no stated period), reports, listings
 4. Any retention for `admin_audit_log` (none implemented; append-only by design).
 5. Chat messages/media expiry remains a published-policy decision
    (see `docs/PRIVACY_DRAFT_ACCOUNT_DELETION.md`).
-6. Index on `user_action.user_id` (not added: building it on a large live table
-   needs `CREATE INDEX CONCURRENTLY` in a maintenance window).
+6. ~~Index on `user_action.user_id`~~ -- **already exists**: migration D-06
+   (`n5o6p7q8r9s0`, `ix_user_action_user_id`) is in the alembic chain and
+   covered by `kk/tests/test_d06_fk_report_status_indexes.py`; no further
+   migration is needed (a second one would only create a duplicate index).
+   Owner check only: confirm `ix_user_action_user_id` exists on the production
+   database (`\d user_action`).
 7. One-click "hide listing / suspend user" from a report (F-18 second half) is a
    product decision; reports are still resolved manually.
 
