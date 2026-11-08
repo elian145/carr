@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -2906,4 +2907,23 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get viewDetailsButton => 'عرض التفاصيل';
+
+  @override
+  String a11yPhotoXOfY(int index, int total) {
+    return 'الصورة $index من $total';
+  }
+
+  @override
+  String get a11yCancelUpload => 'إلغاء الرفع';
+
+  @override
+  String get a11yCancelUploadConfirm =>
+      'إيقاف الرفع؟ إذا لم يتم إنشاء إعلانك بعد، فسيتم الاحتفاظ بالمسودة.';
+
+  @override
+  String get a11yKeepUploading => 'متابعة الرفع';
+
+  @override
+  String get a11yUploadCancelledDraftKept =>
+      'تم إلغاء الرفع. تم الاحتفاظ بالمسودة.';
 }

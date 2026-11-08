@@ -163,7 +163,7 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
             const SizedBox(height: 2),
             Text(
               AppLocalizations.of(context)!.youCanChangeTheseInStep2,
-              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              style: TextStyle(fontSize: 11, color: Colors.grey[700]),
             ),
           ] else if (canApply) ...[
             const SizedBox(height: 12),

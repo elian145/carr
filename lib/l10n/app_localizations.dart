@@ -5408,6 +5408,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View Details'**
   String get viewDetailsButton;
+
+  /// No description provided for @a11yPhotoXOfY.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo {index} of {total}'**
+  String a11yPhotoXOfY(int index, int total);
+
+  /// No description provided for @a11yCancelUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel upload'**
+  String get a11yCancelUpload;
+
+  /// No description provided for @a11yCancelUploadConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop uploading? If your listing isn\'t created yet, your draft is kept.'**
+  String get a11yCancelUploadConfirm;
+
+  /// No description provided for @a11yKeepUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep uploading'**
+  String get a11yKeepUploading;
+
+  /// No description provided for @a11yUploadCancelledDraftKept.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload cancelled. Your draft was kept.'**
+  String get a11yUploadCancelledDraftKept;
 }
 
 class _AppLocalizationsDelegate

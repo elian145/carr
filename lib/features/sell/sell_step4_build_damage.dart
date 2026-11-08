@@ -106,30 +106,15 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                             ),
                           ),
                           Positioned(
-                            right: 6,
-                            top: 6,
-                            child: Semantics(
-                              button: true,
+                            right: 0,
+                            top: 0,
+                            child: SellMediaOverlayButton(
+                              icon: Icons.close,
                               label: AppLocalizations.of(context)!.removeAction,
-                              child: InkWell(
                               onTap: () {
                                 _removeDamagePhotoAt(index);
                                 unawaited(_saveDraft());
                               },
-                              borderRadius: BorderRadius.circular(20),
-                              child: Container(
-                                decoration: const BoxDecoration(
-                                  color: Colors.black54,
-                                  shape: BoxShape.circle,
-                                ),
-                                padding: const EdgeInsets.all(6),
-                                child: const Icon(
-                                  Icons.close,
-                                  size: 18,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
                             ),
                           ),
                         ],

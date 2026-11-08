@@ -1028,5 +1028,16 @@
   "unableToChangePasswordTryLater": "Unable to change password. Please try again later.",
   "sendingEllipsis": "Sending...",
   "videoBadge": "VIDEO",
-  "viewDetailsButton": "View Details"
+  "viewDetailsButton": "View Details",
+  "a11yPhotoXOfY": "Photo {index} of {total}",
+  "@a11yPhotoXOfY": {
+    "placeholders": {
+      "index": { "type": "int", "example": "1" },
+      "total": { "type": "int", "example": "5" }
+    }
+  },
+  "a11yCancelUpload": "Cancel upload",
+  "a11yCancelUploadConfirm": "Stop uploading? If your listing isn't created yet, your draft is kept.",
+  "a11yKeepUploading": "Keep uploading",
+  "a11yUploadCancelledDraftKept": "Upload cancelled. Your draft was kept."
 }

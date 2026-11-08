@@ -982,5 +982,16 @@
   "unableToChangePasswordTryLater": "تعذر تغيير كلمة المرور. يرجى المحاولة لاحقًا.",
   "sendingEllipsis": "جارٍ الإرسال...",
   "videoBadge": "فيديو",
-  "viewDetailsButton": "عرض التفاصيل"
+  "viewDetailsButton": "عرض التفاصيل",
+  "a11yPhotoXOfY": "الصورة {index} من {total}",
+  "@a11yPhotoXOfY": {
+    "placeholders": {
+      "index": { "type": "int", "example": "1" },
+      "total": { "type": "int", "example": "5" }
+    }
+  },
+  "a11yCancelUpload": "إلغاء الرفع",
+  "a11yCancelUploadConfirm": "إيقاف الرفع؟ إذا لم يتم إنشاء إعلانك بعد، فسيتم الاحتفاظ بالمسودة.",
+  "a11yKeepUploading": "متابعة الرفع",
+  "a11yUploadCancelledDraftKept": "تم إلغاء الرفع. تم الاحتفاظ بالمسودة."
 }
