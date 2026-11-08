@@ -455,3 +455,61 @@ def test_dev_code_not_exposed_by_default(app, monkeypatch):
     uid = _make_user(app)
     r, _raw = _forgot(app, monkeypatch, _user_phone(app, uid))
     assert "dev_code" not in r.get_json()
+
+
+# ----------------------------------------------------------------------------------------
+# F. e-mail verification tokens (same at-rest treatment, separate pepper context)
+# ----------------------------------------------------------------------------------------
+
+
+def _ev_rows(db_path):
+    con = sqlite3.connect(db_path)
+    try:
+        return con.execute("select user_id, token, is_used from email_verification order by id").fetchall()
+    finally:
+        con.close()
+
+
+def test_email_verification_token_hashed_at_rest_single_use_and_domain_separated(app, db_path):
+    from kk.auth import create_email_verification_token, verify_email_verification_token
+    from kk.reset_token_crypto import hash_email_verification_token
+
+    uid = _make_user(app)
+    with app.app_context():
+        raw = create_email_verification_token(db.session.get(User, uid))
+        stored = [r[1] for r in _ev_rows(db_path) if r[0] == uid]
+        assert stored == [hash_email_verification_token(raw)]
+        assert re.fullmatch(r"h1\$[0-9a-f]{64}", stored[0]) and raw not in stored[0]
+        assert hash_email_verification_token(raw) != hash_reset_token(raw)
+        assert raw.encode() not in _db_file_bytes(db_path)
+        # submitting the stored hash as the "token" must not verify
+        assert verify_email_verification_token(stored[0])[0] is None
+        user, err = verify_email_verification_token(raw)
+        assert err is None and user.id == uid
+        assert verify_email_verification_token(raw)[0] is None  # single use
+
+
+def test_email_verification_expired_and_legacy_plaintext(app, db_path, monkeypatch):
+    from kk.auth import create_email_verification_token, verify_email_verification_token
+    from kk.models import EmailVerification
+
+    uid = _make_user(app)
+    with app.app_context():
+        raw = create_email_verification_token(db.session.get(User, uid))
+        EmailVerification.query.filter_by(user_id=uid).update({"expires_at": utcnow() - timedelta(minutes=1)})
+        db.session.commit()
+        assert verify_email_verification_token(raw) == (None, "Token has expired")
+
+        # pre-change row holding a plaintext token still works once while the legacy flag is on
+        db.session.execute(
+            text("insert into email_verification (user_id, token, expires_at, is_used, created_at) "
+                 "values (:u, 'legacy-plain-token', :e, 0, :c)"),
+            {"u": uid, "e": utcnow() + timedelta(hours=1), "c": utcnow()},
+        )
+        db.session.commit()
+        monkeypatch.setenv(LEGACY_PLAINTEXT_ENV, "0")
+        assert verify_email_verification_token("legacy-plain-token")[0] is None
+        monkeypatch.delenv(LEGACY_PLAINTEXT_ENV)
+        user, err = verify_email_verification_token("legacy-plain-token")
+        assert err is None and user.id == uid
+        assert verify_email_verification_token("legacy-plain-token")[0] is None

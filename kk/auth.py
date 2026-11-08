@@ -327,8 +327,24 @@ def consume_password_reset_token(token, user_id):
     return result.rowcount == 1
 
 def verify_email_verification_token(token):
-    """Verify email verification token"""
+    """Verify email verification token (raw token in; lookup is by HMAC hash, F-29 follow-up)."""
+    # ``filter_by(token=token)`` binds the hashed value via HashedEmailVerificationToken.
     verification_token = EmailVerification.query.filter_by(token=token, is_used=False).first()
+    if (
+        verification_token is None
+        and legacy_plaintext_enabled()
+        and isinstance(token, str)
+        and token
+        and not token.startswith(_RESET_HASH_PREFIX)
+    ):
+        # Rows created before this change hold the plaintext token (<= 1 day lifetime).
+        # type_coerce bypasses the hashing type so the raw value is compared as stored.
+        legacy = EmailVerification.query.filter(
+            _sa_type_coerce(EmailVerification.token, _SAString()) == token,
+            EmailVerification.is_used.is_(False),
+        ).first()
+        if legacy is not None and tokens_equal(str(legacy.token), token):
+            verification_token = legacy
     
     if not verification_token:
         return None, "Invalid or expired token"

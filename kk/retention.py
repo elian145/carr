@@ -7,6 +7,8 @@ classes, so the periods are an owner decision (see docs/RETENTION_CLEANUP.md).
   RETENTION_TOKEN_BLACKLIST_PURGE=1     delete token_blacklist rows whose JWT has
                                         already expired (functionally dead: the
                                         token is rejected on expiry anyway)
+  RETENTION_AUTH_TOKEN_PURGE=1          delete password_reset / email_verification
+                                        rows that expired > 1 h ago (unredeemable)
   RETENTION_USER_ACTION_DAYS=<n>        delete analytics rows in user_action
                                         older than n days (admin_* actions are
                                         never touched)
@@ -25,7 +27,14 @@ import logging
 import os
 from datetime import timedelta
 
-from .models import Notification, TokenBlacklist, UserAction, db
+from .models import (
+    EmailVerification,
+    Notification,
+    PasswordReset,
+    TokenBlacklist,
+    UserAction,
+    db,
+)
 from .time_utils import utcnow
 
 logger = logging.getLogger(__name__)
@@ -89,6 +98,24 @@ def purge_expired_token_blacklist(now=None) -> int:
     )
 
 
+def purge_expired_auth_tokens(now=None) -> dict:
+    """Delete password-reset / email-verification rows that expired > TOKEN_EXPIRY_GRACE ago.
+
+    Used and unused rows alike: past expiry neither can ever be redeemed (every
+    redeem path checks ``expires_at``), so this is behaviour-neutral apart from the
+    error text for a long-expired code ("Invalid or expired token" instead of
+    "Token has expired"). Also removes any leftover pre-F-29 plaintext reset rows.
+    """
+    now = now or utcnow()
+    cutoff = now - TOKEN_EXPIRY_GRACE
+    return {
+        "password_reset": _delete_in_batches(PasswordReset, PasswordReset.expires_at < cutoff),
+        "email_verification": _delete_in_batches(
+            EmailVerification, EmailVerification.expires_at < cutoff
+        ),
+    }
+
+
 def purge_old_user_actions(days: int, now=None) -> int:
     now = now or utcnow()
     return _delete_in_batches(
@@ -112,6 +139,10 @@ def run_retention(now=None) -> dict:
     result: dict = {}
     if _flag_env("RETENTION_TOKEN_BLACKLIST_PURGE"):
         result["token_blacklist"] = purge_expired_token_blacklist(now)
+    if _flag_env("RETENTION_AUTH_TOKEN_PURGE"):
+        counts = purge_expired_auth_tokens(now)
+        result["password_reset"] = counts["password_reset"]
+        result["email_verification"] = counts["email_verification"]
     days = _positive_int_env("RETENTION_USER_ACTION_DAYS")
     if days:
         result["user_action"] = purge_old_user_actions(days, now)

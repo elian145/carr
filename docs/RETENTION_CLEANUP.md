@@ -9,6 +9,7 @@ no retention period is built in or assumed.
 | Env var | Effect when set |
 |---|---|
 | `RETENTION_TOKEN_BLACKLIST_PURGE=1` | Delete `token_blacklist` rows whose JWT expired > 1 h ago (already dead; behaviour-neutral). |
+| `RETENTION_AUTH_TOKEN_PURGE=1` | Delete `password_reset` and `email_verification` rows (used or unused) whose expiry passed > 1 h ago. They can no longer be redeemed, so only the error text for a long-expired code changes. Also clears any leftover pre-F-29 plaintext reset rows (F-29). |
 | `RETENTION_USER_ACTION_DAYS=<n>` | Delete `user_action` analytics rows older than *n* days. `admin_*` actions are never deleted. |
 | `RETENTION_READ_NOTIFICATION_DAYS=<n>` | Delete **read** notifications older than *n* days. Unread are never deleted. |
 
@@ -25,7 +26,8 @@ media (privacy policy: no automatic expiry, no stated period), reports, listings
 1. Retention period for `user_action` (analytics: views, logins) and whether the
    privacy policy should state it.
 2. Period for read notifications (and whether unread ones should ever expire).
-3. Whether to enable `RETENTION_TOKEN_BLACKLIST_PURGE` now (recommended; safe).
+3. Whether to enable `RETENTION_TOKEN_BLACKLIST_PURGE` and `RETENTION_AUTH_TOKEN_PURGE` now (both
+   are behaviour-neutral: they only remove already-dead rows; neither is on by default).
 4. Any retention for `admin_audit_log` (none implemented; append-only by design).
 5. Chat messages/media expiry remains a published-policy decision
    (see `docs/PRIVACY_DRAFT_ACCOUNT_DELETION.md`).

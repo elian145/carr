@@ -162,3 +162,43 @@ def test_beat_schedule_and_task_registered():
 
     sched = celery_app.conf.beat_schedule
     assert sched["retention-cleanup"]["task"] == "kk.tasks.retention_tasks.run_retention_cleanup"
+
+
+def test_auth_token_purge_is_opt_in_and_removes_only_long_expired_rows(ctx, monkeypatch):
+    """Reset / email-verification rows: purged only past expiry+grace, only when enabled."""
+    import secrets
+
+    import kk.retention as r
+    from kk.models import EmailVerification, PasswordReset
+    from kk.time_utils import utcnow
+
+    app, db = ctx
+    uid, _p, _n = _make_user(app, db)
+    now = utcnow()
+    with app.app_context():
+        # PasswordReset.token is hashed on bind, so unique raw values give unique rows.
+        for expires, used in (
+            (now - timedelta(days=2), False),     # expired, unused -> purge
+            (now - timedelta(days=2), True),      # expired, used   -> purge
+            (now - timedelta(minutes=5), False),  # inside grace    -> keep
+            (now + timedelta(minutes=30), False),  # live            -> keep
+        ):
+            db.session.add(PasswordReset(user_id=uid, token=secrets.token_hex(8),
+                                         expires_at=expires, is_used=used))
+            db.session.add(EmailVerification(user_id=uid, token=secrets.token_hex(8),
+                                             expires_at=expires, is_used=used))
+        db.session.commit()
+        pr0, ev0 = PasswordReset.query.count(), EmailVerification.query.count()
+
+        assert "password_reset" not in r.run_retention()  # disabled by default
+        assert PasswordReset.query.count() == pr0 and EmailVerification.query.count() == ev0
+
+        monkeypatch.setenv("RETENTION_AUTH_TOKEN_PURGE", "1")
+        res = r.run_retention()
+        assert res["password_reset"] >= 2 and res["email_verification"] >= 2
+        assert PasswordReset.query.count() == pr0 - res["password_reset"]
+        assert EmailVerification.query.count() == ev0 - res["email_verification"]
+        # live + inside-grace rows survive
+        assert PasswordReset.query.filter_by(user_id=uid).filter(
+            PasswordReset.expires_at > now - timedelta(hours=1)).count() == 2
+        assert r.run_retention()["password_reset"] == 0  # idempotent
