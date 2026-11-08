@@ -22,7 +22,7 @@ abstract final class _ApiServiceChat {
         payload['receiver_id'] = receiverId.trim();
       }
       if (listingPreview != null && listingPreview.isNotEmpty) {
-        payload['listing_preview'] = listingPreview;
+        payload['listing_preview'] = chatListingPreviewRefForSend(listingPreview);
       }
       if (replyToMessageId != null && replyToMessageId.trim().isNotEmpty) {
         payload['reply_to_message_id'] = replyToMessageId.trim();
@@ -233,7 +233,8 @@ abstract final class _ApiServiceChat {
           req.fields['reply_to_message_id'] = replyToMessageId.trim();
         }
         if (listingPreview != null && listingPreview.isNotEmpty) {
-          req.fields['listing_preview'] = json.encode(listingPreview);
+          req.fields['listing_preview'] =
+              json.encode(chatListingPreviewRefForSend(listingPreview));
         }
         ApiService.assertSessionCurrent(session);
         final streamedResponse = await ApiService._httpClient.send(req).timeout(ApiService._uploadTimeout);
