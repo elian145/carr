@@ -61,6 +61,8 @@ class AdminTokenSettings:
     public_key: Any  # cryptography EllipticCurvePublicKey
     private_key: Any | None  # cryptography EllipticCurvePrivateKey (API only)
     enforce: bool
+    issuer: str = _config.ADMIN_JWT_DEFAULT_ISSUER
+    audience: str = _config.ADMIN_JWT_DEFAULT_AUDIENCE
 
 
 def _load_settings() -> AdminTokenSettings | None:
@@ -121,7 +123,11 @@ def _load_settings() -> AdminTokenSettings | None:
         )
 
     return AdminTokenSettings(
-        public_key=public_key, private_key=private_key, enforce=enforce
+        public_key=public_key,
+        private_key=private_key,
+        enforce=enforce,
+        issuer=_config.admin_jwt_issuer(),
+        audience=_config.admin_jwt_audience(),
     )
 
 
@@ -193,12 +199,25 @@ def issue_admin_token(
         ttl = timedelta(minutes=30) if token_type == "access" else timedelta(days=7)
     payload["exp"] = now + ttl
     payload.update(claims)
-    # Admin-signed tokens always carry both admin claims.
+    # Admin-signed tokens always carry both admin claims plus iss/aud, which
+    # admin-web and ``_decode_key_for`` strictly require (caller claims cannot
+    # override them).
     payload["account_scope"] = "admin"
     payload["is_admin"] = True
+    payload["iss"] = settings.issuer
+    payload["aud"] = settings.audience
     return pyjwt.encode(
         payload, settings.private_key, algorithm=ADMIN_TOKEN_ALGORITHM
     )
+
+
+def _audience_matches(claim: Any, expected: str) -> bool:
+    """RFC 7519 ``aud``: a string or a list of strings; ``expected`` must be present."""
+    if isinstance(claim, str):
+        return claim == expected
+    if isinstance(claim, list):
+        return any(isinstance(a, str) and a == expected for a in claim)
+    return False
 
 
 def _decode_key_for(app, settings: AdminTokenSettings, header: dict, payload: dict):
@@ -217,6 +236,13 @@ def _decode_key_for(app, settings: AdminTokenSettings, header: dict, payload: di
             str(payload.get("account_scope") or "").strip().lower() != "admin"
         ):
             raise InvalidTokenError("admin-signed token without admin scope")
+        # iss/aud are mandatory on every admin-signed token (access AND
+        # refresh, i.e. also ``/api/auth/refresh``). The signature is verified
+        # by PyJWT right after this hook against the same claims.
+        if payload.get("iss") != settings.issuer:
+            raise InvalidTokenError("admin-signed token has a missing or wrong issuer")
+        if not _audience_matches(payload.get("aud"), settings.audience):
+            raise InvalidTokenError("admin-signed token has a missing or wrong audience")
         if has_request_context() and not is_admin_route_path(request.path):
             raise InvalidTokenError("admin-signed token not valid on this route")
         return settings.public_key

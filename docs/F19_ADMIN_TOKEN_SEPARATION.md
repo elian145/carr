@@ -51,6 +51,14 @@ API side (`kk/admin_tokens.py`, hook in `kk/app_factory.py`, settings in `kk/con
 * `alg` is constrained to `HS256`/`ES256`; the key is chosen per algorithm (HS256 -> only the shared
   secret, ES256 -> only the admin public key), so `none`, RS256 and HS256-signed-with-the-public-key
   confusion attacks are rejected.
+* Every admin-signed token (access and refresh) is stamped with `iss` (`ADMIN_JWT_ISSUER`, default
+  `carnet-api`) and `aud` (`ADMIN_JWT_AUDIENCE`, default `carnet-admin-web`). The API
+  (`_decode_key_for`) and admin-web (`verifyAdminAccessJwt`, also for a freshly rotated access
+  token) **require both**: a missing or different `iss`/`aud` is a 401 / no session. The defaults are
+  public constants, so no new variable is needed; the check is never skipped when a variable is unset
+  (blank = default). Tokens issued before this change lack the claims and are rejected: admins
+  sign in again once. Legacy HS256 admin tokens are minted by flask-jwt-extended without `iss`/`aud`
+  and are not covered (that path is removed by stage 3).
 * Revocation (`jti` blocklist, inactive users, `tokens_invalid_before`) is unchanged: the admin
   tokens carry the same `jti/iat/sub/type/fresh` claims.
 * Only dashboard logins (`POST /api/auth/login` with `"account_scope": "admin"` for an `AdminAccount`)
@@ -82,6 +90,8 @@ admin-web (`admin-web/src/lib/verify-admin-jwt.ts`, `admin-session-auth.ts`):
 | `ADMIN_JWT_PUBLIC_KEY` | `carr` (optional, derived from the private key) and `carr-admin` | matching SPKI public key PEM (admin-web also accepts the bare base64 body) |
 | `ADMIN_JWT_ENFORCE` | `carr` | `1` = reject HS256 tokens carrying admin claims (needs the private key on the same service) |
 | `ADMIN_ALLOWED_ORIGINS` | `carr-admin` (optional) | CSRF allow-list, see below |
+| `ADMIN_JWT_ISSUER` | `carr` and `carr-admin` (optional) | expected/stamped `iss` of admin-signed tokens; default `carnet-api`. Set to the SAME value on both services or on neither |
+| `ADMIN_JWT_AUDIENCE` | `carr` and `carr-admin` (optional) | expected/stamped `aud` of admin-signed tokens; default `carnet-admin-web`. Same rule as above |
 | `JWT_SECRET_KEY` | `carr` (always); `carr-admin` (legacy only, removed in stage 3a) | HS256 secret of **user** tokens |
 
 The names are read in `kk/config.py` (`admin_jwt_private_key_pem`, `admin_jwt_public_key_pem`,

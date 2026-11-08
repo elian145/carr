@@ -35,6 +35,8 @@ _ENV_KEYS = (
     "ADMIN_JWT_PRIVATE_KEY",
     "ADMIN_JWT_PUBLIC_KEY",
     "ADMIN_JWT_ENFORCE",
+    "ADMIN_JWT_ISSUER",
+    "ADMIN_JWT_AUDIENCE",
 )
 
 
@@ -164,8 +166,13 @@ class _Env:
             "type": "access",
             "sub": public_id,
             "exp": now + exp_delta,
+            # What the API stamps on every admin-signed token; pass
+            # ``iss=None`` / ``aud=None`` to omit a claim.
+            "iss": "carnet-api",
+            "aud": "carnet-admin-web",
         }
         payload.update(claims)
+        payload = {k: v for k, v in payload.items() if v is not None}
         return pyjwt.encode(payload, key, algorithm="ES256")
 
     # -- requests ---------------------------------------------------------------
@@ -334,9 +341,16 @@ def test_dual_dashboard_login_issues_admin_signed_tokens_and_refresh_works(dual,
     body = login.get_json()
     for tok in (body["access_token"], body["refresh_token"]):
         assert pyjwt.get_unverified_header(tok)["alg"] == "ES256"
+        unverified = pyjwt.decode(tok, options={"verify_signature": False})
+        assert unverified["iss"] == "carnet-api"
+        assert unverified["aud"] == "carnet-admin-web"
     # Verifies with the PUBLIC key only (what admin-web holds).
     claims = pyjwt.decode(
-        body["access_token"], keys["good"].public_key(), algorithms=["ES256"]
+        body["access_token"],
+        keys["good"].public_key(),
+        algorithms=["ES256"],
+        issuer="carnet-api",
+        audience="carnet-admin-web",
     )
     assert claims["account_scope"] == "admin" and claims["is_admin"] is True
     assert claims["sub"] == admin["public_id"]
@@ -708,3 +722,133 @@ def test_issued_admin_tokens_always_carry_exp_even_if_config_disables_expiry(dua
                 assert payload["exp"] > int(datetime.now(timezone.utc).timestamp())
         finally:
             dual.app.config.update(saved)
+
+
+# --------------------------------------------------------------------------
+# iss / aud on admin-signed tokens (strictly required on every path)
+# --------------------------------------------------------------------------
+_ADMIN_CLAIMS = {"is_admin": True, "account_scope": "admin"}
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"iss": None},
+        {"iss": "someone-else"},
+        {"aud": None},
+        {"aud": "someone-else"},
+        {"aud": ["other-service"]},
+        {"aud": 7},
+    ],
+    ids=["no-iss", "wrong-iss", "no-aud", "wrong-aud", "wrong-aud-list", "int-aud"],
+)
+def test_dual_admin_signed_token_with_missing_or_wrong_iss_aud_rejected(dual, keys, bad):
+    admin = dual.make_dashboard_admin()
+    good_tok = dual.es256(keys["good"], admin["public_id"], **_ADMIN_CLAIMS)
+    assert dual.admin_get(good_tok).status_code == 200  # control: same token, valid iss/aud
+    tok = dual.es256(keys["good"], admin["public_id"], **_ADMIN_CLAIMS, **bad)
+    assert dual.admin_get(tok).status_code == 401
+    assert dual.get("/api/auth/me", tok).status_code == 401
+    # also on the session-refresh path (refresh token type)
+    refresh = dual.es256(
+        keys["good"], admin["public_id"], type="refresh", **_ADMIN_CLAIMS, **bad
+    )
+    r = dual.client.post(
+        "/api/auth/refresh", headers={"Authorization": f"Bearer {refresh}"}
+    )
+    assert r.status_code == 401
+
+
+def test_dual_valid_iss_aud_list_audience_accepted(dual, keys):
+    admin = dual.make_dashboard_admin()
+    tok = dual.es256(
+        keys["good"],
+        admin["public_id"],
+        aud=["other-service", "carnet-admin-web"],
+        **_ADMIN_CLAIMS,
+    )
+    assert dual.admin_get(tok).status_code == 200
+
+
+def test_dual_wrong_alg_and_expired_still_rejected_with_valid_iss_aud(dual, keys):
+    admin = dual.make_dashboard_admin()
+    expired = dual.es256(
+        keys["good"],
+        admin["public_id"],
+        exp_delta=timedelta(seconds=-60),
+        **_ADMIN_CLAIMS,
+    )
+    assert dual.admin_get(expired).status_code == 401
+    # right claims but HS256 + the (wrong) admin public key as secret
+    hs = pyjwt.encode(
+        {
+            "sub": admin["public_id"],
+            "type": "access",
+            "jti": str(uuid.uuid4()),
+            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            "iss": "carnet-api",
+            "aud": "carnet-admin-web",
+            **_ADMIN_CLAIMS,
+        },
+        "x" * 40,
+        algorithm="HS256",
+    )
+    assert dual.admin_get(hs).status_code == 401
+    assert dual.admin_get(_unsigned_none(admin["public_id"], iss="carnet-api", aud="carnet-admin-web")).status_code == 401
+
+
+def test_dual_refreshed_admin_tokens_carry_iss_aud(dual):
+    admin = dual.make_dashboard_admin()
+    refresh = dual.admin_signed(admin["public_id"], token_type="refresh")
+    r = dual.client.post(
+        "/api/auth/refresh", headers={"Authorization": f"Bearer {refresh}"}
+    )
+    assert r.status_code == 200, r.data
+    body = r.get_json()
+    for tok in (body["access_token"], body.get("refresh_token")):
+        if not tok:
+            continue
+        claims = pyjwt.decode(tok, options={"verify_signature": False})
+        assert claims["iss"] == "carnet-api" and claims["aud"] == "carnet-admin-web"
+
+
+def test_enforce_admin_signed_token_without_iss_aud_rejected(enforce, keys):
+    admin = enforce.make_dashboard_admin()
+    ok = enforce.es256(keys["good"], admin["public_id"], **_ADMIN_CLAIMS)
+    assert enforce.admin_get(ok).status_code == 200
+    for bad in ({"iss": None}, {"aud": None}, {"iss": "x"}, {"aud": "x"}):
+        tok = enforce.es256(keys["good"], admin["public_id"], **_ADMIN_CLAIMS, **bad)
+        assert enforce.admin_get(tok).status_code == 401, bad
+
+
+def test_issue_admin_token_always_stamps_iss_aud_caller_cannot_override(dual):
+    from kk.admin_tokens import issue_admin_token
+
+    with dual.app.app_context():
+        tok = issue_admin_token(
+            "pub-id",
+            "access",
+            {**_ADMIN_CLAIMS, "iss": "forged", "aud": "forged"},
+        )
+    claims = pyjwt.decode(tok, options={"verify_signature": False})
+    assert claims["iss"] == "carnet-api" and claims["aud"] == "carnet-admin-web"
+
+
+def test_iss_aud_env_overrides_are_read_at_boot_and_default_otherwise(keys, monkeypatch):
+    s = _settings_with_env(monkeypatch, ADMIN_JWT_PRIVATE_KEY=_pem_private(keys["good"]))
+    assert (s.issuer, s.audience) == ("carnet-api", "carnet-admin-web")
+    s = _settings_with_env(
+        monkeypatch,
+        ADMIN_JWT_PRIVATE_KEY=_pem_private(keys["good"]),
+        ADMIN_JWT_ISSUER="  my-iss ",
+        ADMIN_JWT_AUDIENCE="my-aud",
+    )
+    assert (s.issuer, s.audience) == ("my-iss", "my-aud")
+    # blank values fall back to the defaults, never to "no check"
+    s = _settings_with_env(
+        monkeypatch,
+        ADMIN_JWT_PRIVATE_KEY=_pem_private(keys["good"]),
+        ADMIN_JWT_ISSUER="   ",
+        ADMIN_JWT_AUDIENCE="",
+    )
+    assert (s.issuer, s.audience) == ("carnet-api", "carnet-admin-web")
