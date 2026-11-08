@@ -163,7 +163,7 @@ Widget carListingSpecsDetailRow(
                   ),
                   child: Text(
                     value,
-                    textAlign: TextAlign.right,
+                    textAlign: TextAlign.end,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(

@@ -333,8 +333,8 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
           ),
 
           // Scroll hint arrows
-          Positioned(
-            right: 16,
+          PositionedDirectional(
+            end: 16,
             top: MediaQuery.of(context).size.height * 0.45,
             child: Column(
               children: [

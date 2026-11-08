@@ -283,9 +283,9 @@ abstract final class AppResponsive {
       child: FittedBox(
         fit: BoxFit.scaleDown,
         alignment: textAlign == TextAlign.end
-            ? Alignment.centerRight
+            ? AlignmentDirectional.centerEnd
             : (textAlign == TextAlign.start
-                  ? Alignment.centerLeft
+                  ? AlignmentDirectional.centerStart
                   : Alignment.center),
         child: Text(
           text,

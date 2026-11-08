@@ -40,7 +40,7 @@ Widget buildChatReplyPreviewCard(
     decoration: BoxDecoration(
       color: baseColor,
       borderRadius: BorderRadius.circular(12),
-      border: Border(left: BorderSide(color: borderColor, width: 3)),
+      border: BorderDirectional(start: BorderSide(color: borderColor, width: 3)),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,9 +151,9 @@ Widget _buildChatComposerAttachmentTile({
           child: child,
         ),
       ),
-      Positioned(
+      PositionedDirectional(
         top: 4,
-        right: 4,
+        end: 4,
         child: Semantics(
           button: true,
           label: AppLocalizations.of(context)?.removeAction ?? 'Remove',

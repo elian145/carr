@@ -394,9 +394,9 @@ Widget _buildGlobalCarCard(
               child: _globalListingCardVideoCountBadge(car),
             ),
           if (featured)
-            Positioned(
+            PositionedDirectional(
               top: listLayout ? 8 : 10,
-              left: listLayout ? 8 : 10,
+              start: listLayout ? 8 : 10,
               child: buildListingFeaturedBadge(context, compact: listLayout),
             ),
         ],

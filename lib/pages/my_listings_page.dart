@@ -794,9 +794,9 @@ class _MyListingsPageState extends State<MyListingsPage>
                                   clipBehavior: Clip.none,
                                   children: [
                                     cardWidget,
-                                    Positioned(
+                                    PositionedDirectional(
                                       bottom: listingColumns == 1 ? 12 : 8,
-                                      left: listingColumns == 1 ? 12 : 8,
+                                      start: listingColumns == 1 ? 12 : 8,
                                       child: _buildProcessingMediaBadge(
                                         context,
                                       ),

@@ -211,8 +211,8 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
               ),
             ),
           ),
-          Positioned(
-            left: 20,
+          PositionedDirectional(
+            start: 20,
             bottom: 4,
             child: Material(
               elevation: 8,
