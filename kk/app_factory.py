@@ -21,6 +21,8 @@ from .socketio_deploy import (
     resolve_json_max_content_length,
     resolve_socketio_max_http_buffer_size,
 )
+from .realtime_limits import load_limits
+from .socket_edge_guard import install_socket_edge_guard, load_edge_config
 from .socketio_handlers import register_socketio_handlers
 
 
@@ -434,6 +436,15 @@ def create_app():
             max_http_buffer_size=sio_max_buffer,
         )
         CORS(app, origins=cors_origins or "*")
+
+    # C-1: WSGI edge guard (thread ceiling, no anonymous sessions, orphan reaper).
+    # Installed last so it is the OUTERMOST wrapper (it must see raw requests
+    # before Engine.IO pins a worker thread).
+    install_socket_edge_guard(
+        app,
+        socketio,
+        load_edge_config(max_total=load_limits().max_total),
+    )
 
     # If the SQLite DB file is brand new, it has no tables and the API will 500.
     # In development/testing, auto-create tables to make local boot reliable.
