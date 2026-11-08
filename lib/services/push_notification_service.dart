@@ -12,22 +12,34 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_service.dart' show ApiException, ApiService;
 import 'config.dart';
+import '../l10n/app_localizations.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/debug/app_log.dart';
+import '../state/locale_controller.dart';
 
-const AndroidNotificationChannel _chatChannel = AndroidNotificationChannel(
-  'carzo_chat',
-  'Chat messages',
-  description: 'New chat message alerts',
-  importance: Importance.high,
-);
+// F-22: the channel names/descriptions are user-visible in the Android system
+// notification settings, so they follow the app language. No BuildContext is
+// available here; lookupAppLocalizations resolves strings straight from the
+// resolved app locale. Channel ids stay as-is (owner decision, F-11).
+AndroidNotificationChannel _chatChannel() {
+  final l10n = lookupAppLocalizations(Locale(LocaleController.resolveCode()));
+  return AndroidNotificationChannel(
+    'carzo_chat',
+    l10n.notificationChannelChatName,
+    description: l10n.notificationChannelChatDescription,
+    importance: Importance.high,
+  );
+}
 
-const AndroidNotificationChannel _updatesChannel = AndroidNotificationChannel(
-  'carzo_updates',
-  'Account updates',
-  description: 'Important account and dealership updates',
-  importance: Importance.high,
-);
+AndroidNotificationChannel _updatesChannel() {
+  final l10n = lookupAppLocalizations(Locale(LocaleController.resolveCode()));
+  return AndroidNotificationChannel(
+    'carzo_updates',
+    l10n.notificationChannelUpdatesName,
+    description: l10n.notificationChannelUpdatesDescription,
+    importance: Importance.high,
+  );
+}
 
 final FlutterLocalNotificationsPlugin _localNotifications =
     FlutterLocalNotificationsPlugin();
@@ -412,12 +424,12 @@ class PushNotificationService {
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
           >()
-          ?.createNotificationChannel(_chatChannel);
+          ?.createNotificationChannel(_chatChannel());
       await _localNotifications
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
           >()
-          ?.createNotificationChannel(_updatesChannel);
+          ?.createNotificationChannel(_updatesChannel());
     }
     _localNotificationsReady = true;
   }
@@ -432,8 +444,8 @@ class PushNotificationService {
         : jsonEncode(const {'type': 'chat_message'});
     final channel =
         (message.data['type'] ?? '').toString() == 'dealer_application'
-        ? _updatesChannel
-        : _chatChannel;
+        ? _updatesChannel()
+        : _chatChannel();
     await _localNotifications.show(
       id,
       notification.title,

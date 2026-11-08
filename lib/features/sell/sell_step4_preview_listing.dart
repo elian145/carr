@@ -55,7 +55,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
     final String yearStr = data['year'] != null ? data['year'].toString() : '';
     final String titleWithYear = yearStr.isNotEmpty
         ? '$title ($yearStr)'
-        : (title.isEmpty ? 'Your listing' : title);
+        : (title.isEmpty ? AppLocalizations.of(context)!.yourListingFallbackTitle : title);
 
     final bool fullPage = widget.fullPage;
     return Container(

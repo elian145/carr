@@ -201,7 +201,7 @@ mixin _SavedSearchesPageHelpers on _SavedSearchesPageLoad {
       chips.add(
         _buildFilterChip(
           context,
-          'Damaged Parts',
+          l.damagedParts,
           filters['damaged_parts'].toString(),
         ),
       );
@@ -227,7 +227,7 @@ mixin _SavedSearchesPageHelpers on _SavedSearchesPageLoad {
       chips.add(
         _buildFilterChip(
           context,
-          'Accident History',
+          l.accidentHistory,
           _capitalizeFirst(filters['accident_history'].toString()),
         ),
       );

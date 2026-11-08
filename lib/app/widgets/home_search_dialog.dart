@@ -260,8 +260,8 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
   Widget _buildModelsList() {
     if (_filteredModels.isEmpty) {
       final emptyHint = _searchController.text.trim().isEmpty
-          ? 'Type a model name to search. You can also type a brand to see all its models.'
-          : 'No models match your search.';
+          ? AppLocalizations.of(context)!.typeModelNameToSearch
+          : AppLocalizations.of(context)!.noModelsMatchYourSearch;
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),

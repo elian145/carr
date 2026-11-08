@@ -502,6 +502,11 @@ class AppLocalizationsKu extends AppLocalizations {
       'ناتوانیت پەیام بنێریت بە خۆت لەسەر ڕیکلامی خۆت.';
 
   @override
+  String chatUserTyping(String name) {
+    return '$name دەنووسێت...';
+  }
+
+  @override
   String get unableToOpenWhatsApp => 'ناتوانرێت واتساپ بکرێتەوە';
 
   @override
@@ -1343,6 +1348,20 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get noNotificationsYet => 'هێشتا هیچ ئاگادارکردنەوەیەک نییە';
+
+  @override
+  String get notificationChannelChatName => 'پەیامەکانی چات';
+
+  @override
+  String get notificationChannelChatDescription =>
+      'ئاگادارکردنەوەی پەیامی نوێی چات';
+
+  @override
+  String get notificationChannelUpdatesName => 'نوێکارییەکانی هەژمار';
+
+  @override
+  String get notificationChannelUpdatesDescription =>
+      'نوێکاری گرنگی هەژمار و نمایشگاکان';
 
   @override
   String get failedToLoadNotifications =>
@@ -2405,6 +2424,13 @@ class AppLocalizationsKu extends AppLocalizations {
       'هیچ براند یان مۆدێلێک نەدۆزرایەوە.';
 
   @override
+  String get typeModelNameToSearch =>
+      'ناوی مۆدێلێک بنووسە بۆ گەڕان. دەتوانیت ناوی براندێکیش بنووسیت بۆ بینینی هەموو مۆدێلەکانی.';
+
+  @override
+  String get noModelsMatchYourSearch => 'هیچ مۆدێلێک نەدۆزرایەوە.';
+
+  @override
   String get make => 'براند';
 
   @override
@@ -2480,6 +2506,9 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get untitledDraftTitle => 'ڕەشنووسی بێناو';
+
+  @override
+  String get yourListingFallbackTitle => 'ڕیکلامەکەت';
 
   @override
   String get continueEditing => 'بەردەوامبوون لە دەستکاری';
@@ -2560,6 +2589,10 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get specsAvailableForThisYear => 'مواسەفات بۆ ئەم ساڵە بەردەستە.';
+
+  @override
+  String get noSpecRowForThisYear =>
+      'مواسەفات بۆ ئەم ساڵە نییە — ساڵێکی تر یان جۆرێکی تر تاقی بکەرەوە.';
 
   @override
   String get applySpecs => 'جێبەجێکردنی مواسەفات';

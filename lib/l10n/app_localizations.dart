@@ -1072,6 +1072,12 @@ abstract class AppLocalizations {
   /// **'You can\'t message yourself on your own listing.'**
   String get chatCarzoOwnListing;
 
+  /// Typing indicator shown above the chat composer
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is typing...'**
+  String chatUserTyping(String name);
+
   /// No description provided for @unableToOpenWhatsApp.
   ///
   /// In en, this message translates to:
@@ -2571,6 +2577,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No notifications yet'**
   String get noNotificationsYet;
+
+  /// No description provided for @notificationChannelChatName.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat messages'**
+  String get notificationChannelChatName;
+
+  /// No description provided for @notificationChannelChatDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat message alerts'**
+  String get notificationChannelChatDescription;
+
+  /// No description provided for @notificationChannelUpdatesName.
+  ///
+  /// In en, this message translates to:
+  /// **'Account updates'**
+  String get notificationChannelUpdatesName;
+
+  /// No description provided for @notificationChannelUpdatesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Important account and dealership updates'**
+  String get notificationChannelUpdatesDescription;
 
   /// No description provided for @failedToLoadNotifications.
   ///
@@ -4483,6 +4513,18 @@ abstract class AppLocalizations {
   /// **'No makes or models match your search.'**
   String get noMakesOrModelsMatchYourSearch;
 
+  /// No description provided for @typeModelNameToSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a model name to search. You can also type a brand to see all its models.'**
+  String get typeModelNameToSearch;
+
+  /// No description provided for @noModelsMatchYourSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'No models match your search.'**
+  String get noModelsMatchYourSearch;
+
   /// No description provided for @make.
   ///
   /// In en, this message translates to:
@@ -4627,6 +4669,12 @@ abstract class AppLocalizations {
   /// **'Untitled draft'**
   String get untitledDraftTitle;
 
+  /// No description provided for @yourListingFallbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your listing'**
+  String get yourListingFallbackTitle;
+
   /// No description provided for @continueEditing.
   ///
   /// In en, this message translates to:
@@ -4764,6 +4812,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Specs available for this year.'**
   String get specsAvailableForThisYear;
+
+  /// No description provided for @noSpecRowForThisYear.
+  ///
+  /// In en, this message translates to:
+  /// **'No spec row for this year — try another year or variant.'**
+  String get noSpecRowForThisYear;
 
   /// No description provided for @applySpecs.
   ///
