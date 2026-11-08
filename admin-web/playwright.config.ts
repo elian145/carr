@@ -31,6 +31,13 @@ export default defineConfig({
         timeout: 120_000,
         env: {
           ...process.env,
+          // F-32 forces `Secure` session cookies whenever the server runs in
+          // production mode (`next start`, as in CI). This test server is
+          // plain HTTP on 127.0.0.1, where the Playwright request jar will not
+          // replay a Secure cookie, so every authenticated API-level spec saw
+          // a signed-out session. Opt out here only; real deployments never
+          // set this (see src/lib/admin-session-auth.ts).
+          ADMIN_COOKIE_ALLOW_HTTP: "1",
           JWT_SECRET_KEY: process.env.JWT_SECRET_KEY || "ci-admin-jwt-secret",
           NEXT_PUBLIC_API_BASE:
             process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:5000",
