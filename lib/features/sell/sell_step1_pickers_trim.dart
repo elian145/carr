@@ -182,7 +182,7 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
             child: ElevatedButton(
               onPressed: canApply ? _applyCatalogSpecsToFlow : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: kFilterAccentColor,
+                backgroundColor: AppColors.brandOrangeStrong,
                 foregroundColor: Colors.white,
                 disabledBackgroundColor:
                     kFilterAccentColor.withValues(alpha: 0.35),

@@ -81,7 +81,7 @@ class _SellCarPageState extends _SellCarPageFields
                 ? AppLocalizations.of(context)!.editListingTitle
                 : AppLocalizations.of(context)!.addListingTitle,
           ),
-          backgroundColor: AppColors.brandOrange,
+          backgroundColor: AppColors.brandOrangeStrong,
           foregroundColor: Colors.white,
           elevation: 0,
           leading: IconButton(

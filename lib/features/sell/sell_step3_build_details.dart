@@ -248,7 +248,7 @@ mixin _SellStep3BuildDetails on _SellStep3BuildPrice {
                       if (ok) setState(() {});
                     },
               style: TextButton.styleFrom(
-                foregroundColor: kFilterAccentColor,
+                foregroundColor: AppColors.accentText(context),
                 disabledForegroundColor: Colors.green,
                 visualDensity: VisualDensity.compact,
               ),

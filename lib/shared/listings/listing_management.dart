@@ -201,7 +201,7 @@ Future<bool> confirmMarkListingSold(BuildContext context) async {
           onPressed: () => Navigator.pop(ctx, true),
           child: Text(
             _soldDialogText(context, 'Mark sold', 'مباع', 'فرۆشراو'),
-            style: const TextStyle(color: AppColors.brandOrange),
+            style: TextStyle(color: AppColors.accentText(context)),
           ),
         ),
       ],

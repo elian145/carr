@@ -269,7 +269,7 @@ class _FirstRunOnboardingGateState extends State<FirstRunOnboardingGate> {
                           height: 50,
                           child: FilledButton(
                             style: FilledButton.styleFrom(
-                              backgroundColor: _accent,
+                              backgroundColor: AppColors.brandOrangeStrong,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
@@ -309,7 +309,7 @@ class _FirstRunOnboardingGateState extends State<FirstRunOnboardingGate> {
                       height: 50,
                       child: FilledButton(
                         style: FilledButton.styleFrom(
-                          backgroundColor: _accent,
+                          backgroundColor: AppColors.brandOrangeStrong,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),

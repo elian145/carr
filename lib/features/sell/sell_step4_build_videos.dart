@@ -322,7 +322,7 @@ mixin _SellStep4BuildVideos on _SellStep4BuildDamage {
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kFilterAccentColor.withValues(alpha: 0.12),
-                  foregroundColor: kFilterAccentColor,
+                  foregroundColor: AppColors.accentText(context),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

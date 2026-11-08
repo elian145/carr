@@ -388,7 +388,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
       child: Text(
         label,
         style: TextStyle(
-          color: _accent,
+          color: AppColors.accentText(context),
           fontSize: 11,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.2,
@@ -551,7 +551,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                     child: ElevatedButton.icon(
                       onPressed: () => unawaited(_continueDraft(draft)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _accent,
+                        backgroundColor: AppColors.brandOrangeStrong,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -610,7 +610,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
       child: ElevatedButton.icon(
         onPressed: () => unawaited(_startFreshWithArchive()),
         style: ElevatedButton.styleFrom(
-          backgroundColor: _accent,
+          backgroundColor: AppColors.brandOrangeStrong,
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -713,7 +713,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.addListingTitle),
-        backgroundColor: _accent,
+        backgroundColor: AppColors.brandOrangeStrong,
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(

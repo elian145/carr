@@ -140,7 +140,7 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kFilterAccentColor.withValues(alpha: 0.12),
-                  foregroundColor: kFilterAccentColor,
+                  foregroundColor: AppColors.accentText(context),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

@@ -346,7 +346,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                               const SizedBox(height: 14),
                               OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.brandOrange,
+                                  foregroundColor: AppColors.accentText(context),
                                   side: BorderSide(
                                     color: AppColors.brandOrange.withValues(alpha: 0.45),
                                   ),

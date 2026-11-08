@@ -195,7 +195,7 @@ class AppThemes {
         },
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: scheme.primary,
+        backgroundColor: AppColors.brandOrangeStrong,
         foregroundColor: scheme.onPrimary,
         elevation: 0,
       ),
@@ -206,7 +206,7 @@ class AppThemes {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: scheme.primary,
+          backgroundColor: AppColors.brandOrangeStrong,
           foregroundColor: scheme.onPrimary,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
@@ -307,7 +307,7 @@ class AppThemes {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: scheme.primary,
+          backgroundColor: AppColors.brandOrangeStrong,
           foregroundColor: scheme.onPrimary,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),

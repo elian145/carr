@@ -440,7 +440,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                           width: double.infinity,
                           child: FilledButton.icon(
                             style: FilledButton.styleFrom(
-                              backgroundColor: _brandOrange,
+                              backgroundColor: AppColors.brandOrangeStrong,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -487,7 +487,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                           width: double.infinity,
                           child: OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: _brandOrange,
+                              foregroundColor: AppColors.accentText(context),
                               side: BorderSide(
                                 color: _brandOrange.withValues(alpha: 0.4),
                               ),

@@ -247,7 +247,7 @@ class _SettingsPageState extends State<SettingsPage> {
       backgroundColor: isLightShell ? Colors.white : null,
       appBar: AppBar(
         title: Text(loc.settingsTitle),
-        backgroundColor: AppColors.brandOrange,
+        backgroundColor: AppColors.brandOrangeStrong,
         foregroundColor: Colors.white,
         elevation: 0,
       ),

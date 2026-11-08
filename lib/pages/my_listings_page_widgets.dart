@@ -34,7 +34,7 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
             label: Text(label),
             selected: _filter == filter,
             onSelected: (_) => _selectFilter(filter),
-            selectedColor: AppColors.brandOrange,
+            selectedColor: AppColors.brandOrangeStrong,
             labelStyle: TextStyle(
               color: _filter == filter ? Colors.white : null,
               fontWeight: FontWeight.w700,
@@ -357,7 +357,7 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
                         ),
                         onPressed: () => unawaited(_resumeDraft(snapshot)),
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.brandOrange,
+                          backgroundColor: AppColors.brandOrangeStrong,
                           foregroundColor: Colors.white,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 10),

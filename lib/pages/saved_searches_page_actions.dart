@@ -114,7 +114,7 @@ mixin _SavedSearchesPageActions on _SavedSearchesPageFilterDetails {
               _applySearch(filters);
             },
             style: TextButton.styleFrom(
-              backgroundColor: AppColors.brandOrange,
+              backgroundColor: AppColors.brandOrangeStrong,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),

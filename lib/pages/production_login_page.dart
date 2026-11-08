@@ -593,7 +593,7 @@ class _LoginPageState extends State<LoginPage> {
       appBar: AppBar(
         title: Text(loc.loginTitle),
         elevation: 0,
-        backgroundColor: AppColors.brandOrange,
+        backgroundColor: AppColors.brandOrangeStrong,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -806,7 +806,7 @@ class _LoginPageState extends State<LoginPage> {
                               onPressed:
                                   (_loading || _sendingOtp) ? null : _sendOtp,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.brandOrange,
+                                backgroundColor: AppColors.brandOrangeStrong,
                                 foregroundColor: Colors.white,
                                 disabledBackgroundColor: AppColors.brandOrange
                                     .withValues(alpha: 0.45),
@@ -865,7 +865,7 @@ class _LoginPageState extends State<LoginPage> {
                           child: ElevatedButton(
                             onPressed: _loading ? null : _loginWithPhone,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.brandOrange,
+                              backgroundColor: AppColors.brandOrangeStrong,
                               foregroundColor: Colors.white,
                               disabledBackgroundColor: AppColors.brandOrange
                                   .withValues(alpha: 0.45),

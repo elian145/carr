@@ -385,7 +385,7 @@ Widget buildSellWizardNavRow(
       child: ElevatedButton(
         onPressed: onNext,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.brandOrange,
+          backgroundColor: AppColors.brandOrangeStrong,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

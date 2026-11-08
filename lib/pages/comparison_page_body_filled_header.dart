@@ -21,7 +21,7 @@ extension _CarComparisonPageBodyFilledHeader on CarComparisonPage {
         ),
         OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.brandOrange,
+            foregroundColor: AppColors.accentText(context),
             side: const BorderSide(color: AppColors.brandOrange),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             shape: RoundedRectangleBorder(

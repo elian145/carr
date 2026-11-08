@@ -65,7 +65,7 @@ class EmptyStatePanel extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onAction,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _accent,
+                  backgroundColor: AppColors.brandOrangeStrong,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,

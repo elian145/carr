@@ -195,7 +195,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: kFilterAccentColor,
+                                  color: AppColors.brandOrangeStrong,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
@@ -279,7 +279,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                   overflow: TextOverflow.ellipsis,
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: kFilterAccentColor,
+                  backgroundColor: AppColors.brandOrangeStrong,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(

@@ -252,7 +252,7 @@ mixin _SavedSearchesPageHelpers on _SavedSearchesPageLoad {
       ),
       child: Text(
         '$label: $value',
-        style: TextStyle(fontSize: 11, color: AppColors.brandOrange),
+        style: TextStyle(fontSize: 11, color: AppColors.accentText(context)),
       ),
     );
   }

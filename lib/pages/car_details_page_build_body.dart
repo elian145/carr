@@ -59,7 +59,7 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                             ),
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.brandOrange,
+                                foregroundColor: AppColors.accentText(context),
                                 side: BorderSide(color: AppColors.brandOrange),
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 10,

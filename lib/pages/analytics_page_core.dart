@@ -6,7 +6,7 @@ mixin _AnalyticsPageCore on _AnalyticsPageWidgets {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.analyticsTitle),
-        backgroundColor: AppColors.brandOrange,
+        backgroundColor: AppColors.brandOrangeStrong,
         foregroundColor: Colors.white,
         elevation: 0,
       ),

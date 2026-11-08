@@ -383,7 +383,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
                 icon: const Icon(Icons.refresh),
                 label: Text(loc.blurPlatesNow),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: kFilterAccentColor,
+                  backgroundColor: AppColors.brandOrangeStrong,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -407,7 +407,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
               icon: const Icon(Icons.refresh),
               label: Text(loc.blurPlatesNow),
               style: ElevatedButton.styleFrom(
-                backgroundColor: kFilterAccentColor,
+                backgroundColor: AppColors.brandOrangeStrong,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(

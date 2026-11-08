@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../../theme/app_colors.dart';
 
 /// Compact list/grid layout switcher for the home feed.
 class ListingLayoutToggle extends StatelessWidget {
@@ -94,12 +95,12 @@ class _Segment extends StatelessWidget {
                 width: 38,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: selected ? scheme.primary : Colors.transparent,
+                  color: selected ? AppColors.brandOrangeStrong : Colors.transparent,
                   borderRadius: BorderRadius.circular(9),
                   boxShadow: selected
                       ? [
                           BoxShadow(
-                            color: scheme.primary.withValues(alpha: 0.28),
+                            color: AppColors.brandOrangeStrong.withValues(alpha: 0.28),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -112,7 +113,7 @@ class _Segment extends StatelessWidget {
                   // F-24: unselected icons were ~2.4:1 on the toggle track
                   // (below the 3:1 non-text minimum).
                   color: selected
-                      ? scheme.onPrimary
+                      ? Colors.white
                       : scheme.onSurfaceVariant.withValues(
                           alpha: isDark ? 0.9 : 0.85,
                         ),

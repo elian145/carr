@@ -204,7 +204,7 @@ mixin _SellStep5Build on _SellStep5Logic {
         child: ElevatedButton(
           onPressed: isSubmitting ? null : () => _onSellStep5SubmitPressed(parentState),
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.brandOrange,
+            backgroundColor: AppColors.brandOrangeStrong,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             elevation: 2,
