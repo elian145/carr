@@ -29,6 +29,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Parity with `pip-audit` in backend_ci.yml: fail on known high/critical
+      # advisories in the shipped (production) dependency tree.
+      - name: Audit dependencies
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Lint
         run: npm run lint
 

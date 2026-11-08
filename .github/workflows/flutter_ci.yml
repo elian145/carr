@@ -43,10 +43,18 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-warnings --no-fatal-infos
 
-      - name: Publish preflight (static + optional host)
+      # lib/l10n/app_localizations*.dart are committed: fail if they drift from
+      # the .arb files (stale generated code would ship missing/old strings).
+      - name: Localization generated files are up to date
         run: |
-          python scripts/verify_preflight.py --host https://carr-5hrm.onrender.com || \
-          python scripts/verify_preflight.py --skip-host
+          flutter gen-l10n
+          git diff --exit-code -- lib/l10n
+
+      # Static only. The deployed-host smoke test lives in verify_production.yml;
+      # a `host check || static check` fallback here could never fail on the host
+      # (false green) and made PR CI depend on the Render free-tier being awake.
+      - name: Publish preflight (static)
+        run: python scripts/verify_preflight.py --skip-host
 
       - name: Run tests
         run: bash scripts/flutter_test_ci.sh --no-pub --coverage
