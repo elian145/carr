@@ -406,6 +406,109 @@ class TestOrphanReaper:
         r.scan_once()
         assert r._orphan_since == {}
 
+    # -- transport release: eio.disconnect alone leaves the gthread request
+    #    thread blocked in ws.receive() for the ping timeout (found with real
+    #    gunicorn); the reaper must also shut the transport socket down.
+
+    class _RawSock:
+        def __init__(self, raises=None):
+            self.shutdowns = []
+            self.raises = raises
+
+        def shutdown(self, how):
+            self.shutdowns.append(how)
+            if self.raises:
+                raise self.raises
+
+    def _orphan_with_environ(self, query, raw, *, connected=False):
+        r, sio, clock = _reaper()
+        sio.server.eio.sockets["o"] = object()
+        sio.server.environ = {"o": {"QUERY_STRING": query, "gunicorn.socket": raw}}
+        if connected:
+            sio.server.manager.connected["o"] = "sid-1"
+        real_disconnect = sio.server.eio.disconnect
+
+        def disconnect(eio_sid):  # python-socketio drops environ on disconnect
+            sio.server.environ.pop(eio_sid, None)
+            real_disconnect(eio_sid)
+
+        sio.server.eio.disconnect = disconnect
+        r.scan_once()
+        clock.t += 11
+        return r, sio
+
+    def test_direct_websocket_orphan_has_its_transport_shut_down(self):
+        import socket
+
+        raw = self._RawSock()
+        r, sio = self._orphan_with_environ("EIO=4&transport=websocket", raw)
+        assert r.scan_once() == 1
+        assert sio.server.eio.disconnected == ["o"]
+        assert raw.shutdowns == [socket.SHUT_RDWR]
+
+    def test_polling_orphan_transport_is_not_touched(self):
+        raw = self._RawSock()
+        r, sio = self._orphan_with_environ("EIO=4&transport=polling", raw)
+        assert r.scan_once() == 1
+        assert raw.shutdowns == []  # the first poll's connection may be shared
+
+    def test_upgraded_session_transport_is_not_touched(self):
+        raw = self._RawSock()
+        r, _sio = self._orphan_with_environ("EIO=4&transport=websocket&sid=abc", raw)
+        assert r.scan_once() == 1
+        assert raw.shutdowns == []
+
+    def test_connected_socket_transport_is_never_shut_down(self):
+        raw = self._RawSock()
+        r, sio = self._orphan_with_environ("EIO=4&transport=websocket", raw, connected=True)
+        assert r.scan_once() == 0
+        assert sio.server.eio.disconnected == [] and raw.shutdowns == []
+
+    def test_already_closed_transport_does_not_break_the_reaper(self):
+        raw = self._RawSock(raises=OSError("not connected"))
+        r, sio = self._orphan_with_environ("EIO=4&transport=websocket", raw)
+        assert r.scan_once() == 1
+        assert sio.server.eio.disconnected == ["o"]
+
+    class _Session:
+        """Engine.IO Socket stand-in: ``close(wait=True)`` would block forever
+        (no consumer for the CLOSE packet), exactly like an orphan with no poll."""
+
+        def __init__(self):
+            self.calls = []
+
+        def close(self, wait=True, **_kw):
+            self.calls.append(wait)
+            if wait:
+                raise AssertionError("reaper must never wait on a consumer")
+
+    def test_reaper_closes_without_waiting_and_removes_the_session(self):
+        r, sio, clock = _reaper()
+        sess = self._Session()
+        sio.server.eio.sockets["p"] = sess
+        r.scan_once()
+        clock.t += 11
+        assert r.scan_once() == 1
+        assert sess.calls == [False]
+        assert "p" not in sio.server.eio.sockets
+        assert sio.server.eio.disconnected == []  # eio.disconnect() waits; not used
+
+    def test_one_stuck_session_never_prevents_reaping_the_next(self):
+        r, sio, clock = _reaper()
+        first, second = self._Session(), self._Session()
+        sio.server.eio.sockets.update({"a": first, "b": second})
+        r.scan_once()
+        clock.t += 11
+        assert r.scan_once() == 2
+        assert first.calls == [False] and second.calls == [False]
+
+    def test_missing_environ_is_tolerated(self):
+        r, sio, clock = _reaper()
+        sio.server.eio.sockets["x"] = object()  # fake server has no .environ at all
+        r.scan_once()
+        clock.t += 11
+        assert r.scan_once() == 1
+
     def test_deadline_zero_never_starts_the_thread(self):
         r, _sio, _clock = _reaper(deadline=0)
         r.ensure_started()

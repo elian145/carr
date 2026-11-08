@@ -295,6 +295,54 @@ class OrphanReaper:
             except Exception:  # pragma: no cover - keep the reaper alive
                 logger.exception("socket orphan reaper scan failed")
 
+    @staticmethod
+    def _websocket_transport_socket(server, eio_sid: str):
+        """Raw TCP socket of a *direct* websocket session, else ``None``.
+
+        ``eio.disconnect`` only ends the Engine.IO session: under gthread the
+        websocket request thread stays blocked in ``ws.receive()`` (still
+        holding its edge slot and worker thread) until the ping timeout
+        (~45 s). Shutting the transport socket down unblocks it at once.
+        Polling-first sessions are skipped: their stored environ belongs to
+        the first poll request, whose connection may be shared.
+        """
+        try:
+            environ = (getattr(server, "environ", None) or {}).get(eio_sid) or {}
+            query = urllib.parse.parse_qs(environ.get("QUERY_STRING") or "")
+            if (query.get("transport") or [""])[0] != "websocket" or "sid" in query:
+                return None
+            return environ.get("gunicorn.socket") or environ.get("werkzeug.socket")
+        except Exception:  # pragma: no cover - never break the reaper
+            return None
+
+    @staticmethod
+    def _close_session(eio, eio_sid: str) -> None:
+        """Close one Engine.IO session WITHOUT blocking the (single) reaper thread.
+
+        ``eio.disconnect()`` closes with ``wait=True``, i.e. ``queue.join()`` until a
+        consumer drains the CLOSE packet. An orphan with no pending poll has no
+        consumer, so that call would hang the reaper and stall every later
+        reap. ``close(wait=False)`` + removal is the same cleanup minus the wait.
+        """
+        session = eio.sockets.get(eio_sid)
+        close = getattr(session, "close", None)
+        if close is None:  # unknown engine implementation: use the public API
+            eio.disconnect(eio_sid)
+            return
+        try:
+            close(wait=False)
+        finally:
+            eio.sockets.pop(eio_sid, None)
+
+    @staticmethod
+    def _release_transport(raw) -> None:
+        import socket as _socket
+
+        try:
+            raw.shutdown(_socket.SHUT_RDWR)
+        except (OSError, AttributeError):
+            pass  # already closed / not a real socket
+
     def scan_once(self) -> int:
         server = getattr(self.socketio, "server", None)
         if server is None:
@@ -315,11 +363,16 @@ class OrphanReaper:
             since = self._orphan_since.setdefault(eio_sid, now)
             if now - since >= self.config.auth_deadline:
                 self._orphan_since.pop(eio_sid, None)
+                # Read BEFORE disconnect: python-socketio forgets the request
+                # environ as soon as the Engine.IO session is closed.
+                raw = self._websocket_transport_socket(server, eio_sid)
                 try:
-                    eio.disconnect(eio_sid)
+                    self._close_session(eio, eio_sid)
                     closed += 1
                 except Exception:  # pragma: no cover - already gone
                     logger.debug("orphan close failed", exc_info=True)
+                if raw is not None:
+                    self._release_transport(raw)
         for gone in [s for s in self._orphan_since if s not in live_set]:
             self._orphan_since.pop(gone, None)
         self.closed_total += closed
