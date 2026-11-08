@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../l10n/app_localizations.dart';
 import '../shared/maps/dealer_map_coords.dart';
 import '../shared/debug/app_log.dart';
+import '../theme/app_colors.dart';
 
 /// Default map center (Baghdad) when the dealer has no saved pin yet.
 

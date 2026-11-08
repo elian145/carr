@@ -126,14 +126,14 @@ mixin _DealerLocationPickerPageLoad on _DealerLocationPickerPageFields {
       if (_predictions.isNotEmpty) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: WarningSnackBarText(
             _tr(
               'No results. If this keeps happening, enable the Places API for your key (and ensure billing / restrictions allow Places).',
               ar: 'لا توجد نتائج. إذا استمرت المشكلة، فعّل Places API للمفتاح وتأكد من الفوترة وصلاحيات القيود.',
               ku: 'هیچ ئەنجامێک نەدۆزرایەوە. ئەگەر بەردەوام بوو، Places API بۆ key ـەکەت چالاک بکە و دڵنیابە لە billing و قەیدەکان.',
             ),
           ),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warningSnackBarBackground,
         ),
       );
     });

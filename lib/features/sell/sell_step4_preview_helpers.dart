@@ -102,7 +102,7 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
     final isLight = Theme.of(context).brightness == Brightness.light;
     // F-24: 8E8E93 is ~3.3:1 on a white card (below 4.5:1 for small text).
     final labelGrey =
-        isLight ? const Color(0xFF636366) : const Color(0xFF8E8E93);
+        isLight ? AppColors.mutedText : AppColors.mutedTextOnDark;
     final cardBg = isLight ? Colors.white : const Color(0xFF1E1E1E);
     final iconCircleFill = isLight
         ? const Color(0xFFFFF0E6)
@@ -225,7 +225,7 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
     const brandOrange = AppColors.brandOrangeIcon;
     // F-24: 8E8E93 is ~3.3:1 on a white card (below 4.5:1 for 12px text).
     final labelGrey =
-        isLight ? const Color(0xFF636366) : const Color(0xFF8E8E93);
+        isLight ? AppColors.mutedText : AppColors.mutedTextOnDark;
     final cardBg = isLight ? Colors.white : const Color(0xFF1E1E1E);
     final iconCircleFill = isLight
         ? const Color(0xFFFFF0E6)

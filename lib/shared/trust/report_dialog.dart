@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/api_service.dart';
+import '../../theme/app_colors.dart';
 import '../errors/user_error_text.dart';
 
 /// Shared report dialog for users and listings.
@@ -65,7 +66,7 @@ Future<void> showReportDialog(
             if (reason.isEmpty) {
               ScaffoldMessenger.of(ctx).showSnackBar(
                 SnackBar(
-                  content: Text(
+                  content: WarningSnackBarText(
                     _tr(
                       context,
                       'Please provide a reason',
@@ -73,7 +74,7 @@ Future<void> showReportDialog(
                       ku: 'تکایە هۆکارێک بنووسە',
                     ),
                   ),
-                  backgroundColor: Colors.orange,
+                  backgroundColor: AppColors.warningSnackBarBackground,
                 ),
               );
               return;

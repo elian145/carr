@@ -90,7 +90,7 @@ mixin _HomePageSearchFiltersCards on _HomePageMoreFiltersDialog {
   }) {
     final isLight = Theme.of(context).brightness == Brightness.light;
     final titleColor = isLight ? const Color(0xFF1A1A1A) : Colors.white;
-    final summaryColor = isLight ? const Color(0xFF8E8E93) : Colors.white70;
+    final summaryColor = isLight ? AppColors.mutedText : Colors.white70;
     final summaryStyle = TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w500,

@@ -639,7 +639,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: isLight
-                                ? const Color(0xFF8E8E93)
+                                ? AppColors.mutedText
                                 : Colors.white60,
                           ),
                         ),
@@ -650,7 +650,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                 Icon(
                   Icons.open_in_new_rounded,
                   size: 16,
-                  color: isLight ? const Color(0xFF8E8E93) : Colors.white54,
+                  color: isLight ? AppColors.mutedText : Colors.white54,
                 ),
               ],
             ),
@@ -719,7 +719,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: isLight ? const Color(0xFF8E8E93) : Colors.white60,
+                    color: isLight ? AppColors.mutedText : Colors.white60,
                   ),
                 ),
                 const SizedBox(height: 2),

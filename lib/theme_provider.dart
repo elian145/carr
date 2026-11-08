@@ -127,6 +127,23 @@ class AppThemes {
   /// Secondary text — clearly lighter than card fill, not dim grey.
   static const Color _darkInkMuted = Color(0xFFD8D8D8);
 
+  /// Shared SnackBar theme: Material's inverse surface with an explicit
+  /// foreground pair (>= 4.5:1: `onInverseSurface` text and an orange action
+  /// label chosen for the inverse surface, which is dark in the light theme and
+  /// light in the dark theme). Warning snackbars use
+  /// [AppColors.warningSnackBarBackground] + [AppColors.warningSnackBarTextStyle].
+  static SnackBarThemeData _snackBarTheme(
+    ColorScheme scheme,
+    Color actionColor,
+  ) {
+    return SnackBarThemeData(
+      backgroundColor: scheme.inverseSurface,
+      contentTextStyle: TextStyle(color: scheme.onInverseSurface),
+      actionTextColor: actionColor,
+      disabledActionTextColor: scheme.onInverseSurface.withValues(alpha: 0.7),
+    );
+  }
+
   static ThemeData _withContrastTextTheme(ThemeData base, ColorScheme scheme) {
     final t = base.textTheme.apply(
       bodyColor: scheme.onSurface,
@@ -214,6 +231,7 @@ class AppThemes {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
+      snackBarTheme: _snackBarTheme(scheme, AppColors.brandOrangeSoft),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: scheme.surfaceContainerHighest,
@@ -248,7 +266,11 @@ class AppThemes {
           brightness: Brightness.dark,
         ).copyWith(
           primary: _brandOrange,
-          onPrimary: Colors.white,
+          // White on the bright brand orange is ~2.86:1: filled surfaces
+          // painted with primary (FilledButton, switches, selected chips...)
+          // carry near-black text (~6.1:1) instead. Dark-theme ElevatedButtons
+          // use the deeper orange with white (see elevatedButtonTheme below).
+          onPrimary: AppColors.onBrandOrange,
           secondary: _brandSecondary,
           onSecondary: Colors.white,
           surface: const Color(0xFF1E1E1E),
@@ -311,10 +333,11 @@ class AppThemes {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.brandOrangeStrong,
-          foregroundColor: scheme.onPrimary,
+          foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
+      snackBarTheme: _snackBarTheme(scheme, AppColors.brandOrangeDeep),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: scheme.surfaceContainerHigh,
