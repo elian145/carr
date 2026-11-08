@@ -251,7 +251,7 @@ def test_neg_unsigned_workflow_missing_analyze(tree: Path) -> None:
     _mutate(
         tree,
         "codemagic.yaml",
-        "      - name: Analyze\n        script: flutter analyze --no-fatal-warnings --no-fatal-infos\n      - name: Build APK\n",
+        "      - name: Analyze\n        script: flutter analyze\n      - name: Build APK\n",
         "      - name: Build APK\n",
     )
     _assert_fails(tree, "flutter analyze")

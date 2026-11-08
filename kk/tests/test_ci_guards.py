@@ -207,3 +207,14 @@ def test_sqlite_job_only_tolerates_pg_and_documented_skips():
     # ... and nothing else except the two documented optional/capability cases.
     assert set(allowed) - set(markers) == {"CARNET_REAL_DOLBY_REPRO_PATH", "This ffmpeg build"}
     assert "sqlite-tests.xml" in text and "--min-tests 3500" in text
+
+
+def test_flutter_analyze_is_strict_in_ci_configs() -> None:
+    """The tree analyzes clean, so CI must not downgrade warnings/infos again."""
+    files = list(WORKFLOWS.glob("*.yml")) + [ROOT / "codemagic.yaml", ROOT / "ios-codemagic.yaml"]
+    offenders = []
+    for f in files:
+        for n, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+            if "flutter analyze" in line and "--no-fatal" in line:
+                offenders.append(f"{f.name}:{n}: {line.strip()}")
+    assert not offenders, "flutter analyze must stay strict: " + "; ".join(offenders)
