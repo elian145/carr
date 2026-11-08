@@ -40,16 +40,16 @@ Widget buildChatReplyPreviewCard(
     decoration: BoxDecoration(
       color: baseColor,
       borderRadius: BorderRadius.circular(12),
-      border: Border(left: BorderSide(color: borderColor, width: 3)),
+      border: BorderDirectional(start: BorderSide(color: borderColor, width: 3)),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          (reply.senderName ?? 'Message').trim().isNotEmpty
+          (reply.senderName ?? '').trim().isNotEmpty
               ? reply.senderName!.trim()
-              : 'Message',
+              : chatText(context, 'Message', ar: 'رسالة', ku: 'پەیام'),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
@@ -59,7 +59,9 @@ Widget buildChatReplyPreviewCard(
         ),
         const SizedBox(height: 2),
         Text(
-          reply.content.trim().isEmpty ? 'Message' : reply.content.trim(),
+          reply.content.trim().isEmpty
+              ? chatText(context, 'Message', ar: 'رسالة', ku: 'پەیام')
+              : reply.content.trim(),
           maxLines: dense ? 1 : 2,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
@@ -151,9 +153,9 @@ Widget _buildChatComposerAttachmentTile({
           child: child,
         ),
       ),
-      Positioned(
+      PositionedDirectional(
         top: 4,
-        right: 4,
+        end: 4,
         child: Semantics(
           button: true,
           label: AppLocalizations.of(context)?.removeAction ?? 'Remove',

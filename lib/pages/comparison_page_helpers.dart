@@ -89,9 +89,9 @@ extension _CarComparisonPageHelpers on CarComparisonPage {
       clipBehavior: Clip.none,
       children: [
         card,
-        Positioned(
+        PositionedDirectional(
           top: 4,
-          right: 4,
+          end: 4,
           child: Material(
             color: Colors.black54,
             shape: const CircleBorder(),

@@ -211,8 +211,8 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
               ),
             ),
           ),
-          Positioned(
-            left: 20,
+          PositionedDirectional(
+            start: 20,
             bottom: 4,
             child: Material(
               elevation: 8,
@@ -462,6 +462,8 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                             icon: const Icon(Icons.phone_outlined, size: 18),
                             label: Text(
                               phones[i],
+                              // Phone numbers stay LTR (+964 7XX...) in RTL UIs.
+                              textDirection: TextDirection.ltr,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),

@@ -501,6 +501,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get chatCarzoOwnListing => 'لا يمكنك مراسلة نفسك على إعلانك.';
 
   @override
+  String chatUserTyping(String name) {
+    return '$name يكتب...';
+  }
+
+  @override
   String get unableToOpenWhatsApp => 'تعذر فتح واتساب';
 
   @override
@@ -1354,6 +1359,20 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noNotificationsYet => 'لا توجد إشعارات بعد';
+
+  @override
+  String get notificationChannelChatName => 'رسائل المحادثة';
+
+  @override
+  String get notificationChannelChatDescription =>
+      'تنبيهات رسائل المحادثة الجديدة';
+
+  @override
+  String get notificationChannelUpdatesName => 'تحديثات الحساب';
+
+  @override
+  String get notificationChannelUpdatesDescription =>
+      'تحديثات مهمة للحساب والمعارض';
 
   @override
   String get failedToLoadNotifications => 'تعذر تحميل الإشعارات';
@@ -2404,6 +2423,13 @@ class AppLocalizationsAr extends AppLocalizations {
       'لا توجد ماركات أو موديلات مطابقة.';
 
   @override
+  String get typeModelNameToSearch =>
+      'اكتب اسم موديل للبحث. يمكنك أيضاً كتابة اسم ماركة لعرض جميع موديلاتها.';
+
+  @override
+  String get noModelsMatchYourSearch => 'لا توجد موديلات مطابقة.';
+
+  @override
   String get make => 'الماركة';
 
   @override
@@ -2479,6 +2505,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get untitledDraftTitle => 'مسودة بدون عنوان';
+
+  @override
+  String get yourListingFallbackTitle => 'إعلانك';
 
   @override
   String get continueEditing => 'متابعة التعديل';
@@ -2559,6 +2588,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get specsAvailableForThisYear => 'المواصفات متاحة لهذه السنة.';
+
+  @override
+  String get noSpecRowForThisYear =>
+      'لا توجد مواصفات لهذه السنة — جرّب سنة أو فئة أخرى.';
 
   @override
   String get applySpecs => 'تطبيق المواصفات';

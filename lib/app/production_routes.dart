@@ -77,7 +77,9 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
       final args = readRouteArgs(context);
       final carId = (args?['carId'] ?? '').toString().trim();
       if (carId.isEmpty) {
-        return navigationErrorScaffold('Missing listing id');
+        return navigationErrorScaffold(
+          AppLocalizations.of(context)!.missingListingData,
+        );
       }
       return CarDetailsPage(
         carId: carId,

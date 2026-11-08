@@ -44,9 +44,9 @@ mixin _EditProfilePageWidgets on _EditProfilePageLoad {
                       )
                     : null,
               ),
-              Positioned(
+              PositionedDirectional(
                 bottom: 0,
-                right: 0,
+                end: 0,
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppColors.brandOrange,

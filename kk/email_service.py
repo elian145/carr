@@ -136,7 +136,7 @@ def send_email(
     dest = (to_email or "").strip().lower()
     if not dest or "@" not in dest:
         return False
-    subject = (subject or "").strip() or "Carzo"
+    subject = (subject or "").strip() or "CarNet"
     text_body = text_body or ""
     if (os.environ.get("RESEND_API_KEY") or "").strip():
         return _send_via_resend(dest, subject, text_body, html_body)
@@ -162,14 +162,14 @@ def send_dealer_email_verification_code(
 
 def send_account_email_change_code(to_email: str, code: str) -> bool:
     """Send an ownership code for a *new* personal account email before it is saved."""
-    subject = "Confirm your new Carzo email"
+    subject = "Confirm your new CarNet email"
     text_body = (
-        f"Your Carzo verification code is: {code}\n\n"
+        f"Your CarNet verification code is: {code}\n\n"
         "Enter this code in the app to confirm this is your new account email. "
         "It expires in 10 minutes. If you did not request this, you can ignore this email."
     )
     html_body = (
-        f"<p>Your Carzo verification code is:</p>"
+        f"<p>Your CarNet verification code is:</p>"
         f"<p style='font-size:24px;font-weight:700;letter-spacing:2px'>{code}</p>"
         f"<p>Enter this code in the app to confirm this is your new account email. "
         f"It expires in 10 minutes. If you did not request this, you can ignore this email.</p>"
@@ -196,14 +196,14 @@ def send_account_email_verification(to_email: str, token: str) -> bool:
         )
         return False
     link = f"{public_base}/verify-email?token={quote(token, safe='')}"
-    subject = "Verify your Carzo email"
+    subject = "Verify your CarNet email"
     text_body = (
-        "Verify your Carzo email address by opening this link:\n\n"
+        "Verify your CarNet email address by opening this link:\n\n"
         f"{link}\n\n"
         "If you did not request this, you can ignore this email."
     )
     html_body = (
-        "<p>Verify your Carzo email address:</p>"
+        "<p>Verify your CarNet email address:</p>"
         f"<p><a href=\"{link}\">Verify email</a></p>"
         "<p>If you did not request this, you can ignore this email.</p>"
     )

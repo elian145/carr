@@ -235,7 +235,7 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
                   width: 48,
                   child: Text(
                     _formatVideoTime(v.duration),
-                    textAlign: TextAlign.right,
+                    textAlign: TextAlign.end,
                     style: timeStyle.copyWith(
                       color: Colors.white70,
                       fontWeight: FontWeight.w500,

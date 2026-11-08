@@ -131,7 +131,7 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Analytics Dashboard',
+                                AppLocalizations.of(context)!.analyticsDashboard,
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 20,
@@ -140,7 +140,7 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
                                 ),
                               ),
                               Text(
-                                'Performance insights',
+                                AppLocalizations.of(context)!.performanceInsights,
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.9),
                                   fontSize: 14,
@@ -302,7 +302,7 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
                           SizedBox(height: 32),
                           // Modern metrics section
                           Text(
-                            'Performance Metrics',
+                            AppLocalizations.of(context)!.performanceMetrics,
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,

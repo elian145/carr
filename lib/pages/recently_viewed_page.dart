@@ -291,9 +291,9 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
               clipBehavior: Clip.none,
               children: [
                 card,
-                Positioned(
+                PositionedDirectional(
                   top: 6,
-                  right: 6,
+                  end: 6,
                   child: Material(
                     color: Colors.black54,
                     shape: const CircleBorder(),

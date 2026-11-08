@@ -184,6 +184,15 @@
   "whatsappListingInterestDefaultTitle": "car",
   "chatOnCarzo": "Chat on CarNet",
   "chatCarzoOwnListing": "You can't message yourself on your own listing.",
+  "chatUserTyping": "{name} is typing...",
+  "@chatUserTyping": {
+    "description": "Typing indicator shown above the chat composer",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "unableToOpenWhatsApp": "Unable to open WhatsApp",
   "unableToMakeCall": "Unable to make call",
   "failedToShareListing": "Failed to share listing",
@@ -476,6 +485,10 @@
   "accountActionsTitle": "Account Actions",
   "notificationsTitle": "Notifications",
   "noNotificationsYet": "No notifications yet",
+  "notificationChannelChatName": "Chat messages",
+  "notificationChannelChatDescription": "New chat message alerts",
+  "notificationChannelUpdatesName": "Account updates",
+  "notificationChannelUpdatesDescription": "Important account and dealership updates",
   "failedToLoadNotifications": "Failed to load notifications",
   "helpSupportTitle": "Help & Support",
   "carComparisonCount": "Car Comparison",
@@ -844,6 +857,8 @@
   "selectFromList": "Select from list",
   "searchMakeOrModel": "Search make or model",
   "noMakesOrModelsMatchYourSearch": "No makes or models match your search.",
+  "typeModelNameToSearch": "Type a model name to search. You can also type a brand to see all its models.",
+  "noModelsMatchYourSearch": "No models match your search.",
   "make": "Make",
   "sendMessage": "Send message",
   "filterSelectedCount": "{count} selected",
@@ -876,6 +891,7 @@
   "continueHereToFinishTheListingOrDiscardItIfYouWantToStartOver": "Continue here to finish the listing, or discard it if you want to start over.",
   "draftBadgeLabel": "DRAFT",
   "untitledDraftTitle": "Untitled draft",
+  "yourListingFallbackTitle": "Your listing",
   "continueEditing": "Continue editing",
   "addPhotosToContinue": "Add photos to continue",
   "failedToBlurPlatesPleaseTryAgain": "Failed to blur plates. Please try again.",
@@ -907,6 +923,7 @@
   "modelYear": "Model year",
   "youCanChangeTheseInStep2": "You can change these in step 2.",
   "specsAvailableForThisYear": "Specs available for this year.",
+  "noSpecRowForThisYear": "No spec row for this year — try another year or variant.",
   "applySpecs": "Apply specs",
   "specifications": "Specifications",
   "vinOptional": "VIN (optional)",

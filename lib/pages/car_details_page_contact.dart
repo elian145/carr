@@ -81,7 +81,7 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
               for (final phone in phones)
                 ListTile(
                   leading: const Icon(Icons.phone_outlined),
-                  title: Text(phone),
+                  title: Text(phone, textDirection: TextDirection.ltr),
                   onTap: () => Navigator.pop(ctx, phone),
                 ),
               TextButton(

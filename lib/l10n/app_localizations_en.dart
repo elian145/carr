@@ -502,6 +502,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'You can\'t message yourself on your own listing.';
 
   @override
+  String chatUserTyping(String name) {
+    return '$name is typing...';
+  }
+
+  @override
   String get unableToOpenWhatsApp => 'Unable to open WhatsApp';
 
   @override
@@ -1341,6 +1346,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noNotificationsYet => 'No notifications yet';
+
+  @override
+  String get notificationChannelChatName => 'Chat messages';
+
+  @override
+  String get notificationChannelChatDescription => 'New chat message alerts';
+
+  @override
+  String get notificationChannelUpdatesName => 'Account updates';
+
+  @override
+  String get notificationChannelUpdatesDescription =>
+      'Important account and dealership updates';
 
   @override
   String get failedToLoadNotifications => 'Failed to load notifications';
@@ -2398,6 +2416,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'No makes or models match your search.';
 
   @override
+  String get typeModelNameToSearch =>
+      'Type a model name to search. You can also type a brand to see all its models.';
+
+  @override
+  String get noModelsMatchYourSearch => 'No models match your search.';
+
+  @override
   String get make => 'Make';
 
   @override
@@ -2473,6 +2498,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get untitledDraftTitle => 'Untitled draft';
+
+  @override
+  String get yourListingFallbackTitle => 'Your listing';
 
   @override
   String get continueEditing => 'Continue editing';
@@ -2553,6 +2581,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get specsAvailableForThisYear => 'Specs available for this year.';
+
+  @override
+  String get noSpecRowForThisYear =>
+      'No spec row for this year — try another year or variant.';
 
   @override
   String get applySpecs => 'Apply specs';

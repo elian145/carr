@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 /// Normalizes [ModalRoute.settings.arguments] into a string-keyed map.
 Map<String, dynamic>? readRouteArgs(BuildContext context) {
   final args = ModalRoute.of(context)?.settings.arguments;
@@ -13,7 +15,12 @@ Map<String, dynamic>? readRouteArgs(BuildContext context) {
 /// Standard scaffold shown when a named route is missing required arguments.
 Widget navigationErrorScaffold(String message) {
   return Scaffold(
-    appBar: AppBar(title: const Text('Navigation error')),
+    appBar: AppBar(
+      title: Builder(
+        builder: (context) =>
+            Text(AppLocalizations.of(context)!.navigationErrorTitle),
+      ),
+    ),
     body: Center(child: Text(message)),
   );
 }

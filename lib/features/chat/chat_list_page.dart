@@ -273,7 +273,7 @@ class _ChatListPageState extends State<ChatListPage>
                       ? null
                       : Text(
                           _relativeTime(context, dt),
-                          textAlign: TextAlign.right,
+                          textAlign: TextAlign.end,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: timeStyle,

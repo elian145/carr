@@ -317,7 +317,7 @@ mixin _HomePageFetch on _HomePageFetchCore {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Sorting temporarily unavailable'),
+            content: Text(homeFeedSortDisabledText(context)),
             duration: Duration(seconds: 2),
             backgroundColor: Colors.orange,
           ),

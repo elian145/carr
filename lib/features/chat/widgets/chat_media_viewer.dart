@@ -107,9 +107,9 @@ class _ChatMediaGroupViewerState extends State<ChatMediaGroupViewer> {
                 },
               ),
             ),
-            Positioned(
+            PositionedDirectional(
               top: 12,
-              left: 16,
+              start: 16,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: Colors.black54,
@@ -127,10 +127,10 @@ class _ChatMediaGroupViewerState extends State<ChatMediaGroupViewer> {
                 ),
               ),
             ),
-            Positioned(
+            PositionedDirectional(
               top: 12,
-              left: 72,
-              right: 56,
+              start: 72,
+              end: 56,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: Colors.black54,
@@ -154,9 +154,9 @@ class _ChatMediaGroupViewerState extends State<ChatMediaGroupViewer> {
                 ),
               ),
             ),
-            Positioned(
+            PositionedDirectional(
               top: 8,
-              right: 8,
+              end: 8,
               child: IconButton(
                 tooltip: AppLocalizations.of(context)?.close ?? 'Close',
                 icon: const Icon(Icons.close, color: Colors.white, size: 30),

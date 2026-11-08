@@ -359,8 +359,8 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
         final filled = index <= step;
         return Expanded(
           child: Container(
-            margin: EdgeInsets.only(
-              right: index < SellWizardSteps.lastIndex ? 4 : 0,
+            margin: EdgeInsetsDirectional.only(
+              end: index < SellWizardSteps.lastIndex ? 4 : 0,
             ),
             height: 4,
             decoration: BoxDecoration(
