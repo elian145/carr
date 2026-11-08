@@ -57,8 +57,8 @@ def _secret_key() -> bytes:
     return key.encode("utf-8") if isinstance(key, str) else bytes(key)
 
 
-def _pepper() -> bytes:
-    return hmac.new(_secret_key(), _PEPPER_CONTEXT, hashlib.sha256).digest()
+def _pepper(context: bytes = _PEPPER_CONTEXT) -> bytes:
+    return hmac.new(_secret_key(), context, hashlib.sha256).digest()
 
 
 def hash_reset_token(raw) -> str:
@@ -71,6 +71,18 @@ def hash_reset_token(raw) -> str:
         return INVALID_TOKEN_SENTINEL
     digest = hmac.new(_pepper(), raw.encode("utf-8"), hashlib.sha256).hexdigest()
     return HASH_PREFIX + digest
+
+
+# F-29 (follow-up): e-mail verification tokens get the same treatment under a separate
+# pepper context, so a reset-token hash can never be replayed as a verification token.
+_EMAIL_VERIFICATION_PEPPER_CONTEXT = b"carnet/email-verification-token/v1"
+
+
+def hash_email_verification_token(raw) -> str:
+    if not isinstance(raw, str) or not raw or len(raw) > MAX_RAW_TOKEN_LEN:
+        return INVALID_TOKEN_SENTINEL
+    key = _pepper(_EMAIL_VERIFICATION_PEPPER_CONTEXT)
+    return HASH_PREFIX + hmac.new(key, raw.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
 def is_hashed_form(stored) -> bool:
@@ -101,6 +113,21 @@ class HashedResetToken(TypeDecorator):
         if value is None:
             return None
         return hash_reset_token(value)
+
+    def process_result_value(self, value, dialect):
+        return value
+
+
+class HashedEmailVerificationToken(TypeDecorator):
+    """``String(100)`` column whose bound values are HMAC-hashed (see ``hash_email_verification_token``)."""
+
+    impl = String(100)
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        return hash_email_verification_token(value)
 
     def process_result_value(self, value, dialect):
         return value

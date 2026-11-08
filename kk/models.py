@@ -13,7 +13,7 @@ bcrypt = Bcrypt()
 # Use a single UTC helper (avoids deprecated datetime.utcnow()).
 from .time_utils import iso_utc, utcnow
 from .dealer_socials import public_dealership_socials as _public_dealership_socials
-from .reset_token_crypto import HashedResetToken
+from .reset_token_crypto import HashedEmailVerificationToken, HashedResetToken
 from .phone_format import normalize_stored_iraqi_mobile
 
 
@@ -1718,7 +1718,9 @@ class EmailVerification(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
-    token = db.Column(db.String(100), unique=True, nullable=False)
+    # F-29 follow-up: stored as "h1$" + HMAC-SHA256 hex (67 chars), never the raw token
+    # (fits String(100): no migration). Pre-change rows hold plaintext for <= 1 day.
+    token = db.Column(HashedEmailVerificationToken(), unique=True, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=utcnow)
@@ -1727,7 +1729,7 @@ class EmailVerification(db.Model):
         return utcnow() > self.expires_at
     
     def __repr__(self):
-        return f'<EmailVerification {self.token}>'
+        return f'<EmailVerification id={self.id} user_id={self.user_id}>'
 
 class SavedSearch(db.Model):
     __tablename__ = 'saved_search'
