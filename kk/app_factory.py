@@ -179,10 +179,14 @@ def _socketio_async_mode(env_name: str, has_message_queue: bool) -> str | None:
     ``eventlet.monkey_patch()`` after Flask/Werkzeug are imported, which causes
     LocalProxy / RLock errors, worker hangs, and Render 502s.
 
-    Break-glass only (not recommended; eventlet is deprecated):
+    Break-glass only (not recommended):
       SOCKETIO_ALLOW_EVENTLET=1
-      SOCKETIO_ASYNC_MODE=eventlet  (or gevent)
+      SOCKETIO_ASYNC_MODE=gevent
       REDIS_URL / SOCKETIO_MESSAGE_QUEUE
+
+    ``eventlet`` is no longer selectable: Gunicorn >= 26 removed its worker and
+    the package is not installed, so a request for it always yields
+    ``threading`` (matching ``gunicorn.conf.py``, which then runs gthread).
     """
     raw = (os.environ.get("SOCKETIO_ASYNC_MODE") or "").strip().lower()
     allow_eventlet = (os.environ.get("SOCKETIO_ALLOW_EVENTLET") or "").strip().lower() in (
@@ -190,7 +194,9 @@ def _socketio_async_mode(env_name: str, has_message_queue: bool) -> str | None:
         "true",
         "yes",
     )
-    if raw in ("eventlet", "gevent"):
+    if raw == "eventlet":
+        return "threading"
+    if raw == "gevent":
         if allow_eventlet and has_message_queue:
             return raw
         return "threading"
