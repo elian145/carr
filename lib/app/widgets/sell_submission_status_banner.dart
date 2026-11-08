@@ -14,6 +14,12 @@ double? sellSubmissionProgressFraction(SellSubmissionUiStatus status) {
       .clamp(0.0, 1.0)
       .toDouble();
 }
+
+/// Test hook / stable finder for the banner's cancel button.
+const Key kSellSubmissionBannerCancelKey = ValueKey<String>(
+  'sell-submission-banner-cancel',
+);
+
 /// Global, page-independent UI for `PendingSellSubmissionService` (req.
 /// #10): a persistent slim progress banner while a submission is actively
 /// uploading, plus one-shot success / needs-attention / retrying
@@ -206,9 +212,17 @@ class _SellSubmissionStatusBannerState
         final bg = theme.colorScheme.primaryContainer;
         final fg = theme.colorScheme.onPrimaryContainer;
 
+        // `verticalDirection: up` + the bar as the LAST child keeps the bar
+        // visually on top while painting it AFTER the app content. The
+        // Navigator's route barrier uses BlockSemantics, which drops the
+        // semantics of anything painted before it; with the bar first, its
+        // live-region progress and cancel button were invisible to TalkBack /
+        // VoiceOver (F-41).
         return Column(
+          verticalDirection: VerticalDirection.up,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Expanded(child: child),
             Material(
               color: bg,
               elevation: 1,
@@ -258,14 +272,26 @@ class _SellSubmissionStatusBannerState
                         ),
                       ),
                       if (!status.isEdit && loc != null)
-                        IconButton(
-                          tooltip: loc.a11yCancelUpload,
-                          constraints: const BoxConstraints(
-                            minWidth: 48,
-                            minHeight: 48,
+                        // No `tooltip:` on purpose: this banner is mounted in
+                        // `MaterialApp.builder`, ABOVE the Navigator, so there is
+                        // no Overlay ancestor and a Tooltip would assert while a
+                        // submission is active. The accessible name comes from
+                        // Semantics instead; the 48dp target is kept.
+                        // MergeSemantics => ONE labelled button node (not a
+                        // label node plus an unlabelled button child).
+                        MergeSemantics(
+                          child: Semantics(
+                            label: loc.a11yCancelUpload,
+                            child: IconButton(
+                              key: kSellSubmissionBannerCancelKey,
+                              constraints: const BoxConstraints(
+                                minWidth: 48,
+                                minHeight: 48,
+                              ),
+                              icon: Icon(Icons.close, color: fg),
+                              onPressed: () => _confirmCancel(status.draftId),
+                            ),
                           ),
-                          icon: Icon(Icons.close, color: fg),
-                          onPressed: () => _confirmCancel(status.draftId),
                         )
                       else
                         const SizedBox(width: 12),
@@ -274,7 +300,6 @@ class _SellSubmissionStatusBannerState
                 ),
               ),
             ),
-            Expanded(child: child),
           ],
         );
       },

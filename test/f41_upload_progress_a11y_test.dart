@@ -18,9 +18,14 @@ Widget _app() => MaterialApp(
       navigatorKey: productionNavigatorKey,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const SellSubmissionStatusBanner(
-        child: Scaffold(body: SizedBox()),
-      ),
+      // Mounted exactly like production_app.dart: in MaterialApp.builder,
+      // ABOVE the Navigator (so there is NO Overlay ancestor, and the route
+      // barrier's BlockSemantics applies to anything painted before it).
+      // Mounting it in `home:` hid both a Tooltip-needs-Overlay assertion and
+      // the banner's semantics being dropped (regression guard).
+      builder: (context, child) =>
+          SellSubmissionStatusBanner(child: child ?? const SizedBox.shrink()),
+      home: const Scaffold(body: SizedBox()),
     );
 
 SellSubmissionUiStatus _status({bool isEdit = false}) => SellSubmissionUiStatus(
@@ -74,20 +79,28 @@ void main() {
     );
   });
 
-  testWidgets('cancel button has a tooltip, 48dp target and is hidden for edits',
+  testWidgets('cancel button is labelled, 48dp target and is hidden for edits',
       (tester) async {
     await tester.pumpWidget(_app());
     svc.statusNotifier.value = _status();
     await tester.pump();
-    final btn = find.byTooltip(_en.a11yCancelUpload);
+    final btn = find.byKey(kSellSubmissionBannerCancelKey);
     expect(btn, findsOneWidget);
+    expect(tester.takeException(), isNull); // no Tooltip/Overlay assertion
+    final handle = tester.ensureSemantics();
+    await tester.pump();
+    // One merged, labelled button node that survives the route barrier.
+    final node = tester.getSemantics(find.bySemanticsLabel(_en.a11yCancelUpload));
+    expect(node.getSemanticsData().flagsCollection.isButton, isTrue);
+    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+    handle.dispose();
     final size = tester.getSize(btn);
     expect(size.width, greaterThanOrEqualTo(48));
     expect(size.height, greaterThanOrEqualTo(48));
 
     svc.statusNotifier.value = _status(isEdit: true);
     await tester.pump();
-    expect(find.byTooltip(_en.a11yCancelUpload), findsNothing);
+    expect(find.byKey(kSellSubmissionBannerCancelKey), findsNothing);
   });
 
   testWidgets('cancel asks first; "keep uploading" changes nothing',
@@ -106,7 +119,7 @@ void main() {
     svc.statusNotifier.value = _status();
     await tester.pump();
 
-    await tester.tap(find.byTooltip(_en.a11yCancelUpload));
+    await tester.tap(find.byKey(kSellSubmissionBannerCancelKey));
     await tester.pumpAndSettle();
     expect(find.text(_en.a11yCancelUploadConfirm), findsOneWidget);
 
@@ -132,7 +145,7 @@ void main() {
     svc.statusNotifier.value = _status();
     await tester.pump();
 
-    await tester.tap(find.byTooltip(_en.a11yCancelUpload));
+    await tester.tap(find.byKey(kSellSubmissionBannerCancelKey));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(TextButton, _en.a11yCancelUpload));
     await tester.runAsync(() => Future<void>.delayed(
