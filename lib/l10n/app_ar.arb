@@ -1007,5 +1007,6 @@
   "a11yCancelUpload": "إلغاء الرفع",
   "a11yCancelUploadConfirm": "إيقاف الرفع؟ إذا لم يتم إنشاء إعلانك بعد، فسيتم الاحتفاظ بالمسودة.",
   "a11yKeepUploading": "متابعة الرفع",
-  "a11yUploadCancelledDraftKept": "تم إلغاء الرفع. تم الاحتفاظ بالمسودة."
+  "a11yUploadCancelledDraftKept": "تم إلغاء الرفع. تم الاحتفاظ بالمسودة.",
+  "a11yUploadCancelTooLate": "فات أوان الإلغاء: يتم نشر إعلانك الآن."
 }

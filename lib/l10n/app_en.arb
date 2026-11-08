@@ -1061,5 +1061,6 @@
   "a11yCancelUpload": "Cancel upload",
   "a11yCancelUploadConfirm": "Stop uploading? If your listing isn't created yet, your draft is kept.",
   "a11yKeepUploading": "Keep uploading",
-  "a11yUploadCancelledDraftKept": "Upload cancelled. Your draft was kept."
+  "a11yUploadCancelledDraftKept": "Upload cancelled. Your draft was kept.",
+  "a11yUploadCancelTooLate": "It's too late to cancel: your listing is already being published."
 }

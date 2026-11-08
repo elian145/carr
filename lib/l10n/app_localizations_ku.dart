@@ -2978,4 +2978,8 @@ class AppLocalizationsKu extends AppLocalizations {
   @override
   String get a11yUploadCancelledDraftKept =>
       'بارگیری هەڵوەشێنرایەوە. ڕەشنووسەکە پارێزرا.';
+
+  @override
+  String get a11yUploadCancelTooLate =>
+      'درەنگە بۆ هەڵوەشاندنەوە: ڕێکلامەکەت ئێستا بڵاودەکرێتەوە.';
 }

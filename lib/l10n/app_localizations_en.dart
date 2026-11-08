@@ -2972,4 +2972,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get a11yUploadCancelledDraftKept =>
       'Upload cancelled. Your draft was kept.';
+
+  @override
+  String get a11yUploadCancelTooLate =>
+      'It\'s too late to cancel: your listing is already being published.';
 }

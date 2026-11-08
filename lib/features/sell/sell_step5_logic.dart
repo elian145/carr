@@ -265,6 +265,14 @@ mixin _SellStep5Logic on _SellStep5Fields {
     // Nothing in the service yet (still verifying phones / validating): make
     // the submit flow stop before it ever hands the draft over.
     if (outcome == null && isSubmitting) submitCancelRequested = true;
+    // Refused because the service already owns this draft and is past the
+    // point of no return (everything uploaded, publishing): tell the user.
+    // (A null with no service run yet is the pre-handoff case handled above.)
+    if (outcome == null &&
+        mounted &&
+        PendingSellSubmissionService.instance.isSubmitting(draftId)) {
+      showSellCancelTooLateFeedback(ScaffoldMessenger.maybeOf(context), loc);
+    }
   }
   Future<void> _precacheSubmittedListingImages(Map<String, dynamic> car) async {
     final List<String> urls = <String>[];

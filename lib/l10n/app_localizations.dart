@@ -5522,6 +5522,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Upload cancelled. Your draft was kept.'**
   String get a11yUploadCancelledDraftKept;
+
+  /// No description provided for @a11yUploadCancelTooLate.
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s too late to cancel: your listing is already being published.'**
+  String get a11yUploadCancelTooLate;
 }
 
 class _AppLocalizationsDelegate
