@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -32,6 +31,22 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get navProfile => 'پرۆفایل';
+
+  @override
+  String get homeLayoutList => 'لیست';
+
+  @override
+  String get homeLayoutGrid => 'تۆڕ';
+
+  @override
+  String get mainNavigationLabel => 'ناوبردنی سەرەکی';
+
+  @override
+  String get sellPhotoProcessingFailed =>
+      'پرۆسێسکردنی وێنەکان سەرنەکەوت. تکایە دووبارە هەوڵبدەرەوە.';
+
+  @override
+  String get sellSubmissionCancelledByUser => 'تۆ هەڵتوەشاندەوە';
 
   @override
   String get addListingTitle => 'زیادکردنی ڕیکلام';

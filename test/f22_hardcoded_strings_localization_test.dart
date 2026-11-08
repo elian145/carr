@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'package:car_listing_app/features/home/widgets/listing_layout_toggle.dart';
+import 'package:car_listing_app/features/sell/sell_submission_messages.dart';
 import 'package:car_listing_app/l10n/app_localizations.dart';
 import 'package:car_listing_app/pages/change_password_page.dart';
 import 'package:car_listing_app/services/auth_service.dart';
@@ -205,4 +208,141 @@ void main() {
     expect(src.contains("?? 'Message'"), isFalse);
     expect(src.contains(": 'Message',"), isFalse);
     expect(src.contains("? 'Message'"), isFalse);
-  });}
+  });
+
+  // ---- round 3: layout toggle, main navigation label, submission details --
+  test('round 3 keys are translated in ar and ku (not English copies)',
+      () async {
+    final en = await AppLocalizations.delegate.load(const Locale('en'));
+    for (final code in ['ar', 'ku']) {
+      final l = await AppLocalizations.delegate.load(Locale(code));
+      for (final pair in <List<String>>[
+        [en.homeLayoutList, l.homeLayoutList],
+        [en.homeLayoutGrid, l.homeLayoutGrid],
+        [en.mainNavigationLabel, l.mainNavigationLabel],
+        [en.sellPhotoProcessingFailed, l.sellPhotoProcessingFailed],
+        [en.sellSubmissionCancelledByUser, l.sellSubmissionCancelledByUser],
+      ]) {
+        expect(pair[1], isNot(pair[0]), reason: code);
+        expect(pair[1].trim(), isNotEmpty);
+      }
+    }
+  });
+
+  test('List / Grid / Main navigation English literals are gone', () {
+    const removed = <String, List<String>>{
+      'lib/features/home/widgets/listing_layout_toggle.dart': [
+        "tooltip: 'List'",
+        "tooltip: 'Grid'",
+      ],
+      'lib/app/widgets/main_shell_navigation.dart': [
+        "label: 'Main navigation'",
+      ],
+    };
+    removed.forEach((path, literals) {
+      final src = File(path).readAsStringSync();
+      for (final lit in literals) {
+        expect(src.contains(lit), isFalse, reason: '$path: $lit');
+      }
+    });
+  });
+
+  test('sell submission details are localized at display time', () async {
+    final en = await AppLocalizations.delegate.load(const Locale('en'));
+    for (final code in ['en', 'ar', 'ku']) {
+      final l = await AppLocalizations.delegate.load(Locale(code));
+      expect(localizedSellSubmissionDetail(l, kSellMsgAuthRequired),
+          l.loginRequired);
+      expect(localizedSellSubmissionDetail(l, kSellMsgPhotoProcessingFailed),
+          l.sellPhotoProcessingFailed);
+      expect(localizedSellSubmissionDetail(l, kSellMsgCancelledByUser),
+          l.sellSubmissionCancelledByUser);
+      // Server-provided text and unknown values are never rewritten.
+      expect(localizedSellSubmissionDetail(l, 'Rate limit exceeded'),
+          'Rate limit exceeded');
+      if (code != 'en') {
+        expect(
+          localizedSellSubmissionDetail(l, kSellMsgCancelledByUser),
+          isNot(kSellMsgCancelledByUser),
+        );
+      }
+    }
+    // Without localizations the stored text is shown unchanged.
+    expect(localizedSellSubmissionDetail(null, kSellMsgAuthRequired),
+        kSellMsgAuthRequired);
+    expect(en.homeLayoutList, 'List');
+  });
+
+  test('stored English submission messages come from the shared constants',
+      () {
+    for (final path in const [
+      'lib/features/sell/pending_sell_submission_service.dart',
+      'lib/features/sell/sell_step5_logic.dart',
+      'lib/features/sell/sell_listing_media_upload.dart',
+    ]) {
+      final src = File(path).readAsStringSync();
+      expect(src.contains("message: 'Authentication required'"), isFalse,
+          reason: path);
+      expect(src.contains("'Cancelled by the user'"), isFalse, reason: path);
+      expect(src.contains("'Photo processing failed. Please try again.'"),
+          isFalse,
+          reason: path);
+    }
+  });
+
+  for (final code in ['ar', 'ku']) {
+    testWidgets('layout toggle is localized, labelled and 48dp for $code',
+        (t) async {
+      final loc = await AppLocalizations.delegate.load(Locale(code));
+      var columns = 1;
+      final handle = t.ensureSemantics();
+      await t.pumpWidget(
+        MaterialApp(
+          locale: Locale(code),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            KuMaterialLocalizationsDelegate(),
+            KuCupertinoLocalizationsDelegate(),
+            KuWidgetsLocalizationsDelegate(),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) => ListingLayoutToggle(
+                columns: columns,
+                onChanged: (c) => setState(() => columns = c),
+              ),
+            ),
+          ),
+        ),
+      );
+      await t.pumpAndSettle();
+      final list = find.bySemanticsLabel(RegExp(RegExp.escape(loc.homeLayoutList)));
+      final grid = find.bySemanticsLabel(RegExp(RegExp.escape(loc.homeLayoutGrid)));
+      expect(list, findsOneWidget);
+      expect(grid, findsOneWidget);
+      expect(find.bySemanticsLabel('List'), findsNothing);
+      expect(find.bySemanticsLabel('Grid'), findsNothing);
+
+      // selected state is exposed; both targets are at least 48x48
+      expect(t.getSemantics(list).flagsCollection.isSelected,
+          Tristate.isTrue);
+      expect(t.getSemantics(grid).flagsCollection.isSelected,
+          Tristate.isFalse);
+      for (final f in [list, grid]) {
+        final r = t.getRect(find.descendant(
+            of: f, matching: find.byType(InkWell)).first);
+        expect(r.width, greaterThanOrEqualTo(48));
+        expect(r.height, greaterThanOrEqualTo(48));
+      }
+
+      await t.tap(find.byTooltip(loc.homeLayoutGrid));
+      await t.pump(const Duration(milliseconds: 250));
+      expect(columns, 2);
+      handle.dispose();
+    });
+  }
+}

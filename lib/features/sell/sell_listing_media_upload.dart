@@ -17,6 +17,7 @@ import 'sell_media_identity.dart';
 import 'sell_photo_prestage.dart';
 import 'sell_server_transcode_runner.dart';
 import 'sell_server_transcode_video.dart';
+import 'sell_submission_messages.dart';
 import 'sell_video_helpers.dart';
 
 /// Phases reported while [SellListingMediaUpload.uploadForCar] runs.
@@ -599,7 +600,7 @@ class SellListingMediaUpload {
       // server-side failure so the outer retry loop gets another attempt.
       throw ApiException(
         statusCode: 502,
-        message: 'Photo processing failed. Please try again.',
+        message: kSellMsgPhotoProcessingFailed,
       );
     }
 

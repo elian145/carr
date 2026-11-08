@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -32,6 +31,22 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get navProfile => 'الملف الشخصي';
+
+  @override
+  String get homeLayoutList => 'قائمة';
+
+  @override
+  String get homeLayoutGrid => 'شبكة';
+
+  @override
+  String get mainNavigationLabel => 'التنقل الرئيسي';
+
+  @override
+  String get sellPhotoProcessingFailed =>
+      'فشلت معالجة الصور. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get sellSubmissionCancelledByUser => 'ألغيتَ العملية';
 
   @override
   String get addListingTitle => 'إضافة إعلان';

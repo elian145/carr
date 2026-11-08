@@ -26,6 +26,7 @@ import 'sell_listing_payload.dart';
 import 'sell_listing_submit_result.dart';
 import 'sell_media_identity.dart';
 import 'sell_server_transcode_video.dart';
+import 'sell_submission_messages.dart';
 import 'sell_video_helpers.dart';
 
 /// Coarse phase reported while a submission runs, for UI display only.
@@ -568,7 +569,7 @@ class PendingSellSubmissionService {
       (fresh ?? record).copyWith(
         status: SellSubmissionStatus.needsAttention,
         carId: carId,
-        lastErrorMessage: 'Cancelled by the user',
+        lastErrorMessage: kSellMsgCancelledByUser,
         lastErrorRetryable: false,
         updatedAt: DateTime.now().millisecondsSinceEpoch,
       ),
@@ -577,7 +578,7 @@ class PendingSellSubmissionService {
       draftId: draftId,
       success: false,
       needsAttention: true,
-      message: 'Cancelled by the user',
+      message: kSellMsgCancelledByUser,
       carId: carId,
     ));
     appLog('[SELL CANCEL] listing kept as needsAttention record=$draftId');
@@ -1133,7 +1134,7 @@ class PendingSellSubmissionService {
         signal.complete(result);
       } else {
         signal.completeError(
-          ApiException(statusCode: 401, message: 'Authentication required'),
+          ApiException(statusCode: 401, message: kSellMsgAuthRequired),
         );
       }
     }, onError: (Object e, StackTrace st) {

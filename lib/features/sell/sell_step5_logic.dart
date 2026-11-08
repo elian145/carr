@@ -95,7 +95,7 @@ mixin _SellStep5Logic on _SellStep5Fields {
     // Require authentication before allowing submission.
     final existingToken = ApiService.accessToken;
     if (existingToken == null || existingToken.isEmpty) {
-      throw ApiException(statusCode: 401, message: 'Authentication required');
+      throw ApiException(statusCode: 401, message: kSellMsgAuthRequired);
     }
 
     final draftId = parentState?._currentDraftId.isNotEmpty == true
@@ -173,7 +173,7 @@ mixin _SellStep5Logic on _SellStep5Fields {
         // the top of this method would have.
         throw ApiException(
           statusCode: 401,
-          message: 'Authentication required',
+          message: kSellMsgAuthRequired,
         );
       }
 

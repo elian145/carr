@@ -148,6 +148,36 @@ abstract class AppLocalizations {
   /// **'Profile'**
   String get navProfile;
 
+  /// No description provided for @homeLayoutList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get homeLayoutList;
+
+  /// No description provided for @homeLayoutGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid'**
+  String get homeLayoutGrid;
+
+  /// No description provided for @mainNavigationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Main navigation'**
+  String get mainNavigationLabel;
+
+  /// No description provided for @sellPhotoProcessingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo processing failed. Please try again.'**
+  String get sellPhotoProcessingFailed;
+
+  /// No description provided for @sellSubmissionCancelledByUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled by you'**
+  String get sellSubmissionCancelledByUser;
+
   /// No description provided for @addListingTitle.
   ///
   /// In en, this message translates to:

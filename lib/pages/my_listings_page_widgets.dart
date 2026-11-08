@@ -527,7 +527,10 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
                 const SizedBox(height: 4),
                 Expanded(
                   child: Text(
-                    detail,
+                    localizedSellSubmissionDetail(
+                      AppLocalizations.of(context),
+                      detail,
+                    ),
                     maxLines: listLayout ? 2 : 4,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: metaColor, fontSize: 11),
