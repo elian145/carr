@@ -36,6 +36,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:car_listing_app/features/sell/pending_sell_submission_service.dart';
+import 'package:car_listing_app/features/sell/sell_listing_media_upload.dart'
+    show SellSubmissionCancelledException;
 import 'package:car_listing_app/features/sell/sell_media_identity.dart';
 import 'package:car_listing_app/features/sell/sell_submission_visibility.dart';
 import 'package:car_listing_app/features/sell/sell_video_compression.dart';
@@ -784,6 +786,42 @@ void main() {
     },
   );
 
+  // ---- F-41: cancel mid-submission is safe (no retry, draft record gone) ---
+  test(
+    'F-41: cancelling while createCar is failing transiently stops the '
+    'retry, removes the record and leaves no listing',
+    () async {
+      const draftId = 'draft_cancel';
+      createCarOverride = (body) {
+        // User taps "Cancel upload" while the first create attempt fails.
+        unawaited(
+          PendingSellSubmissionService.instance.cancelSubmission(draftId),
+        );
+        return http.Response(
+          json.encode({'message': 'unavailable'}),
+          503,
+          headers: {'content-type': 'application/json'},
+        );
+      };
+
+      await expectLater(
+        PendingSellSubmissionService.instance.submit(
+          draftId: draftId,
+          carData: _baseCarData(),
+        ),
+        throwsA(isA<SellSubmissionCancelledException>()),
+      );
+
+      expect(createCarCalls.length, 1, reason: 'no retry after cancel');
+      expect(carsById, isEmpty, reason: 'no half-created listing');
+      expect(await SellSubmissionStatePrefs.load(draftId), isNull);
+      expect(PendingSellSubmissionService.instance.isSubmitting(draftId),
+          isFalse);
+      // A later resume trigger must not resurrect the cancelled submission.
+      await PendingSellSubmissionService.instance.resumeAll();
+      expect(createCarCalls.length, 1);
+    },
+  );
   // ---- B + G: pause/resume continues the same run; concurrent triggers ----
   // only spawn one worker for the same draft.
   test(

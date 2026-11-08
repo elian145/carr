@@ -412,6 +412,15 @@ class _ServerTranscodeStillInProgressException implements Exception {
       'automatically.';
 }
 
+/// F-41: result of [PendingSellSubmissionService.cancelSubmission].
+enum SellCancelOutcome {
+  /// No listing existed yet; the local draft is untouched.
+  draftKept,
+
+  /// The listing was already created; it stays (needs attention, no retries).
+  listingNeedsAttention,
+}
+
 /// Application-level coordinator that owns creating the listing and
 /// uploading its media once the user presses Submit — deliberately NOT
 /// owned by `SellStep5`'s `State` (see `sell_step5_logic.dart`), so:
@@ -464,6 +473,97 @@ class PendingSellSubmissionService {
   bool _connectivityHooked = false;
 
   bool isSubmitting(String draftId) => _activeRuns.containsKey(draftId);
+
+  /// F-41: draft ids the user asked to cancel. Checked at every checkpoint
+  /// of [_runSubmission] (and, for the media phase, via
+  /// [SellListingMediaUpload.cancelUploadsFor]) so a cancel never triggers
+  /// another network call or retry.
+  final Set<String> _cancelRequested = <String>{};
+
+  bool isCancelRequested(String draftId) => _cancelRequested.contains(draftId);
+
+  void _throwIfCancelled(String draftId) {
+    if (_cancelRequested.contains(draftId)) {
+      throw const SellSubmissionCancelledException();
+    }
+  }
+
+  /// F-41: whether the user can still cancel [draftId]'s submission.
+  /// Edits of an existing listing are never cancellable here (the PUT may
+  /// already have been applied; use the edit screen to revert).
+  Future<bool> canCancel(String draftId) async {
+    final r = await SellSubmissionStatePrefs.load(draftId);
+    if (r == null || r.isEdit) return false;
+    return r.status != SellSubmissionStatus.needsAttention &&
+        r.status != SellSubmissionStatus.completed;
+  }
+
+  /// F-41: safely cancel the submission for [draftId].
+  ///
+  /// - Listing not created yet: the submission record is removed (no further
+  ///   retries) and the local draft is left untouched, so the user loses
+  ///   nothing and no half-created listing can appear.
+  /// - Listing already created (create step is idempotent and cannot be
+  ///   undone from here): upload stops at the next chunk boundary and the
+  ///   record becomes `needsAttention` -- never auto-retried; the user is
+  ///   pointed at My Listings to finish or delete it (existing UX).
+  ///
+  /// Returns null when there is nothing cancellable.
+  Future<SellCancelOutcome?> cancelSubmission(String draftId) async {
+    final id = draftId.trim().isEmpty ? 'default' : draftId.trim();
+    final record = await SellSubmissionStatePrefs.load(id);
+    if (record == null || record.isEdit) return null;
+    if (record.status == SellSubmissionStatus.needsAttention ||
+        record.status == SellSubmissionStatus.completed) {
+      return null;
+    }
+    final carId = (record.carId ?? '').trim();
+    final outcome = carId.isEmpty
+        ? SellCancelOutcome.draftKept
+        : SellCancelOutcome.listingNeedsAttention;
+    _cancelRequested.add(id);
+    if (carId.isNotEmpty) SellListingMediaUpload.cancelUploadsFor(carId);
+    if (_activeRuns.containsKey(id)) {
+      // The running worker applies the terminal state at its next
+      // checkpoint (see the catch block in [_runSubmission]).
+      return outcome;
+    }
+    await _applyCancelTerminal(id, record, carId);
+    _cancelRequested.remove(id);
+    if (carId.isNotEmpty) SellListingMediaUpload.clearCancelFor(carId);
+    return outcome;
+  }
+
+  Future<void> _applyCancelTerminal(
+    String draftId,
+    SellSubmissionRecord record,
+    String carId,
+  ) async {
+    statusNotifier.value = null;
+    if (carId.isEmpty) {
+      await SellSubmissionStatePrefs.remove(draftId);
+      appLog('[SELL CANCEL] draft kept, record removed record=$draftId');
+      return;
+    }
+    final fresh = await SellSubmissionStatePrefs.load(draftId);
+    await SellSubmissionStatePrefs.upsert(
+      (fresh ?? record).copyWith(
+        status: SellSubmissionStatus.needsAttention,
+        carId: carId,
+        lastErrorMessage: 'Cancelled by the user',
+        lastErrorRetryable: false,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+    _emit(SellSubmissionEvent(
+      draftId: draftId,
+      success: false,
+      needsAttention: true,
+      message: 'Cancelled by the user',
+      carId: carId,
+    ));
+    appLog('[SELL CANCEL] listing kept as needsAttention record=$draftId');
+  }
 
   void _emit(SellSubmissionEvent e) {
     if (!_controller.isClosed) _controller.add(e);
@@ -1249,6 +1349,7 @@ class PendingSellSubmissionService {
         })
         .whenComplete(() {
       _activeRuns.remove(draftId);
+      _cancelRequested.remove(draftId);
     });
     _activeRuns[draftId] = future;
     return future;
@@ -1781,6 +1882,7 @@ class PendingSellSubmissionService {
             carData: carData,
             updatedAt: nowMs(),
           );
+          _throwIfCancelled(draftId);
           await SellSubmissionStatePrefs.upsert(record);
           final payload = buildSellCarCreatePayload(carData);
           payload['expected_media'] =
@@ -1796,6 +1898,7 @@ class PendingSellSubmissionService {
             created = await _createCarWithBoundedRetry(
               payload,
               record.idempotencyKey,
+              draftId: draftId,
             );
           } on ApiException catch (e) {
             appLog(
@@ -1972,6 +2075,7 @@ class PendingSellSubmissionService {
         // (see below) -- "Phase A did not complete" is itself already a
         // legitimate, accurate rejection reason, regardless of whether
         // Phase B later happens to still succeed on retry.
+        _throwIfCancelled(draftId);
         try {
           await SellListingMediaUpload.runPhaseAOnly(
             carId: carId,
@@ -2069,6 +2173,7 @@ class PendingSellSubmissionService {
         );
       }
 
+      _throwIfCancelled(draftId);
       final listingMediaConfirmed = await SellListingMediaUpload.uploadForCar(
         carId: carId,
         carData: carData,
@@ -2240,6 +2345,9 @@ class PendingSellSubmissionService {
       }
       unawaited(AppHaptics.success());
       statusNotifier.value = null;
+      // A cancel that arrived after the last checkpoint is moot: all media is
+      // already confirmed. Drop it so it cannot leak into a later run.
+      SellListingMediaUpload.clearCancelFor(carId);
       if (record.isEdit && !editSubmittedForReview) {
         // A resumed edit no longer holds the PUT response: ask the server.
         try {
@@ -2280,6 +2388,14 @@ class PendingSellSubmissionService {
       // exists" guarantee its doc comment promises: a media-only failure
       // here finds no signal left to reject.
       _rejectCarReadySignals(draftId, e, st);
+      if (e is SellSubmissionCancelledException ||
+          _cancelRequested.contains(draftId)) {
+        // F-41: user cancel -- terminal state, never retried.
+        _cancelRequested.remove(draftId);
+        if (carId.isNotEmpty) SellListingMediaUpload.clearCancelFor(carId);
+        await _applyCancelTerminal(draftId, record, carId);
+        throw const SellSubmissionCancelledException();
+      }
       final retryable = isRetryableSellSubmissionError(e);
       final statusCode = e is ApiException ? e.statusCode : null;
       // Multi-photo partial-failure fix (same rationale as
@@ -2549,10 +2665,12 @@ class PendingSellSubmissionService {
   /// validation/auth/permission failures surface immediately.
   Future<Map<String, dynamic>> _createCarWithBoundedRetry(
     Map<String, dynamic> payload,
-    String idempotencyKey,
-  ) async {
+    String idempotencyKey, {
+    String? draftId,
+  }) async {
     const maxAttempts = 2;
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      if (draftId != null) _throwIfCancelled(draftId);
       try {
         return await ApiService.createCar(
           payload,
@@ -2567,6 +2685,7 @@ class PendingSellSubmissionService {
           'transient error: $e',
         );
         await Future<void>.delayed(const Duration(seconds: 2));
+        if (draftId != null) _throwIfCancelled(draftId);
       }
     }
     throw StateError('createCar retry loop exited unexpectedly');

@@ -126,6 +126,7 @@ void main() {
   });
 
   tearDown(() async {
+    SellListingMediaUpload.clearCancelFor('car_1');
     SellListingMediaUpload.uploadChunkSize = 3;
     SellListingMediaUpload.uploadChunkAttempts = 2;
     SellListingMediaUpload.uploadChunkRetryDelay =
@@ -191,5 +192,39 @@ void main() {
     statusForCall = (_) => 400;
     await expectLater(run(), throwsA(anything));
     expect(enqueueCalls, hasLength(1));
+  });
+
+  // F-41: SAFE cancel -- never another request after the user cancels.
+  test('cancel after the first chunk stops the rest of the batch', () async {
+    statusForCall = (i) {
+      if (i == 0) SellListingMediaUpload.cancelUploadsFor('car_1');
+      return 202;
+    };
+    await expectLater(
+      run(),
+      throwsA(isA<SellSubmissionCancelledException>()),
+    );
+    // Only the in-flight chunk went out; chunks 2 and 3 were never sent.
+    expect(enqueueCalls, hasLength(1));
+  });
+
+  test('cancel while a chunk is failing does not retry it', () async {
+    statusForCall = (i) {
+      SellListingMediaUpload.cancelUploadsFor('car_1');
+      return 503;
+    };
+    await expectLater(
+      run(),
+      throwsA(isA<SellSubmissionCancelledException>()),
+    );
+    expect(enqueueCalls, hasLength(1)); // no retry, no further chunks
+  });
+
+  test('negative control: clearing the cancel lets uploads proceed', () async {
+    SellListingMediaUpload.cancelUploadsFor('car_1');
+    SellListingMediaUpload.clearCancelFor('car_1');
+    await run();
+    expect(attached, hasLength(7));
+    expect(SellListingMediaUpload.isCancelled('car_1'), isFalse);
   });
 }
