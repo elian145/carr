@@ -68,7 +68,6 @@ mixin _SellStep4Fields on State<SellStep4Page> {
   /// local to render from without re-deriving it from `carData` on every
   /// build.
   List<ServerTranscodeVideoSpec> _pendingServerTranscodeVideos = [];
-  bool _isProcessingImages = false;
   bool _imagesProcessed = false;
   /// True while chosen photos/videos are being processed into the draft.
   bool _isImportingMedia = false;

@@ -35,16 +35,16 @@ mixin _HomePageSearchFiltersIconSections on _HomePageSearchFiltersBrand {
     final isFuelAsset =
         imageAsset != null && imageAsset.startsWith('assets/fuel_types/');
     final effectiveImageWidth = isFuelAsset
-        ? (imageWidth == null ? 40.0 : imageWidth!.clamp(32.0, 48.0).toDouble())
+        ? (imageWidth == null ? 40.0 : imageWidth.clamp(32.0, 48.0).toDouble())
         : imageWidth;
     final effectiveImageHeight = isFuelAsset
         ? (imageHeight == null
             ? 40.0
-            : imageHeight!.clamp(32.0, 48.0).toDouble())
+            : imageHeight.clamp(32.0, 48.0).toDouble())
         : imageHeight;
     final effectiveCompact = compactImageTile || isFuelAsset;
     final effectiveWidth = isFuelAsset
-        ? (width == null ? 80.0 : width!.clamp(72.0, 88.0).toDouble())
+        ? (width == null ? 80.0 : width.clamp(72.0, 88.0).toDouble())
         : width;
     final Widget? graphic;
     if (textOnly) {
@@ -170,7 +170,6 @@ mixin _HomePageSearchFiltersIconSections on _HomePageSearchFiltersBrand {
     double? tileImageHeight,
     BoxFit tileImageFit = BoxFit.contain,
     double tileImageBorderRadius = 0,
-    double? scrollListHeight,
     bool compactImageTile = false,
   }) {
     final visibleOptions =
@@ -293,7 +292,6 @@ mixin _HomePageSearchFiltersIconSections on _HomePageSearchFiltersBrand {
     double? tileImageHeight,
     BoxFit tileImageFit = BoxFit.contain,
     double tileImageBorderRadius = 0,
-    double? scrollListHeight,
   }) {
     final visibleOptions =
         options.where((option) => option != 'Any').toList(growable: false);

@@ -218,7 +218,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: chips.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 6),
+            separatorBuilder: (_, _) => const SizedBox(width: 6),
             itemBuilder: (context, index) => chips[index],
           ),
         ),

@@ -251,7 +251,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: collapsedBrands.length + 1,
-                  separatorBuilder: (_, __) =>
+                  separatorBuilder: (_, _) =>
                       const SizedBox(width: _searchBrandGridSpacing),
                   itemBuilder: (context, index) {
                     if (index == 0) {

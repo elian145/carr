@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:car_listing_app/data/brand_logo_filenames.dart';
@@ -128,26 +129,26 @@ void main() {
       );
 
       if (unexpectedlyMissing.isNotEmpty) {
-        print(
+        debugPrint(
           'Unexpected missing brand logo coverage for '
           '${unexpectedlyMissing.length}/${brands.length} brands:\n'
           '${unexpectedlyMissing.join('\n')}',
         );
       }
       if (invalidFormat.isNotEmpty) {
-        print(
+        debugPrint(
           'Invalid/corrupt logo files for ${invalidFormat.length} brand(s):\n'
           '${invalidFormat.join('\n')}',
         );
       }
       if (staleAllowlistEntries.isNotEmpty) {
-        print(
+        debugPrint(
           'Stale allowlist entries (now have a valid logo, remove from '
           'knownMissingBrandLogos): ${staleAllowlistEntries.join(', ')}',
         );
       }
       if (unknownAllowlistEntries.isNotEmpty) {
-        print(
+        debugPrint(
           'Allowlist entries that do not match any catalog brand name: '
           '${unknownAllowlistEntries.join(', ')}',
         );
@@ -205,7 +206,7 @@ void main() {
       });
 
       if (collisions.isNotEmpty) {
-        print('Slug collisions detected:\n${collisions.join('\n')}');
+        debugPrint('Slug collisions detected:\n${collisions.join('\n')}');
       }
 
       expect(

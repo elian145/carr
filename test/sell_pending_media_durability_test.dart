@@ -71,7 +71,7 @@ void main() {
         // refuses to continue with a silently shortened media list.
         final prepareIdxAlt = prepareIdx >= 0
             ? prepareIdx
-            : (body.indexOf('.prepareCarDataForStorage(') >= 0
+            : (body.contains('.prepareCarDataForStorage(')
                   ? body.indexOf('.prepareCarDataForStorage(')
                   : body.indexOf('_hardenMediaOrThrow('));
         expect(

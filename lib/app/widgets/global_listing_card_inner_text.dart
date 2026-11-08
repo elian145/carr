@@ -243,7 +243,7 @@ Widget _buildGridCarCardInnerText(
     );
   }
 
-  double _yearMileageChipWidth(String value, double fontSize) {
+  double yearMileageChipWidth(String value, double fontSize) {
     final double iconSize = (fontSize * 0.92).clamp(10.0, 14.0);
     final double iconGap = compact ? 3.0 : 3.5;
     final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
@@ -292,16 +292,16 @@ Widget _buildGridCarCardInnerText(
 
         double mileageWidthForSizing(double fontSize) {
           if (mileageDisplay.isEmpty) return 0;
-          final actual = _yearMileageChipWidth(mileageDisplay, fontSize);
+          final actual = yearMileageChipWidth(mileageDisplay, fontSize);
           final reference =
-              _yearMileageChipWidth(referenceMileageDisplay, fontSize);
+              yearMileageChipWidth(referenceMileageDisplay, fontSize);
           return actual > reference ? actual : reference;
         }
 
         double rowWidthAt(double fontSize) {
           double total = 0;
           if (yearDisplay.isNotEmpty) {
-            total += _yearMileageChipWidth(yearDisplay, fontSize);
+            total += yearMileageChipWidth(yearDisplay, fontSize);
           }
           if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty) {
             total += gap;
@@ -315,13 +315,13 @@ Widget _buildGridCarCardInnerText(
         double paintedRowWidthAt(double fontSize) {
           double total = 0;
           if (yearDisplay.isNotEmpty) {
-            total += _yearMileageChipWidth(yearDisplay, fontSize);
+            total += yearMileageChipWidth(yearDisplay, fontSize);
           }
           if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty) {
             total += gap;
           }
           if (mileageDisplay.isNotEmpty) {
-            total += _yearMileageChipWidth(mileageDisplay, fontSize);
+            total += yearMileageChipWidth(mileageDisplay, fontSize);
           }
           return total;
         }
@@ -757,7 +757,7 @@ Widget _buildListCarCardInnerText(
     final priceNeeded = priceTextW + style.horizontalPadding * 2;
     final bool bounded =
         maxWidth != null && maxWidth.isFinite && maxWidth > 0;
-    final bool priceNeedsShrink = bounded && priceNeeded > maxWidth!;
+    final bool priceNeedsShrink = bounded && priceNeeded > maxWidth;
 
     final label = Text(
       priceText,
@@ -865,7 +865,7 @@ Widget _buildListCarCardInnerText(
     );
   }
 
-  double _yearMileageChipWidth(String value, double fontSize) {
+  double yearMileageChipWidth(String value, double fontSize) {
     final double iconSize = (fontSize * 0.92).clamp(10.0, 14.0);
     final double iconGap = compact ? 3.0 : 3.5;
     final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
@@ -905,14 +905,14 @@ Widget _buildListCarCardInnerText(
           '${localizeDigits(context, decimalFormatterForLocale(context).format(999999))} $mileageUnit';
 
       double mileageWidthForSizing(double fontSize) {
-        final actual = _yearMileageChipWidth(mileageText, fontSize);
+        final actual = yearMileageChipWidth(mileageText, fontSize);
         final reference =
-            _yearMileageChipWidth(referenceMileageDisplay, fontSize);
+            yearMileageChipWidth(referenceMileageDisplay, fontSize);
         return actual > reference ? actual : reference;
       }
 
       double rowWidthAt(double fontSize) {
-        return _yearMileageChipWidth(yearText, fontSize) +
+        return yearMileageChipWidth(yearText, fontSize) +
             gap +
             mileageWidthForSizing(fontSize);
       }
