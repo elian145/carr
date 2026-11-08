@@ -296,9 +296,12 @@ def main() -> int:
             rest_status, rest_dt = http_get("/api/cars?limit=1")
             health_status, health_dt = http_get("/health")
         limit = THREADS - 2
-        check("B: sessions beyond the thread ceiling get 503 server_busy, not a thread",
-              accepted <= limit and statuses.count(503) >= 100 - limit and set(statuses) <= {101, 503},
-              f"accepted={accepted} limit<={limit} busy={statuses.count(503)}")
+        # N-2: ONE account is also capped per account, so its older sockets are
+        # recycled (accepted can reach 100): what must hold is how many stay OPEN.
+        still_open = sum(1 for s, st in res if st == 101 and not is_closed_by_server(s))
+        check("B: sessions beyond the thread ceiling never hold a thread (503, or recycled by N-2)",
+              still_open <= limit and set(statuses) <= {101, 503},
+              f"accepted={accepted} still_open={still_open} limit<={limit} busy={statuses.count(503)}")
         check("B: /health and REST answer while the ceiling is saturated",
               health_status == 200 and rest_status == 200 and mon.fail == 0 and max(mon.lat) < 3.0,
               f"{mon.summary()} health={health_dt:.2f}s rest={rest_dt:.2f}s")
