@@ -30,11 +30,11 @@ mixin _ChatConversationMessageUiNav on _ChatConversationComposer {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: WarningSnackBarText(
             AppLocalizations.of(context)?.originalMessageNotLoaded ??
                 'Original message is not loaded.',
           ),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warningSnackBarBackground,
         ),
       );
       return;

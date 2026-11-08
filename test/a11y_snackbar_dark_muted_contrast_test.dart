@@ -137,8 +137,6 @@ void main() {
     });
 
     test('source guard: no raw Colors.orange SnackBar backgrounds in lib/', () {
-      // lib/features/chat is owned by a separate change set and is exempt
-      // until it migrates to AppColors.warningSnackBarBackground.
       final offenders = <String>[];
       final raw = RegExp(r'backgroundColor:\s*Colors\.orange\b');
       for (final f
@@ -147,7 +145,6 @@ void main() {
               .whereType<File>()
               .where((f) => f.path.endsWith('.dart'))) {
         final p = f.path.replaceAll('\\', '/');
-        if (p.contains('lib/features/chat/')) continue;
         final lines = f.readAsLinesSync();
         for (var i = 0; i < lines.length; i++) {
           if (raw.hasMatch(lines[i])) offenders.add('$p:${i + 1}');

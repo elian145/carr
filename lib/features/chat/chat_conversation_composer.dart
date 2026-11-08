@@ -92,11 +92,11 @@ mixin _ChatConversationComposer on _ChatConversationMessageActions {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
+              content: WarningSnackBarText(
                 AppLocalizations.of(context)?.messageCannotBeEmpty ??
                     'Message cannot be empty.',
               ),
-              backgroundColor: Colors.orange,
+              backgroundColor: AppColors.warningSnackBarBackground,
             ),
           );
           setState(() => _isSending = false);
