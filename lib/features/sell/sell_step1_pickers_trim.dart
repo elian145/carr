@@ -157,7 +157,7 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 height: 1.35,
-                color: kFilterAccentColor,
+                color: AppColors.accentText(context),
               ),
             ),
             const SizedBox(height: 2),
@@ -172,7 +172,7 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: kFilterAccentColor,
+                color: AppColors.accentText(context),
               ),
             ),
           ],

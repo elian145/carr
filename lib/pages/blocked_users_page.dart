@@ -124,7 +124,7 @@ class _BlockedUsersPageState extends State<BlockedUsersPage> {
           ? null
           : listingCachedNetworkImageProvider(url),
       child: url.isEmpty
-          ? const Icon(Icons.person, color: AppColors.brandOrange, size: 24)
+          ? const Icon(Icons.person, color: AppColors.brandOrangeIcon, size: 24)
           : null,
     );
   }

@@ -359,7 +359,7 @@ Widget buildSellWizardNavRow(
     child: OutlinedButton(
       onPressed: onPrevious,
       style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: AppColors.brandOrange),
+        side: const BorderSide(color: AppColors.brandOrangeIcon),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: FittedBox(
@@ -367,10 +367,10 @@ Widget buildSellWizardNavRow(
         child: Text(
           AppLocalizations.of(context)!.previousButton,
           maxLines: 1,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.brandOrange,
+            color: AppColors.accentText(context),
           ),
         ),
       ),

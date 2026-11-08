@@ -92,8 +92,8 @@ mixin _ChatConversationMessageUi on _ChatConversationMessageUiNav {
               const SizedBox(height: 4),
               Text(
                 price,
-                style: const TextStyle(
-                  color: _kChatListingCardAccentOrange,
+                style: TextStyle(
+                  color: AppColors.accentText(context),
                   fontWeight: FontWeight.w600,
                 ),
               ),

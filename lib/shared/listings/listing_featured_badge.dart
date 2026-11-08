@@ -3,7 +3,7 @@ import '../../theme/app_colors.dart';
 
 import '../../l10n/app_localizations.dart';
 
-const Color kFeaturedListingAccent = AppColors.brandOrange;
+const Color kFeaturedListingAccent = AppColors.brandOrangeStrong;
 
 String listingFeaturedLabel(BuildContext context) {
   return AppLocalizations.of(context)!.featured;

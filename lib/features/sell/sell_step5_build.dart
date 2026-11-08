@@ -111,7 +111,7 @@ mixin _SellStep5Build on _SellStep5Logic {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       CircularProgressIndicator(
-                                        color: AppColors.brandOrange,
+                                        color: AppColors.brandOrangeIcon,
                                         value: fraction,
                                       ),
                                       const SizedBox(height: 16),
@@ -166,7 +166,7 @@ mixin _SellStep5Build on _SellStep5Logic {
                 parent?._goToPreviousStep();
               },
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppColors.brandOrange),
+          side: const BorderSide(color: AppColors.brandOrangeIcon),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: FittedBox(
@@ -175,10 +175,10 @@ mixin _SellStep5Build on _SellStep5Logic {
             AppLocalizations.of(context)!.previousButton,
             maxLines: 2,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppColors.brandOrange,
+              color: AppColors.accentText(context),
             ),
           ),
         ),

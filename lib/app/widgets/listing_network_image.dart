@@ -33,7 +33,7 @@ Widget _listingImagePlaceholderShell(Widget? placeholder) {
             height: 24,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandOrange),
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandOrangeIcon),
             ),
           ),
         ),
@@ -343,7 +343,7 @@ class _RetryingListingNetworkImageState
               height: 24,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandOrange),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandOrangeIcon),
               ),
             ),
           ),

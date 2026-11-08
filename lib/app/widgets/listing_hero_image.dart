@@ -176,7 +176,7 @@ class _ListingHeroImageState extends State<ListingHeroImage> {
           height: 24,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandOrange),
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandOrangeIcon),
           ),
         ),
       ),

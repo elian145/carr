@@ -175,7 +175,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.brandOrange,
+                      color: AppColors.accentText(context),
                     ),
                   ),
                 SizedBox(height: 16),
@@ -188,7 +188,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
                     fontWeight: FontWeight.bold,
                     height: 1.35,
                     leadingDistribution: TextLeadingDistribution.even,
-                    color: AppColors.brandOrange,
+                    color: AppColors.brandOrangeIcon,
                   ),
                 ),
                 SizedBox(height: 12),

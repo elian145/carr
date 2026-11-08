@@ -10,7 +10,7 @@ import 'filter_option_icons.dart';
 import 'responsive.dart';
 
 /// Brand accent for filter / sell tiles (alias of [AppColors.brandOrange]).
-const Color kFilterAccentColor = AppColors.brandOrange;
+const Color kFilterAccentColor = AppColors.brandOrangeIcon;
 
 BoxDecoration filterCardDecoration(BuildContext context, {bool isError = false}) {
   final isLight = Theme.of(context).brightness == Brightness.light;
@@ -586,7 +586,7 @@ MoreFiltersDialogStyle filterDialogStyle(BuildContext context) {
   return MoreFiltersDialogStyle(
     onSurface: isLight ? const Color(0xFF1A1A1A) : Colors.white,
     muted: isLight ? const Color(0xFF8E8E93) : Colors.white70,
-    anyOrange: kFilterAccentColor,
+    anyOrange: isLight ? AppColors.brandOrangeDeep : AppColors.brandOrange,
     fieldFill: isLight ? Colors.white : Colors.black.withValues(alpha: 0.2),
     menuFill: isLight ? Colors.white : const Color(0xFF2A2A2E),
     fieldGap: 0,
@@ -817,7 +817,7 @@ class FilterIconOptionTile extends StatelessWidget {
                   ),
                   height: 1.1,
                   fontWeight: FontWeight.w600,
-                  color: selected ? kFilterAccentColor : idleColor,
+                  color: selected ? AppColors.accentTextOnTint(context) : idleColor,
                 ),
               ),
             ],

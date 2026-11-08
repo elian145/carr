@@ -3,7 +3,6 @@ part of 'chat_pages.dart';
 // Theme / copy helpers live in chat_theme.dart + chat_strings.dart (M-15).
 // Private aliases keep existing part call sites stable.
 const Color _kComposerOutlineOrange = kComposerOutlineOrange;
-const Color _kChatListingCardAccentOrange = kChatListingCardAccentOrange;
 const Color _kChatListRowInkLight = kChatListRowInkLight;
 const Color _kChatListRowInkDarkPrimary = kChatListRowInkDarkPrimary;
 const Color _kChatListRowInkDarkMuted = kChatListRowInkDarkMuted;

@@ -66,7 +66,7 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersMileageRange {
                                 AppLocalizations.of(context)!.selectColor,
                                 style: AppFonts.orbitronForLocale(
                                   Localizations.localeOf(dlgContext),
-                                  color: AppColors.brandOrange,
+                                  color: AppColors.brandOrangeIcon,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 20,
                                 ),
@@ -161,7 +161,7 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersMileageRange {
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
                                         color: selected
-                                            ? AppColors.brandOrange
+                                            ? AppColors.brandOrangeIcon
                                             : borderSubtle,
                                         width: selected ? 2 : 1,
                                       ),
@@ -178,7 +178,7 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersMileageRange {
                                         if (isAny)
                                           Icon(
                                             Icons.block,
-                                            color: AppColors.brandOrange,
+                                            color: AppColors.brandOrangeIcon,
                                             size: 28,
                                           )
                                         else

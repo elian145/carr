@@ -99,7 +99,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   color: AppColors.brandOrange.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: AppColors.brandOrange, size: 22),
+                child: Icon(icon, color: AppColors.brandOrangeIcon, size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -234,7 +234,7 @@ class _SettingsPageState extends State<SettingsPage> {
             title: loc.settingsEnablePush,
             trailing: Switch.adaptive(
               value: _pushEnabled,
-              activeThumbColor: AppColors.brandOrange,
+              activeThumbColor: AppColors.brandOrangeIcon,
               onChanged: _togglePush,
             ),
             onTap: () => _togglePush(!_pushEnabled),

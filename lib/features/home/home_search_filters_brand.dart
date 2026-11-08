@@ -143,7 +143,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
             const SizedBox(height: 8),
             BrandTileLabel(
               display,
-              color: selected ? _searchAccent : labelColor,
+              color: selected ? AppColors.accentTextOnTint(context) : labelColor,
             ),
           ],
         ),
@@ -251,7 +251,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: collapsedBrands.length + 1,
-                  separatorBuilder: (_, __) =>
+                  separatorBuilder: (_, _) =>
                       const SizedBox(width: _searchBrandGridSpacing),
                   itemBuilder: (context, index) {
                     if (index == 0) {

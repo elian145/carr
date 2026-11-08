@@ -95,7 +95,7 @@ mixin _AnalyticsPageWidgets on _AnalyticsPageListingSelection {
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.brandOrange, Color(0xFFFF8C42)],
+          colors: AppColors.brandGradientBehindWhiteText,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

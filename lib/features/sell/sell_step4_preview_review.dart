@@ -226,7 +226,7 @@ class _SellReviewCarDetailScrollViewState
       fontWeight: FontWeight.bold,
       height: 1.4,
       leadingDistribution: TextLeadingDistribution.even,
-      color: AppColors.brandOrange,
+      color: AppColors.brandOrangeIcon,
     );
   }
 
@@ -531,7 +531,7 @@ class _SellReviewCarDetailScrollViewState
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.brandOrange,
+                              color: AppColors.brandOrangeIcon,
                               height: 1.15,
                             ),
                           ),

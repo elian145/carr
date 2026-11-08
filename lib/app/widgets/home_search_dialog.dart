@@ -34,7 +34,7 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
 
   ButtonStyle _searchModeButtonStyle({required bool selected}) {
     final backgroundColor = selected
-        ? AppColors.brandOrange
+        ? AppColors.brandOrangeStrong
         : Colors.white.withValues(alpha: 0.12);
     final foregroundColor = selected ? Colors.white : Colors.white70;
     return ElevatedButton.styleFrom(
@@ -189,7 +189,7 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
                     ? AppLocalizations.of(context)!.searchBrands
                     : AppLocalizations.of(context)!.searchModels,
                 hintStyle: TextStyle(color: Colors.grey[400]),
-                prefixIcon: Icon(Icons.search, color: AppColors.brandOrange),
+                prefixIcon: Icon(Icons.search, color: AppColors.brandOrangeIcon),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.grey[600]!),
@@ -200,7 +200,7 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.brandOrange, width: 2),
+                  borderSide: BorderSide(color: AppColors.brandOrangeIcon, width: 2),
                 ),
                 filled: true,
                 fillColor: Colors.grey[800],

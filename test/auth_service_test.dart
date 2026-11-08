@@ -80,7 +80,7 @@ void main() {
   // left AuthGuard-protected pages, e.g. Chat, spinning indefinitely).
   // --------------------------------------------------------------------
 
-  http.Response _jsonResponse(int status, Object body) => http.Response(
+  http.Response jsonResponse(int status, Object body) => http.Response(
         json.encode(body),
         status,
         headers: {'content-type': 'application/json; charset=utf-8'},
@@ -90,23 +90,23 @@ void main() {
   /// [firstStatus]; every call after that returns 200 with a valid profile.
   /// Any other endpoint is stubbed with an empty 200 (not exercised by these
   /// tests — `_loadUserProfile()` only calls `/auth/me`).
-  MockClient _profileFlakyThenOkClient({required int firstStatus}) {
+  MockClient profileFlakyThenOkClient({required int firstStatus}) {
     var call = 0;
     return MockClient((request) async {
       if (request.url.path == '/api/auth/me') {
         call++;
         if (call == 1) {
           return firstStatus == 401
-              ? _jsonResponse(401, {'message': 'Token has expired'})
-              : _jsonResponse(firstStatus, {'message': 'temporary failure'});
+              ? jsonResponse(401, {'message': 'Token has expired'})
+              : jsonResponse(firstStatus, {'message': 'temporary failure'});
         }
-        return _jsonResponse(200, {
+        return jsonResponse(200, {
           'id': 1,
           'username': 'testuser',
           'account_type': 'individual',
         });
       }
-      return _jsonResponse(200, <String, dynamic>{});
+      return jsonResponse(200, <String, dynamic>{});
     });
   }
 
@@ -131,7 +131,7 @@ void main() {
       final originalClient = ApiService.boundTestHttpClient;
       addTearDown(() => ApiService.testHttpClient = originalClient);
 
-      ApiService.testHttpClient = _profileFlakyThenOkClient(firstStatus: 500);
+      ApiService.testHttpClient = profileFlakyThenOkClient(firstStatus: 500);
       await ApiService.setTokens(
         accessToken: 'flaky_token',
         refreshToken: 'flaky_refresh',
@@ -164,7 +164,7 @@ void main() {
       final originalClient = ApiService.boundTestHttpClient;
       addTearDown(() => ApiService.testHttpClient = originalClient);
 
-      ApiService.testHttpClient = _profileFlakyThenOkClient(firstStatus: 401);
+      ApiService.testHttpClient = profileFlakyThenOkClient(firstStatus: 401);
       await ApiService.setTokens(
         accessToken: 'expired_token',
         refreshToken: 'expired_refresh',
@@ -205,9 +205,9 @@ void main() {
         if (request.url.path == '/api/auth/me') {
           // Simulate a slow/cold-starting backend far longer than our bound.
           await Future.delayed(const Duration(seconds: 2));
-          return _jsonResponse(200, {'id': 1, 'username': 'testuser'});
+          return jsonResponse(200, {'id': 1, 'username': 'testuser'});
         }
-        return _jsonResponse(200, <String, dynamic>{});
+        return jsonResponse(200, <String, dynamic>{});
       });
       await ApiService.setTokens(
         accessToken: 'bounded_token',
@@ -242,14 +242,14 @@ void main() {
       ApiService.testHttpClient = MockClient((request) async {
         if (request.url.path == '/api/auth/me') {
           meCalls++;
-          return _jsonResponse(401, {'message': 'Token has expired'});
+          return jsonResponse(401, {'message': 'Token has expired'});
         }
         // No explicit /api/auth/refresh handler: falls through to the
         // generic 200-with-empty-body stub below, so _refreshAccessToken()
         // finds no access_token in the response and fails — the realistic
         // "refresh token is also no longer valid" case already covered by
         // test D, extended here to also assert no retry gets scheduled.
-        return _jsonResponse(200, <String, dynamic>{});
+        return jsonResponse(200, <String, dynamic>{});
       });
 
       await ApiService.setTokens(
@@ -289,9 +289,9 @@ void main() {
       ApiService.testHttpClient = MockClient((request) async {
         if (request.url.path == '/api/auth/me') {
           meCalls++;
-          return _jsonResponse(500, {'message': 'always failing'});
+          return jsonResponse(500, {'message': 'always failing'});
         }
-        return _jsonResponse(200, <String, dynamic>{});
+        return jsonResponse(200, <String, dynamic>{});
       });
 
       await ApiService.setTokens(
@@ -325,12 +325,12 @@ void main() {
       ApiService.testHttpClient = MockClient((request) async {
         if (request.url.path == '/api/auth/me') {
           meCallsByToken.add(ApiService.accessToken ?? '');
-          return _jsonResponse(500, {'message': 'fail'});
+          return jsonResponse(500, {'message': 'fail'});
         }
         if (request.url.path == '/api/auth/logout') {
-          return _jsonResponse(200, {'message': 'logged out'});
+          return jsonResponse(200, {'message': 'logged out'});
         }
-        return _jsonResponse(200, <String, dynamic>{});
+        return jsonResponse(200, <String, dynamic>{});
       });
 
       // Old session fails once and schedules a retry ~300ms out.
@@ -398,12 +398,12 @@ void main() {
         if (request.url.path == '/api/auth/me') {
           meCalls++;
           await gate.future; // stays pending until the test releases it.
-          return _jsonResponse(200, {
+          return jsonResponse(200, {
             'id': 1,
             'username': 'shared_user',
           });
         }
-        return _jsonResponse(200, <String, dynamic>{});
+        return jsonResponse(200, <String, dynamic>{});
       });
       addTearDown(() {
         if (!gate.isCompleted) gate.complete();
@@ -453,12 +453,12 @@ void main() {
         if (request.url.path == '/api/auth/me') {
           meCalls++;
           await gate.future;
-          return _jsonResponse(200, {
+          return jsonResponse(200, {
             'id': 1,
             'username': 'sequential_user',
           });
         }
-        return _jsonResponse(200, <String, dynamic>{});
+        return jsonResponse(200, <String, dynamic>{});
       });
       addTearDown(() {
         if (!gate.isCompleted) gate.complete();
@@ -512,9 +512,9 @@ void main() {
         if (request.url.path == '/api/auth/me') {
           meCalls++;
           await gate.future;
-          return _jsonResponse(500, {'message': 'boom'});
+          return jsonResponse(500, {'message': 'boom'});
         }
-        return _jsonResponse(200, <String, dynamic>{});
+        return jsonResponse(200, <String, dynamic>{});
       });
       addTearDown(() {
         if (!gate.isCompleted) gate.complete();
@@ -579,12 +579,12 @@ void main() {
             await oldGate.future;
             // If this were ever wrongly adopted by the new session, it
             // would surface as the wrong user below.
-            return _jsonResponse(200, {'id': 999, 'username': 'old_user'});
+            return jsonResponse(200, {'id': 999, 'username': 'old_user'});
           }
           meCallsNew++;
-          return _jsonResponse(200, {'id': 1, 'username': 'new_user'});
+          return jsonResponse(200, {'id': 1, 'username': 'new_user'});
         }
-        return _jsonResponse(200, <String, dynamic>{});
+        return jsonResponse(200, <String, dynamic>{});
       });
       addTearDown(() {
         if (!oldGate.isCompleted) oldGate.complete();
@@ -658,16 +658,16 @@ void main() {
       ApiService.testHttpClient = MockClient((request) async {
         if (request.url.path == '/api/auth/me') {
           meCalls++;
-          return _jsonResponse(200, {'id': 1, 'username': 'testuser'});
+          return jsonResponse(200, {'id': 1, 'username': 'testuser'});
         }
         if (request.url.path == '/api/users/push_token') {
           pushCalls++;
           // Simulate a slow backend for push-token registration — this
           // must never be able to delay the auth decision above it.
           await pushGate.future;
-          return _jsonResponse(200, {'message': 'ok'});
+          return jsonResponse(200, {'message': 'ok'});
         }
-        return _jsonResponse(200, <String, dynamic>{});
+        return jsonResponse(200, <String, dynamic>{});
       });
       addTearDown(() {
         if (!pushGate.isCompleted) pushGate.complete();
@@ -721,13 +721,13 @@ void main() {
       ApiService.testHttpClient = MockClient((request) async {
         if (request.url.path == '/api/auth/me') {
           meCalls++;
-          return _jsonResponse(200, {'id': 1, 'username': 'testuser'});
+          return jsonResponse(200, {'id': 1, 'username': 'testuser'});
         }
         if (request.url.path == '/api/users/push_token') {
           pushCalls++;
-          return _jsonResponse(500, {'message': 'push backend down'});
+          return jsonResponse(500, {'message': 'push backend down'});
         }
-        return _jsonResponse(200, <String, dynamic>{});
+        return jsonResponse(200, <String, dynamic>{});
       });
 
       await ApiService.setTokens(

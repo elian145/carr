@@ -95,7 +95,7 @@ Widget carListingSpecsDetailRow(
       return const SizedBox.shrink();
     }
     final isLight = Theme.of(context).brightness == Brightness.light;
-    const brandOrange = AppColors.brandOrange;
+    const brandOrange = AppColors.brandOrangeIcon;
     const iconCircleFillLight = Color(0xFFFFF0E6);
     const iconCircleFillDark = Color(0xFFFFE8D6);
     const labelGrey = Color(0xFF8E8E93);
@@ -167,7 +167,7 @@ Widget carListingSpecsDetailRow(
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: onTap != null ? brandOrange : valueColor,
+                      color: onTap != null ? AppColors.accentText(context) : valueColor,
                       fontSize: fontSize,
                       fontWeight: FontWeight.w800,
                       height: 1.15,
@@ -241,7 +241,7 @@ Widget carListingSpecsDetailRow(
   }
 
 Widget carListingSpecsCard(ListingSpecItem item, {required double scale}) {
-  const brandOrange = AppColors.brandOrange;
+  const brandOrange = AppColors.brandOrangeIcon;
   const labelGrey = Color(0xFF8E8E93);
   final radius = _specsDim(_specsDesignRadius, scale);
 

@@ -98,7 +98,7 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
   }
 
   Widget _buildSpecCard(_SpecItem item) {
-    const brandOrange = AppColors.brandOrange;
+    const brandOrange = AppColors.brandOrangeIcon;
     final isLight = Theme.of(context).brightness == Brightness.light;
     // F-24: 8E8E93 is ~3.3:1 on a white card (below 4.5:1 for small text).
     final labelGrey =
@@ -222,7 +222,7 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
   }) {
     if (value == null || value.isEmpty) return const SizedBox.shrink();
     final isLight = Theme.of(context).brightness == Brightness.light;
-    const brandOrange = AppColors.brandOrange;
+    const brandOrange = AppColors.brandOrangeIcon;
     // F-24: 8E8E93 is ~3.3:1 on a white card (below 4.5:1 for 12px text).
     final labelGrey =
         isLight ? const Color(0xFF636366) : const Color(0xFF8E8E93);

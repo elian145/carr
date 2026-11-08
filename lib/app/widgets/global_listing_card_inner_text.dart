@@ -140,7 +140,7 @@ Widget _buildGridCarCardInnerText(
   final textDirection = isRtl ? TextDirection.rtl : TextDirection.ltr;
   final double leadingShift = isRtl ? 6 : -6;
   final double trailingShift = isRtl ? -4 : 4;
-  const Color priceAccent = Color(0xFFFF5A00);
+  const Color priceAccent = AppColors.brandOrangeStrong;
 
   /// Spec chip that always hugs its label. Do not put a FittedBox inside a
   /// Flexible — that expands the pill to the flex share while shrinking text,
@@ -243,7 +243,7 @@ Widget _buildGridCarCardInnerText(
     );
   }
 
-  double _yearMileageChipWidth(String value, double fontSize) {
+  double yearMileageChipWidth(String value, double fontSize) {
     final double iconSize = (fontSize * 0.92).clamp(10.0, 14.0);
     final double iconGap = compact ? 3.0 : 3.5;
     final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
@@ -292,16 +292,16 @@ Widget _buildGridCarCardInnerText(
 
         double mileageWidthForSizing(double fontSize) {
           if (mileageDisplay.isEmpty) return 0;
-          final actual = _yearMileageChipWidth(mileageDisplay, fontSize);
+          final actual = yearMileageChipWidth(mileageDisplay, fontSize);
           final reference =
-              _yearMileageChipWidth(referenceMileageDisplay, fontSize);
+              yearMileageChipWidth(referenceMileageDisplay, fontSize);
           return actual > reference ? actual : reference;
         }
 
         double rowWidthAt(double fontSize) {
           double total = 0;
           if (yearDisplay.isNotEmpty) {
-            total += _yearMileageChipWidth(yearDisplay, fontSize);
+            total += yearMileageChipWidth(yearDisplay, fontSize);
           }
           if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty) {
             total += gap;
@@ -315,13 +315,13 @@ Widget _buildGridCarCardInnerText(
         double paintedRowWidthAt(double fontSize) {
           double total = 0;
           if (yearDisplay.isNotEmpty) {
-            total += _yearMileageChipWidth(yearDisplay, fontSize);
+            total += yearMileageChipWidth(yearDisplay, fontSize);
           }
           if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty) {
             total += gap;
           }
           if (mileageDisplay.isNotEmpty) {
-            total += _yearMileageChipWidth(mileageDisplay, fontSize);
+            total += yearMileageChipWidth(mileageDisplay, fontSize);
           }
           return total;
         }
@@ -677,7 +677,7 @@ Widget _buildListCarCardInnerText(
   final String yearText = yearDisplay.isNotEmpty ? yearDisplay : '—';
   final String mileageText = mileageDisplay.isNotEmpty ? mileageDisplay : '—';
   final String cityText = cityLine.isNotEmpty ? cityLine : '—';
-  const Color priceAccent = Color(0xFFFF5A00);
+  const Color priceAccent = AppColors.brandOrangeStrong;
   final bool showLogo =
       car['brand'] != null && car['brand'].toString().trim().isNotEmpty;
 
@@ -757,7 +757,7 @@ Widget _buildListCarCardInnerText(
     final priceNeeded = priceTextW + style.horizontalPadding * 2;
     final bool bounded =
         maxWidth != null && maxWidth.isFinite && maxWidth > 0;
-    final bool priceNeedsShrink = bounded && priceNeeded > maxWidth!;
+    final bool priceNeedsShrink = bounded && priceNeeded > maxWidth;
 
     final label = Text(
       priceText,
@@ -865,7 +865,7 @@ Widget _buildListCarCardInnerText(
     );
   }
 
-  double _yearMileageChipWidth(String value, double fontSize) {
+  double yearMileageChipWidth(String value, double fontSize) {
     final double iconSize = (fontSize * 0.92).clamp(10.0, 14.0);
     final double iconGap = compact ? 3.0 : 3.5;
     final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
@@ -905,14 +905,14 @@ Widget _buildListCarCardInnerText(
           '${localizeDigits(context, decimalFormatterForLocale(context).format(999999))} $mileageUnit';
 
       double mileageWidthForSizing(double fontSize) {
-        final actual = _yearMileageChipWidth(mileageText, fontSize);
+        final actual = yearMileageChipWidth(mileageText, fontSize);
         final reference =
-            _yearMileageChipWidth(referenceMileageDisplay, fontSize);
+            yearMileageChipWidth(referenceMileageDisplay, fontSize);
         return actual > reference ? actual : reference;
       }
 
       double rowWidthAt(double fontSize) {
-        return _yearMileageChipWidth(yearText, fontSize) +
+        return yearMileageChipWidth(yearText, fontSize) +
             gap +
             mileageWidthForSizing(fontSize);
       }
@@ -1264,7 +1264,7 @@ class _ListingCardFavoriteButtonState
         icon: Icon(
           _isFavorite ? Icons.favorite : Icons.favorite_border,
           size: 20,
-          color: _isFavorite ? AppColors.brandOrange : widget.idleColor,
+          color: _isFavorite ? AppColors.brandOrangeIcon : widget.idleColor,
         ),
       ),
     );

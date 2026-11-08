@@ -277,7 +277,7 @@ List<HomeFilterChipDescriptor> buildHomeFilterChipDescriptors({
   required HomeFilterChipLabels labels,
   required HomeFilterChipFormatters formatters,
 }) {
-  const brandOrange = AppColors.brandOrange;
+  const brandOrange = AppColors.brandOrangeIcon;
   final chips = <HomeFilterChipDescriptor>[];
 
   void add(

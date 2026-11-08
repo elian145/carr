@@ -106,7 +106,7 @@ Widget buildFloatingBottomNav(
       type: BottomNavigationBarType.fixed,
       backgroundColor: useSolid ? solidFill : Colors.transparent,
       elevation: 0,
-      selectedItemColor: AppColors.brandOrange,
+      selectedItemColor: AppColors.accentText(context),
       unselectedItemColor: unselectedItemColor,
       selectedFontSize: compact ? 10 : 12,
       unselectedFontSize: compact ? 10 : 11,

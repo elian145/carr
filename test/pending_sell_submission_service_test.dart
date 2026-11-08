@@ -38,6 +38,7 @@ import 'dart:io';
 import 'package:car_listing_app/features/sell/pending_sell_submission_service.dart';
 import 'package:car_listing_app/features/sell/sell_listing_media_upload.dart'
     show SellSubmissionCancelledException;
+import 'package:car_listing_app/features/sell/sell_listing_submit_result.dart';
 import 'package:car_listing_app/features/sell/sell_media_identity.dart';
 import 'package:car_listing_app/features/sell/sell_submission_visibility.dart';
 import 'package:car_listing_app/features/sell/sell_video_compression.dart';
@@ -935,6 +936,227 @@ void main() {
     try {
       await run;
     } catch (_) {}
+  });
+  // ---- F-41: cancel AFTER the final media confirmation ---------------------
+  //
+  // Contract: `cancelSubmission` either ACCEPTS the cancel (the run then ends
+  // cancelled: needsAttention record, never a success event / result) or
+  // REFUSES it by returning null because every media item is already
+  // confirmed (the run then completes normally). It must never accept a
+  // cancel and still report success, and it must never leak the cancel flag.
+  group('F-41: cancel after the final media confirmation', () {
+    File photo(String name) => File('${tempDir.path}/$name')
+      ..writeAsBytesSync([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3]);
+
+    /// Wraps the fake server so [onResponse] can run (and be awaited) in the
+    /// middle of a specific request, exactly when the worker is waiting on it.
+    void interceptServer(
+      Future<void> Function(http.BaseRequest request, http.Response response)
+      onResponse,
+    ) {
+      final inner = ApiService.boundTestHttpClient!;
+      ApiService.testHttpClient = MockClient((request) async {
+        final copy = http.Request(request.method, request.url)
+          ..headers.addAll(request.headers)
+          ..bodyBytes = request.bodyBytes;
+        final streamed = await inner.send(copy);
+        final response = await http.Response.fromStream(streamed);
+        await onResponse(request, response);
+        return response;
+      });
+    }
+
+    bool isListRefresh(http.BaseRequest r) =>
+        r.method == 'GET' && r.url.path == '/api/cars';
+
+    /// The worker's `GET /api/cars` list refreshes, in order: #1 happens as
+    /// the media phase wraps up (before the worker's last cancel checkpoint),
+    /// #2 after the server confirmed every expected media id (past it).
+    bool Function(http.BaseRequest) nthListRefresh(int n) {
+      var seen = 0;
+      return (r) => isListRefresh(r) && ++seen == n;
+    }
+
+    /// Shared body: the user cancels at the request matched by [trigger]; the
+    /// accepted cancel must win -- never a success result or event.
+    Future<void> expectAcceptedCancelWins(
+      String draftId,
+      bool Function(http.BaseRequest) trigger,
+    ) async {
+      final svc = PendingSellSubmissionService.instance;
+      final events = <SellSubmissionEvent>[];
+      final sub = svc.events.listen(events.add);
+      addTearDown(sub.cancel);
+
+      SellCancelOutcome? outcome;
+      var fired = false;
+      interceptServer((request, response) async {
+        if (!fired && trigger(request)) {
+          fired = true;
+          outcome = await svc.cancelSubmission(draftId);
+        }
+      });
+
+      Object? error;
+      SellListingSubmitResult? result;
+      try {
+        result = await svc.submit(
+          draftId: draftId,
+          carData: _baseCarData(images: [photo('$draftId.jpg').path]),
+        );
+      } catch (e) {
+        error = e;
+      }
+      await Future<void>.delayed(Duration.zero); // let the event stream flush
+
+      expect(fired, isTrue, reason: 'test must exercise the cancel window');
+      expect(outcome, SellCancelOutcome.listingNeedsAttention);
+      expect(
+        result,
+        isNull,
+        reason: 'an accepted cancel must not produce a success result',
+      );
+      expect(error, isA<SellSubmissionCancelledException>());
+      expect(events.where((e) => e.success), isEmpty,
+          reason: 'no success event after the user cancelled');
+      expect(events.where((e) => e.needsAttention), hasLength(1));
+      final record = await SellSubmissionStatePrefs.load(draftId);
+      expect(record, isNotNull, reason: 'created listing stays tracked');
+      expect(record!.status, SellSubmissionStatus.needsAttention);
+      expect(record.lastErrorRetryable, isFalse);
+      expect(record.carId, 'car_1');
+      expect(createCarCalls.length, 1);
+      expect(carsById.keys, ['car_1'], reason: 'listing is never deleted');
+      expect(deleteCallsLog, isEmpty);
+      expect(svc.isCancelRequested(draftId), isFalse,
+          reason: 'state resets cleanly');
+      expect(svc.isSubmitting(draftId), isFalse);
+      expect(svc.statusNotifier.value, isNull);
+
+      // No automatic resume re-uploads or completes a cancelled submission.
+      await svc.resumeAll();
+      expect(createCarCalls.length, 1);
+      expect(
+        (await SellSubmissionStatePrefs.load(draftId))!.status,
+        SellSubmissionStatus.needsAttention,
+      );
+    }
+
+    test(
+      'a cancel accepted while the last media item is being confirmed ends '
+      'cancelled -- never a success result/event -- and keeps the created '
+      'listing for the owner (no orphan record, no delete, no retry)',
+      () async {
+        var enqueued = false;
+        await expectAcceptedCancelWins('draft_cancel_last_media', (r) {
+          if (r.method == 'POST' &&
+              RegExp(r'^/api/cars/[^/]+/images$').hasMatch(r.url.path)) {
+            enqueued = true;
+          }
+          // First readiness poll after the photos were handed to the server.
+          return enqueued && r.url.path.endsWith('/media-summary');
+        });
+      },
+    );
+
+    test(
+      'a cancel accepted in the tail of the media phase (after the upload '
+      'loop\'s own last check, before verification) still wins -- the run '
+      'must not report success for a submission the user was told is '
+      'cancelled',
+      () => expectAcceptedCancelWins('draft_cancel_tail', nthListRefresh(1)),
+    );
+
+    test(
+      'a cancel that lands after the server confirmed every media item '
+      '(final verification / list refresh) is refused, and the run completes '
+      'exactly once without leaking state',
+      () async {
+        const draftId = 'draft_cancel_late';
+        final svc = PendingSellSubmissionService.instance;
+        final events = <SellSubmissionEvent>[];
+        final sub = svc.events.listen(events.add);
+        addTearDown(sub.cancel);
+
+        SellCancelOutcome? lateOutcome;
+        var fired = false;
+        final trigger = nthListRefresh(2);
+        interceptServer((request, response) async {
+          if (!fired && trigger(request)) {
+            fired = true;
+            lateOutcome = await svc.cancelSubmission(draftId);
+          }
+        });
+
+        final result = await svc.submit(
+          draftId: draftId,
+          carData: _baseCarData(images: [photo('late.jpg').path]),
+        );
+        await Future<void>.delayed(Duration.zero); // let the event stream flush
+
+        expect(fired, isTrue, reason: 'test must exercise the late window');
+        expect(
+          lateOutcome,
+          isNull,
+          reason: 'everything is already confirmed: nothing left to cancel, '
+              'so the user must not be told the upload was cancelled',
+        );
+        expect(result, isNotNull);
+        expect(events.where((e) => e.success), hasLength(1));
+        expect(
+          events.where((e) => !e.success),
+          isEmpty,
+          reason: 'no cancelled / needs-attention event next to the success',
+        );
+        expect(createCarCalls.length, 1, reason: 'never double-created');
+        expect(carsById.length, 1);
+        expect(await SellSubmissionStatePrefs.load(draftId), isNull,
+            reason: 'completed submission leaves no record');
+        expect(svc.isCancelRequested(draftId), isFalse);
+        expect(svc.isSubmitting(draftId), isFalse);
+        expect(svc.statusNotifier.value, isNull);
+
+        // Nothing resurrects or re-creates it afterwards.
+        await svc.resumeAll();
+        expect(createCarCalls.length, 1);
+        expect(deleteCallsLog, isEmpty, reason: 'no media was deleted');
+      },
+    );
+
+    test(
+      'a refused late cancel does not poison the next submission of the '
+      'same draft id (no stale cancel flag)',
+      () async {
+        const draftId = 'draft_cancel_late_then_again';
+        final svc = PendingSellSubmissionService.instance;
+        var fired = false;
+        SellCancelOutcome? lateOutcome;
+        final trigger = nthListRefresh(2);
+        interceptServer((request, response) async {
+          if (!fired && trigger(request)) {
+            fired = true;
+            lateOutcome = await svc.cancelSubmission(draftId);
+          }
+        });
+        await svc.submit(
+          draftId: draftId,
+          carData: _baseCarData(images: [photo('again1.jpg').path]),
+        );
+        expect(fired, isTrue);
+        expect(lateOutcome, isNull);
+        expect(svc.isCancelRequested(draftId), isFalse);
+
+        // A second, unrelated submission under the same id runs to the end.
+        final second = await svc.submit(
+          draftId: draftId,
+          carData: _baseCarData(images: [photo('again2.jpg').path]),
+        );
+        expect(second, isNotNull);
+        expect(createCarCalls.length, 2,
+            reason: 'two independent listings: one create each');
+        expect(await SellSubmissionStatePrefs.load(draftId), isNull);
+      },
+    );
   });
   // ---- B + G: pause/resume continues the same run; concurrent triggers ----
   // only spawn one worker for the same draft.

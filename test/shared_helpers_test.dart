@@ -58,7 +58,7 @@ void main() {
   group('navigationErrorScaffold', () {
     testWidgets('shows navigation error message', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(home: navigationErrorScaffold('Missing listing id')),
+        _localizedApp(navigationErrorScaffold('Missing listing id')),
       );
       expect(find.text('Missing listing id'), findsOneWidget);
       expect(find.text('Navigation error'), findsOneWidget);

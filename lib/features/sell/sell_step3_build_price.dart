@@ -30,8 +30,8 @@ mixin _SellStep3BuildPrice on _SellStep3Catalog {
                       enterPriceHint,
                     ).copyWith(
                       prefixText: selectedCurrency == 'IQD' ? 'IQD ' : '\$',
-                      prefixStyle: const TextStyle(
-                        color: kFilterAccentColor,
+                      prefixStyle: TextStyle(
+                        color: AppColors.accentText(context),
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
@@ -108,8 +108,8 @@ mixin _SellStep3BuildPrice on _SellStep3Catalog {
                   },
                   icon: Text(
                     selectedCurrency,
-                    style: const TextStyle(
-                      color: kFilterAccentColor,
+                    style: TextStyle(
+                      color: AppColors.accentText(context),
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),

@@ -117,7 +117,7 @@ class CarDetailsSellerSection extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 16, color: AppColors.brandOrange),
+            Icon(icon, size: 16, color: AppColors.brandOrangeIcon),
             const SizedBox(width: 8),
             Expanded(
               child: RichText(
@@ -179,14 +179,14 @@ class CarDetailsSellerSection extends StatelessWidget {
                     child: !isDealerSeller
                         ? const Icon(
                             Icons.person,
-                            color: AppColors.brandOrange,
+                            color: AppColors.brandOrangeIcon,
                             size: 26,
                           )
                         : avatarUrl.isEmpty
                         ? Text(
                             initials,
-                            style: const TextStyle(
-                              color: AppColors.brandOrange,
+                            style: TextStyle(
+                              color: AppColors.accentText(context),
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
