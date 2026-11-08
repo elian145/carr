@@ -364,6 +364,61 @@ def log_user_action(user, action_type, target_type=None, target_id=None, metadat
         db.session.rollback()
         current_app.logger.error(f"Error logging user action: {str(e)}")
 
+_AUDIT_REDACT_KEY = re.compile(
+    r"(e[-_]?mail|phone|mobile|password|passwd|token|secret|otp|address|authorization|"
+    r"cookie|session|national|passport|card|iban)",
+    re.IGNORECASE,
+)
+_AUDIT_MAX_STR = 200
+_AUDIT_MAX_ITEMS = 25
+_AUDIT_MAX_DEPTH = 3
+_AUDIT_MAX_JSON = 4000
+
+
+def audit_safe_metadata(value, _depth=0):
+    """Bound and de-identify metadata before it enters the append-only audit table.
+
+    ``admin_audit_log`` rows can never be edited or deleted, so whatever lands
+    there stays for good. Raw request bodies / free text must therefore not be
+    stored unbounded: values under personal-data-looking keys are redacted,
+    strings are truncated, containers are capped in size and depth, and the whole
+    document is capped (replaced by a key list if still too large).
+    """
+    import json
+
+    if _depth == 0:
+        out = audit_safe_metadata(value, 1)
+        try:
+            if len(json.dumps(out, default=str)) > _AUDIT_MAX_JSON:
+                keys = sorted(out.keys()) if isinstance(out, dict) else []
+                return {"_truncated": True, "keys": [str(k)[:60] for k in keys[:_AUDIT_MAX_ITEMS]]}
+        except (TypeError, ValueError):
+            return {"_unserializable": True}
+        return out
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, str):
+        return value if len(value) <= _AUDIT_MAX_STR else value[:_AUDIT_MAX_STR] + "...[truncated]"
+    if _depth >= _AUDIT_MAX_DEPTH + 1:
+        return "[nested]"
+    if isinstance(value, dict):
+        cleaned = {}
+        for i, (k, v) in enumerate(value.items()):
+            if i >= _AUDIT_MAX_ITEMS:
+                cleaned["_more_keys"] = len(value) - _AUDIT_MAX_ITEMS
+                break
+            key = str(k)[:60]
+            cleaned[key] = "[redacted]" if _AUDIT_REDACT_KEY.search(key) else audit_safe_metadata(v, _depth + 1)
+        return cleaned
+    if isinstance(value, (list, tuple, set)):
+        items = list(value)
+        cleaned = [audit_safe_metadata(v, _depth + 1) for v in items[:_AUDIT_MAX_ITEMS]]
+        if len(items) > _AUDIT_MAX_ITEMS:
+            cleaned.append(f"[+{len(items) - _AUDIT_MAX_ITEMS} more]")
+        return cleaned
+    return str(value)[:_AUDIT_MAX_STR]
+
+
 def log_admin_action(admin_user, action_type, target_type=None, target_id=None, metadata=None):
     """Record an administrator action (F-17).
 
@@ -381,7 +436,7 @@ def log_admin_action(admin_user, action_type, target_type=None, target_id=None, 
                 action_type=action_type,
                 target_type=target_type,
                 target_id=target_id,
-                action_metadata=metadata,
+                action_metadata=audit_safe_metadata(metadata) if metadata is not None else None,
             )
         )
         if getattr(admin_user, "id", None) is not None:

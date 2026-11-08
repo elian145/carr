@@ -35,3 +35,24 @@ media (privacy policy: no automatic expiry, no stated period), reports, listings
    product decision; reports are still resolved manually.
 
 Requires a Celery **beat** process to be running (see `render.yaml` carr-beat).
+
+## `admin_audit_log` and personal data - what is stored, and the open owner decision
+
+Stored per row: the acting admin's numeric id and a **username snapshot** (staff
+identity), the action type, the target type/id (for users this is the target's
+`public_id`, a pseudonymous identifier), and bounded metadata. Metadata passes
+through `kk.auth.audit_safe_metadata`: values under personal-data-looking keys
+(email, phone, password, token, address, ...) are redacted, strings are truncated
+to 200 characters, containers and the whole document are size-capped, and the
+user- and listing-status endpoints log only an allowlist of fields, never the raw
+request body. Admin-written free text (e.g. a rejection `reason`) can still
+appear, truncated.
+
+The privacy draft's deletion matrix (`docs/PRIVACY_DRAFT_ACCOUNT_DELETION.md`)
+does not mention this table, so **keeping these rows after an account is deleted
+is not covered by any approved statement**. The table is append-only by design
+(a database trigger on PostgreSQL), so erasure is an operator action. Owner to
+decide: (a) disclose it in the privacy text with a stated purpose (security /
+abuse audit) and a retention period, or (b) approve a documented pseudonymisation
+procedure for the target id and admin username on erasure requests. Nothing here
+invents either choice.

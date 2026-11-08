@@ -1870,7 +1870,12 @@ def update_car_status(car_id: str):
                 "admin_update_listing",
                 target_type="car",
                 target_id=car.public_id or str(car.id),
-                metadata=data,
+                # Allowlist, not the raw request body: the audit row is permanent.
+                metadata={
+                    k: data[k]
+                    for k in ("is_active", "status", "is_featured", "featured_until", "reason")
+                    if k in data
+                },
             )
         return jsonify({"car": car.to_dict()}), 200
     except ValueError as e:
@@ -2381,7 +2386,8 @@ def update_user_status(user_id: str):
                 "admin_update_user",
                 target_type="user",
                 target_id=user.public_id,
-                metadata=data,
+                # Only the field this route actually changes, never the raw body.
+                metadata={"is_active": bool(data["is_active"])} if "is_active" in data else None,
             )
         return jsonify({"user": user.to_dict(include_private=True)}), 200
     except Exception as e:

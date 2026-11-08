@@ -107,3 +107,65 @@ def test_audit_rows_are_append_only_in_orm(ctx):
         with pytest.raises(RuntimeError):
             db.session.commit()
         db.session.rollback()
+
+
+# ---------------------------------------------------------------------------
+# Data minimisation: the audit table is permanent, so what enters it is bounded.
+# ---------------------------------------------------------------------------
+
+
+def test_audit_metadata_redacts_personal_keys_and_bounds_free_text():
+    from kk.auth import audit_safe_metadata
+
+    out = audit_safe_metadata(
+        {
+            "email": "someone@example.com",
+            "phone_number": "07701234567",
+            "New_Password": "x",
+            "reason": "r" * 5000,
+            "nested": {"contact_phone": "0770", "ok": 1},
+            "status": "active",
+        }
+    )
+    assert out["email"] == out["phone_number"] == out["New_Password"] == "[redacted]"
+    assert out["nested"] == {"contact_phone": "[redacted]", "ok": 1}
+    assert out["status"] == "active"  # legitimate audit detail is kept
+    assert len(out["reason"]) < 300 and out["reason"].endswith("...[truncated]")
+    assert "someone@example.com" not in repr(out) and "07701234567" not in repr(out)
+
+
+def test_audit_metadata_is_size_bounded_and_negative_controls_pass_through():
+    from kk.auth import audit_safe_metadata
+
+    huge = {f"k{i}": "v" * 190 for i in range(25)}  # ~5 KB once serialised
+    out = audit_safe_metadata(huge)
+    assert out.get("_truncated") is True and len(out["keys"]) <= 25
+    many = audit_safe_metadata({"ids": list(range(1000))})
+    assert len(many["ids"]) == 26 and many["ids"][-1] == "[+975 more]"
+    # negative controls: small, ordinary metadata is stored unchanged
+    small = {"resolution": "dismissed", "is_featured_dealer": True, "n": 3, "none": None}
+    assert audit_safe_metadata(small) == small
+    assert audit_safe_metadata(None) is None
+
+
+def test_update_user_status_audits_only_is_active_never_the_raw_body(ctx):
+    from kk.models import AdminAuditLog
+
+    app, client, db = ctx
+    _aid, _p, admin_name = _make_user(app, db, is_admin=True)
+    target_id, _p, _n = _make_user(app, db)
+    token = _login(client, admin_name)
+    with app.app_context():
+        from kk.models import User
+
+        public_id = db.session.get(User, target_id).public_id
+    resp = client.patch(
+        f"/api/admin/users/{public_id}/status",
+        json={"is_active": False, "email": "leak@example.com", "note": "free text " * 50},
+        headers=_auth(token),
+    )
+    assert resp.status_code == 200, resp.data
+    with app.app_context():
+        row = AdminAuditLog.query.filter_by(action_type="admin_update_user", target_id=public_id).one()
+        assert row.action_metadata == {"is_active": False}
+        assert "leak@example.com" not in repr(row.action_metadata)
