@@ -22,7 +22,7 @@ def run(cmd: list[str]) -> None:
 
 def main() -> None:
     run([sys.executable, "scripts/verify_preflight.py", "--skip-host"])
-    run([_flutter(), "analyze", "--no-fatal-infos"])
+    run([_flutter(), "analyze"])
     run([_flutter(), "test", "--coverage"])
     run([sys.executable, "scripts/smoke_tests/test_backend_factory_smoke.py"])
     run([sys.executable, "scripts/smoke_tests/test_android_jdk_tools_smoke.py"])

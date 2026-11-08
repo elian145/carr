@@ -312,7 +312,7 @@ workflows:
       - name: Firebase release guard (fail-closed)
         script: python scripts/verify_firebase_isolation.py --release --flavor prod --platform android
       - name: Analyze
-        script: flutter analyze --no-fatal-warnings --no-fatal-infos
+        script: flutter analyze
       - name: Build APK
         script: |
           flutter build apk --release --flavor prod \
@@ -461,7 +461,7 @@ workflows:
       - name: Firebase release guard (fail-closed)
         script: python scripts/verify_firebase_isolation.py --release --flavor "$FLAVOR" --platform android
       - name: Analyze
-        script: flutter analyze --no-fatal-warnings --no-fatal-infos --no-pub
+        script: flutter analyze --no-pub
       - name: Tests
         script: bash scripts/flutter_test_ci.sh --no-pub
       - name: Publish preflight (static + deployed)

@@ -41,7 +41,7 @@ jobs:
         run: flutter pub get
 
       - name: Analyze
-        run: flutter analyze --no-fatal-warnings --no-fatal-infos
+        run: flutter analyze
 
       # lib/l10n/app_localizations*.dart are committed: fail if they drift from
       # the .arb files (stale generated code would ship missing/old strings).
