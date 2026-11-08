@@ -29,7 +29,7 @@ class SellDraftGatePage extends StatefulWidget {
 class _SellDraftGatePageState extends State<SellDraftGatePage> {
   static const String _draftSnapshotKey = 'legacy_sell_draft_snapshot_v1';
   static const String _draftCurrentStepKey = 'legacy_sell_draft_current_step_v1';
-  static const Color _accent = AppColors.brandOrange;
+  static const Color _accent = AppColors.brandOrangeIcon;
 
   bool _loading = true;
   List<Map<String, dynamic>> _drafts = <Map<String, dynamic>>[];
@@ -539,7 +539,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: _accent,
+                color: AppColors.accentText(context),
               ),
             ),
             const SizedBox(height: 14),

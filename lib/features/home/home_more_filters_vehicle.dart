@@ -24,7 +24,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterLogic {
       onPressed: onPressed,
       icon: Icon(
         isDropdown ? Icons.edit : Icons.list,
-        color: AppColors.brandOrange,
+        color: AppColors.brandOrangeIcon,
         size: 24,
       ),
       style: IconButton.styleFrom(

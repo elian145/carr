@@ -304,7 +304,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
         children: [
           Icon(
             Icons.add_a_photo_outlined,
-            color: AppColors.brandOrange,
+            color: AppColors.brandOrangeIcon,
             size: 28,
           ),
           const SizedBox(height: 8),

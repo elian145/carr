@@ -3,7 +3,7 @@ part of 'production_account_pages.dart';
 mixin _ProfilePageBodyActions on _ProfilePageBodyAccount {
   /// Prominent favorites entry (UX-03) — above the long account-actions list.
   Widget _buildFavoritesQuickAccess(BuildContext context, bool isLoggedIn) {
-    final accent = AppColors.brandOrange;
+    final accent = AppColors.brandOrangeIcon;
     return Material(
       color: Colors.transparent,
       child: InkWell(

@@ -83,7 +83,7 @@ mixin _SavedSearchesPageActions on _SavedSearchesPageFilterDetails {
             children: [
               Row(
                 children: [
-                  Icon(Icons.filter_list, color: AppColors.brandOrange, size: 20),
+                  Icon(Icons.filter_list, color: AppColors.brandOrangeIcon, size: 20),
                   SizedBox(width: 8),
                   Text(
                     AppLocalizations.of(context)!.appliedFilters,

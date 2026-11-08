@@ -26,7 +26,7 @@ class _FirstRunOnboardingGateState extends State<FirstRunOnboardingGate> {
   int _page = 0;
   final _controller = PageController();
 
-  static const _accent = AppColors.brandOrange;
+  static const _accent = AppColors.brandOrangeIcon;
 
   /// Index of the final signup/login prompt (after the feature pages).
   static const _authPageIndex = 3;

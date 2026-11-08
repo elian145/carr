@@ -20,7 +20,7 @@ import '../../shared/ui/app_haptics.dart';
 import '../../theme_provider.dart';
 import 'listing_network_image.dart';
 
-const Color _kFeaturedAccent = AppColors.brandOrange;
+const Color _kFeaturedAccent = AppColors.brandOrangeStrong;
 const Color _kFeaturedCardBgDark = Color(0xFF121212);
 const Color _kFeaturedMutedDark = Color(0xFF9A9A9A);
 const double _kFeaturedRadius = 16;
@@ -475,7 +475,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                                             child: Text(
                                               price,
                                               style: TextStyle(
-                                                color: _kFeaturedAccent,
+                                                color: AppColors.accentText(context),
                                                 fontWeight: FontWeight.w800,
                                                 fontSize: priceSize,
                                                 height: 1.1,
@@ -515,7 +515,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                                               child: Text(
                                                 price,
                                                 style: TextStyle(
-                                                  color: _kFeaturedAccent,
+                                                  color: AppColors.accentText(context),
                                                   fontWeight: FontWeight.w800,
                                                   fontSize: priceSize,
                                                   height: 1.2,

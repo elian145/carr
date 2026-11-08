@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/car_name_translations.dart';
 import '../../l10n/app_localizations.dart';
+import '../../theme/app_colors.dart';
 import 'app_text_scale.dart';
 import 'brand_logo_image.dart';
 import 'brand_tile_label.dart';
@@ -470,7 +471,7 @@ class _BrandTile extends StatelessWidget {
             const SizedBox(height: 8),
             BrandTileLabel(
               display,
-              color: selected ? kFilterAccentColor : labelColor,
+              color: selected ? AppColors.accentTextOnTint(context) : labelColor,
             ),
           ],
         ),

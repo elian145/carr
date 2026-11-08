@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../theme/app_colors.dart';
 import '../media/media_url.dart';
 import 'listing_image_media.dart';
 import 'listing_status.dart';
@@ -51,7 +52,9 @@ class PendingEditsBanner extends StatelessWidget {
         ? const Color(0xFFC62828)
         : unsubmitted
             ? const Color(0xFF546E7A)
-            : const Color(0xFFF57C00);
+            : (Theme.of(context).brightness == Brightness.light
+                ? AppColors.brandOrangeDeep
+                : const Color(0xFFF57C00));
 
     return Container(
       key: const ValueKey('pending_edits_banner'),

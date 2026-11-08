@@ -121,7 +121,7 @@ class _SellCarPageState extends _SellCarPageFields
                               color: isCompleted
                                   ? Colors.green
                                   : isCurrent
-                                      ? AppColors.brandOrange
+                                      ? AppColors.brandOrangeIcon
                                       : isAccessible
                                           ? AppColors.brandOrange
                                               .withValues(alpha: 0.5)
@@ -154,7 +154,7 @@ class _SellCarPageState extends _SellCarPageFields
                       _getStepTitle(context, currentStep),
                       style: TextStyle(
                         fontSize: 16,
-                        color: AppColors.brandOrange,
+                        color: AppColors.accentText(context),
                         fontWeight: FontWeight.bold,
                       ),
                     ),

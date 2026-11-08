@@ -131,7 +131,7 @@ mixin _HomePageSearchFiltersIconSections on _HomePageSearchFiltersBrand {
                   ),
                   height: 1.1,
                   fontWeight: FontWeight.w600,
-                  color: selected ? _searchAccent : idleColor,
+                  color: selected ? AppColors.accentTextOnTint(context) : idleColor,
                 ),
               ),
             ],

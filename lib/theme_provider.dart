@@ -161,7 +161,10 @@ class AppThemes {
           seedColor: _brandOrange,
           brightness: Brightness.light,
         ).copyWith(
-          primary: _brandOrange,
+          // Light surfaces: the bright brand orange is only ~2.86:1 on white
+          // (focus borders, spinners, text buttons, switches all derive from
+          // primary and need 3:1 / 4.5:1), so use the accessible shade.
+          primary: AppColors.brandOrangeStrong,
           onPrimary: Colors.white,
           secondary: _brandSecondary,
           onSecondary: Colors.white,

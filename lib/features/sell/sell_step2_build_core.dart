@@ -29,7 +29,7 @@ mixin _SellStep2BuildCore on _SellStep2CatalogHydrate {
           label,
           style: TextStyle(
             fontWeight: FontWeight.w600,
-            color: selected ? kFilterAccentColor : Colors.grey[700],
+            color: selected ? AppColors.accentText(context) : Colors.grey[700],
           ),
         ),
       ),

@@ -1,4 +1,4 @@
-﻿part of 'car_details_page.dart';
+part of 'car_details_page.dart';
 
 mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
   Future<void> _loadFavoriteStatus() async {
@@ -220,7 +220,7 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     child: Row(
                       children: [
-                        Icon(icon, size: 18, color: AppColors.brandOrange),
+                        Icon(icon, size: 18, color: AppColors.brandOrangeIcon),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(

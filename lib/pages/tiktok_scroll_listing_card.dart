@@ -137,7 +137,7 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor:
-                            AlwaysStoppedAnimation<Color>(AppColors.brandOrange),
+                            AlwaysStoppedAnimation<Color>(AppColors.brandOrangeIcon),
                       ),
                     ),
                   ),

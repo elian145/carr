@@ -21,7 +21,7 @@ class EmptyStatePanel extends StatelessWidget {
   final VoidCallback? onAction;
   final IconData? actionIcon;
 
-  static const Color _accent = AppColors.brandOrange;
+  static const Color _accent = AppColors.brandOrangeIcon;
 
   @override
   Widget build(BuildContext context) {

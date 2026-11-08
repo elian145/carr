@@ -143,7 +143,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
             const SizedBox(height: 8),
             BrandTileLabel(
               display,
-              color: selected ? _searchAccent : labelColor,
+              color: selected ? AppColors.accentTextOnTint(context) : labelColor,
             ),
           ],
         ),

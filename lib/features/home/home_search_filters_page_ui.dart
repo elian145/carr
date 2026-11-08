@@ -549,7 +549,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                             flex: 5,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: _searchAccent,
+                                backgroundColor: AppColors.brandOrangeStrong,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,

@@ -56,12 +56,12 @@ mixin _EditDealerPageStyle on _EditDealerPageFields {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      labelStyle: const TextStyle(
-        color: _editDealerAccent,
+      labelStyle: TextStyle(
+        color: AppColors.accentText(context),
         fontWeight: FontWeight.w800,
       ),
-      floatingLabelStyle: const TextStyle(
-        color: _editDealerAccent,
+      floatingLabelStyle: TextStyle(
+        color: AppColors.accentText(context),
         fontWeight: FontWeight.w900,
       ),
       filled: true,
@@ -144,10 +144,10 @@ mixin _EditDealerPageStyle on _EditDealerPageFields {
                         maxLines: 1,
                         softWrap: false,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: _editDealerAccent,
+                          color: AppColors.accentText(context),
                           height: 1.1,
                           letterSpacing: 0.05,
                         ),

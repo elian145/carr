@@ -173,8 +173,8 @@ mixin _SellStep3BuildDetails on _SellStep3BuildPrice {
             labelStyle: _sellFlowManualFieldLabelStyle(context),
             hintStyle: _sellFlowManualFieldHintStyle(context),
             prefixText: '+964 ',
-            prefixStyle: const TextStyle(
-              color: kFilterAccentColor,
+            prefixStyle: TextStyle(
+              color: AppColors.accentText(context),
               fontWeight: FontWeight.bold,
               fontSize: 16,
             ),

@@ -16,7 +16,7 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecsEngine {
     return MoreFiltersDialogStyle(
       onSurface: isLightMoreFilters ? const Color(0xFF1A1A1A) : Colors.white,
       muted: isLightMoreFilters ? const Color(0xFF757575) : Colors.white70,
-      anyOrange: AppColors.brandOrange,
+      anyOrange: isLightMoreFilters ? AppColors.brandOrangeDeep : AppColors.brandOrange,
       fieldFill: isLightMoreFilters
           ? Colors.grey.shade200
           : Colors.black.withValues(alpha: 0.2),

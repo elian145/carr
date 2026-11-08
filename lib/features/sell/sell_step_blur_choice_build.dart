@@ -232,7 +232,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: selected
-                            ? kFilterAccentColor
+                            ? AppColors.accentText(context)
                             : Colors.grey.shade900,
                       ),
                     ),

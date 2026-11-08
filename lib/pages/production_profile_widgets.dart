@@ -8,7 +8,7 @@ mixin _ProfilePageWidgets on _ProfilePageLoad {
     Color? color,
     int badgeCount = 0,
   }) {
-    final accent = color ?? AppColors.brandOrange;
+    final accent = color ?? AppColors.brandOrangeIcon;
     final light = _profileLightShell(context);
     return InkWell(
       onTap: onTap,

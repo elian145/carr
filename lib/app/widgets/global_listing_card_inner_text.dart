@@ -140,7 +140,7 @@ Widget _buildGridCarCardInnerText(
   final textDirection = isRtl ? TextDirection.rtl : TextDirection.ltr;
   final double leadingShift = isRtl ? 6 : -6;
   final double trailingShift = isRtl ? -4 : 4;
-  const Color priceAccent = Color(0xFFFF5A00);
+  const Color priceAccent = AppColors.brandOrangeStrong;
 
   /// Spec chip that always hugs its label. Do not put a FittedBox inside a
   /// Flexible — that expands the pill to the flex share while shrinking text,
@@ -677,7 +677,7 @@ Widget _buildListCarCardInnerText(
   final String yearText = yearDisplay.isNotEmpty ? yearDisplay : '—';
   final String mileageText = mileageDisplay.isNotEmpty ? mileageDisplay : '—';
   final String cityText = cityLine.isNotEmpty ? cityLine : '—';
-  const Color priceAccent = Color(0xFFFF5A00);
+  const Color priceAccent = AppColors.brandOrangeStrong;
   final bool showLogo =
       car['brand'] != null && car['brand'].toString().trim().isNotEmpty;
 
@@ -1264,7 +1264,7 @@ class _ListingCardFavoriteButtonState
         icon: Icon(
           _isFavorite ? Icons.favorite : Icons.favorite_border,
           size: 20,
-          color: _isFavorite ? AppColors.brandOrange : widget.idleColor,
+          color: _isFavorite ? AppColors.brandOrangeIcon : widget.idleColor,
         ),
       ),
     );
