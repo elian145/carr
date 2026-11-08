@@ -172,8 +172,9 @@ def make_celery() -> Celery:
                 "task": "kk.tasks.listing_tasks.clear_expired_featured_listings",
                 "schedule": 3600.0,  # hourly
             },
-            # F-16: opt-in retention cleanup. A no-op unless RETENTION_*
-            # env vars are set (see kk/retention.py, docs/RETENTION_CLEANUP.md).
+            # F-16: opt-in retention cleanup. A no-op unless RETENTION_ENABLED=1,
+            # and counts only (dry-run) unless RETENTION_DRY_RUN=0
+            # (see kk/retention.py, docs/RETENTION_CLEANUP.md).
             "retention-cleanup": {
                 "task": "kk.tasks.retention_tasks.run_retention_cleanup",
                 "schedule": 86400.0,  # daily

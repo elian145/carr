@@ -48,6 +48,10 @@ _PG_SKIP_MARKERS = (
     "CARNET_PG_TEST_URL not set",
     "No disposable Postgres",
     "PHONE_INVENTORY_TEST_PG_URL not set",
+    # test_auth_phone_canonical.py (CARNET_SEC_PG_URL) and the
+    # test_auto_moderation_postgres.py "production-head template" test.
+    "needs the disposable local PostgreSQL",
+    "needs the production-head template",
 )
 
 

@@ -1,0 +1,14 @@
+{
+  "_comment": [
+    "Expected Firebase project IDs per environment, read by scripts/verify_firebase_isolation.py.",
+    "Project IDs are identifiers, not secrets. NEVER put API keys, service-account JSON or private keys here.",
+    "Environment variables override these values: CARNET_FIREBASE_PROD_PROJECT_ID, CARNET_FIREBASE_DEV_PROJECT_ID, CARNET_FIREBASE_STAGE_PROJECT_ID.",
+    "A value that is empty or starts with REPLACE_WITH_ counts as NOT CONFIGURED: release verification then fails closed.",
+    "OWNER ACTION (F-20): create the separate dev and stage Firebase projects in the console, put their project IDs below,",
+    "replace android/app/src/{dev,stage}/google-services.json with the downloaded configs, then enable CARNET_FIREBASE_STRICT=1 in CI.",
+    "'prod' is pinned to the project ID already present in the committed prod configs; the owner must confirm it is the intended production project."
+  ],
+  "prod": { "project_id": "carzo-prod" },
+  "stage": { "project_id": "REPLACE_WITH_STAGE_FIREBASE_PROJECT_ID" },
+  "dev": { "project_id": "REPLACE_WITH_DEV_FIREBASE_PROJECT_ID" }
+}

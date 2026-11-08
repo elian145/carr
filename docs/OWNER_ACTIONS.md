@@ -20,7 +20,7 @@ Finding IDs refer to the CarNet audit plan (F-xx) and `PRODUCTION_AUDIT.md` (C-x
 - [ ] **C-3** Keyword search: confirm the Postgres full-text trigger/index exists on production and `q` returns ranked results.
 - [ ] **C-6** Signed production AAB: confirm the Play upload key, Play App Signing enrolment and that the release build used the production keystore.
 - [ ] **F-19 (production switch, left OFF)** Admin token separation (ES256) is implemented but must stay inactive until the owner performs the staged rollout in `docs/F19_ADMIN_TOKEN_SEPARATION.md` (generate keypair outside the repo, set the private key on the API only, public key on admin-web, verify, then remove `JWT_SECRET_KEY` from admin-web).
-- [ ] **F-20** Create separate Firebase projects for dev and stage (console action), download their config files, and replace the placeholders; confirm test pushes/analytics no longer reach production.
+- [ ] **F-20** Create separate Firebase projects for dev and stage (console action), download their config files, and replace the placeholders; confirm test pushes/analytics no longer reach production. Then supply: the dev and stage Firebase project IDs (`scripts/firebase_expected_projects.json` or repo/CI variables `CARNET_FIREBASE_DEV_PROJECT_ID` / `CARNET_FIREBASE_STAGE_PROJECT_ID`), confirm the prod ID pinned there (`carzo-prod`), set `CARNET_FIREBASE_STRICT=1` in GitHub, and set `FIREBASE_EXPECTED_PROJECT_ID` (every backend deployment) and `FIREBASE_PRODUCTION_PROJECT_ID` (non-prod deployments) on the servers. Until then `verify_firebase_isolation.py --release --flavor dev|stage` fails closed.
 
 ## C. Store, compliance and operations
 

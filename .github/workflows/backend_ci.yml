@@ -32,10 +32,20 @@ jobs:
       - name: Compile backend
         run: python -m compileall kk
 
-      # F-20: warns while dev/stage still share the prod Firebase project;
-      # switch to --strict once the owner has created separate projects.
+      # F-20: warns while dev/stage still share the prod Firebase project. Once
+      # the owner has created separate projects, set the repository variable
+      # CARNET_FIREBASE_STRICT=1 (Settings > Variables) to make this fail.
+      # Expected project IDs: scripts/firebase_expected_projects.json (or the
+      # CARNET_FIREBASE_*_PROJECT_ID variables). A pinned-ID mismatch always fails.
       - name: Firebase dev/stage isolation lint
+        env:
+          CARNET_FIREBASE_STRICT: ${{ vars.CARNET_FIREBASE_STRICT }}
         run: python scripts/verify_firebase_isolation.py
+
+      # Fail-closed release check of the prod Firebase configs (also part of
+      # the static publish preflight below, which every release workflow runs).
+      - name: Firebase prod release guard
+        run: python scripts/verify_firebase_isolation.py --release --flavor prod --platform all
 
       - name: Publish preflight (static)
         run: python scripts/verify_preflight.py --skip-host
@@ -49,7 +59,23 @@ jobs:
       # need a real PostgreSQL server skip here with an explicit reason and are
       # executed by the "backend-postgres-tests" job below.
       - name: Run backend test suite (SQLite)
-        run: python -m pytest kk/tests -ra
+        run: python -m pytest kk/tests -ra --junitxml="$RUNNER_TEMP/sqlite-tests.xml"
+
+      # Any skip other than the PostgreSQL-only ones (and two documented
+      # optional/capability cases) fails the job: a missing cv2/pillow-heif/git
+      # must not turn into a silently smaller suite. ~3900 tests ran at the time.
+      - name: Assert only PostgreSQL-only tests were skipped
+        if: always()
+        run: >-
+          python scripts/ci_assert_no_skips.py "$RUNNER_TEMP/sqlite-tests.xml"
+          --min-tests 3500
+          --allow-skip "CARNET_PG_TEST_URL not set"
+          --allow-skip "No disposable Postgres"
+          --allow-skip "PHONE_INVENTORY_TEST_PG_URL not set"
+          --allow-skip "needs the disposable local PostgreSQL"
+          --allow-skip "needs the production-head template"
+          --allow-skip "CARNET_REAL_DOLBY_REPRO_PATH"
+          --allow-skip "This ffmpeg build"
 
   backend-postgres-tests:
     name: Backend tests (Postgres)
@@ -157,7 +183,7 @@ jobs:
           B7_RESET_PG_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/carnet_reset
           PHONE_INVENTORY_TEST_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/carnet_phoneinv
         run: >-
-          python -m pytest -ra
+          python -m pytest -ra --junitxml="$RUNNER_TEMP/pg-tests.xml"
           kk/tests/test_auto_moderation_postgres.py
           kk/tests/test_srch_random_postgres_overflow.py
           kk/tests/test_sec_f01_f03_phone_signup_ownership.py
@@ -170,6 +196,13 @@ jobs:
           kk/tests/test_phone_inventory_cli.py
           kk/tests/test_b8_account_deletion_pg.py
           kk/tests/test_f17_admin_audit_pg.py
+
+      # Reason-agnostic backstop to CARNET_REQUIRE_PG_TESTS: a skipped test is
+      # not a passed test, so this job fails if ANY of the above was skipped
+      # (or if far fewer tests than the ~219 collected at the time ran).
+      - name: Assert no PostgreSQL test was skipped
+        if: always()
+        run: python scripts/ci_assert_no_skips.py "$RUNNER_TEMP/pg-tests.xml" --min-tests 200
 
   migrations:
     name: Migration smoke (Postgres)

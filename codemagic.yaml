@@ -91,6 +91,9 @@ workflows:
           else
             echo "AIRBRIDGE_APP_NAME / AIRBRIDGE_APP_TOKEN not set; listing shares use HTTPS only."
           fi
+      # F-20: iOS has one prod-project plist; fails on project/bundle id mismatch.
+      - name: Firebase release guard (fail-closed)
+        script: python3 scripts/verify_firebase_isolation.py --release --flavor prod --platform ios
       - name: Analyze + tests
         script: |
           flutter analyze
@@ -182,6 +185,9 @@ workflows:
               /usr/libexec/PlistBuddy -c "Add :GOOGLE_PLACES_API_KEY string $IOS_GOOGLE_PLACES_API_KEY" ios/Runner/Info.plist 2>/dev/null || true
             fi
           fi
+      # F-20: iOS has one prod-project plist; fails on project/bundle id mismatch.
+      - name: Firebase release guard (fail-closed)
+        script: python3 scripts/verify_firebase_isolation.py --release --flavor prod --platform ios
       - name: Analyze + tests
         script: |
           flutter analyze
@@ -302,6 +308,9 @@ workflows:
           flutter pub get
       - name: Verify Android release-signing safeguards
         script: python scripts/verify_android_release_signing.py
+      # F-20: fails if the prod Firebase config is not the configured expected project.
+      - name: Firebase release guard (fail-closed)
+        script: python scripts/verify_firebase_isolation.py --release --flavor prod --platform android
       - name: Analyze
         script: flutter analyze --no-fatal-warnings --no-fatal-infos
       - name: Build APK
@@ -358,6 +367,9 @@ workflows:
           else
             echo "ANDROID_GOOGLE_MAPS_API_KEY not set; maps will fail/blank on Android builds."
           fi
+      # F-20: warns while dev shares the prod project; set CARNET_FIREBASE_STRICT=1 once separate projects exist. A pinned-ID mismatch always fails.
+      - name: Firebase isolation lint
+        script: python scripts/verify_firebase_isolation.py --flavor "$FLAVOR" --platform android
       - name: Analyze
         script: flutter analyze
       - name: Tests
@@ -445,6 +457,9 @@ workflows:
           printf 'STORE_FILE=%s\nSTORE_PASSWORD=%s\nKEY_ALIAS=%s\nKEY_PASSWORD=%s\n' \
             "$KEYSTORE_PATH" "$CM_KEYSTORE_PASSWORD" "$CM_KEY_ALIAS" "$CM_KEY_PASSWORD" \
             > "$CM_BUILD_DIR/android/signing.properties"
+      # F-20: fails if the Firebase config for this flavor is not the configured expected project.
+      - name: Firebase release guard (fail-closed)
+        script: python scripts/verify_firebase_isolation.py --release --flavor "$FLAVOR" --platform android
       - name: Analyze
         script: flutter analyze --no-fatal-warnings --no-fatal-infos --no-pub
       - name: Tests
