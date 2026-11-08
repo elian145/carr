@@ -822,6 +822,120 @@ void main() {
       expect(createCarCalls.length, 1);
     },
   );
+
+  // ---- F-41: cancel at the very start of a submission is never a no-op ----
+  test(
+    'F-41: cancelling while the submission is still being prepared stops it '
+    'before any network call, keeps no record and creates no listing',
+    () async {
+      const draftId = 'draft_cancel_early';
+      final svc = PendingSellSubmissionService.instance;
+      final run = svc.submit(draftId: draftId, carData: _baseCarData());
+      // `submit` has registered the draft as preparing synchronously, but
+      // nothing has been persisted yet (record == null): used to be a no-op.
+      expect(svc.isPreparing(draftId), isTrue);
+      expect(await svc.cancelSubmission(draftId), SellCancelOutcome.draftKept);
+      // A second tap is idempotent.
+      expect(await svc.cancelSubmission(draftId), SellCancelOutcome.draftKept);
+
+      await expectLater(run, throwsA(isA<SellSubmissionCancelledException>()));
+
+      expect(createCarCalls, isEmpty, reason: 'no create request was sent');
+      expect(carsById, isEmpty);
+      expect(await SellSubmissionStatePrefs.load(draftId), isNull,
+          reason: 'cancel must not leave (or resurrect) a record');
+      expect(svc.isCancelRequested(draftId), isFalse);
+      expect(svc.isPreparing(draftId), isFalse);
+
+      // Deterministic: nothing resurrects it later.
+      await svc.resumeAll();
+      expect(createCarCalls, isEmpty);
+    },
+  );
+
+  test(
+    'F-41: a cancelled attempt leaves no stale flag -- the next submission '
+    'of the same draft creates exactly one listing',
+    () async {
+      const draftId = 'draft_cancel_then_retry';
+      final svc = PendingSellSubmissionService.instance;
+      final first = svc.submit(draftId: draftId, carData: _baseCarData());
+      await svc.cancelSubmission(draftId);
+      await expectLater(first, throwsA(isA<SellSubmissionCancelledException>()));
+      expect(createCarCalls, isEmpty);
+
+      // Cancel with nothing in flight is a harmless no-op and sets no flag.
+      expect(await svc.cancelSubmission(draftId), isNull);
+      expect(svc.isCancelRequested(draftId), isFalse);
+
+      final result = await svc.submit(draftId: draftId, carData: _baseCarData());
+      expect(result, isNotNull);
+      expect(createCarCalls.length, 1, reason: 'exactly one create, no duplicate');
+      expect(carsById.length, 1);
+    },
+  );
+
+  test(
+    'F-41: cancelling after the create request was sent never deletes the '
+    'server-side listing and never retries create',
+    () async {
+      const draftId = 'draft_cancel_after_create';
+      final svc = PendingSellSubmissionService.instance;
+      createCarOverride = (body) {
+        // The user cancels while the create request is in flight; the server
+        // still creates the listing.
+        unawaited(svc.cancelSubmission(draftId));
+        carIdCounter++;
+        final id = 'car_$carIdCounter';
+        carsById[id] = {
+          'id': id,
+          'images': <dynamic>[],
+          'videos': <dynamic>[],
+        };
+        fakeManifest.registerCreate(id, body);
+        return http.Response(
+          json.encode({'car': carsById[id]}),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      };
+
+      await expectLater(
+        svc.submit(draftId: draftId, carData: _baseCarData()),
+        throwsA(isA<SellSubmissionCancelledException>()),
+      );
+
+      expect(createCarCalls.length, 1, reason: 'create is never retried');
+      expect(carsById.keys, ['car_1'],
+          reason: 'cancel must not delete the server-side listing');
+      final r = await SellSubmissionStatePrefs.load(draftId);
+      expect(r, isNotNull, reason: 'created listing stays tracked');
+      expect(r!.status, SellSubmissionStatus.needsAttention);
+      expect(r.carId, 'car_1');
+      expect(r.lastErrorRetryable, isFalse);
+
+      // No automatic resume re-creates or re-uploads it.
+      await svc.resumeAll();
+      expect(createCarCalls.length, 1);
+      expect(carsById.length, 1);
+    },
+  );
+
+  test('F-41: an edit of an existing listing is not cancellable while preparing',
+      () async {
+    const draftId = 'draft_edit_not_cancellable';
+    final svc = PendingSellSubmissionService.instance;
+    final run = svc.submit(
+      draftId: draftId,
+      carData: _baseCarData(),
+      editListingId: 'car_existing',
+    );
+    expect(await svc.cancelSubmission(draftId), isNull);
+    expect(svc.isCancelRequested(draftId), isFalse);
+    try {
+      await run;
+    } catch (_) {}
+  });
   // ---- B + G: pause/resume continues the same run; concurrent triggers ----
   // only spawn one worker for the same draft.
   test(

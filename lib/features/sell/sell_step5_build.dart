@@ -236,6 +236,7 @@ mixin _SellStep5Build on _SellStep5Logic {
   }
 
   Future<void> _onSellStep5SubmitPressed(_SellCarPageState? parentState) async {
+    submitCancelRequested = false;
     setState(() {
       isSubmitting = true;
       submitStatusMessage = AppLocalizations.of(context)!.submitting;

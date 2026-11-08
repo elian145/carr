@@ -517,7 +517,18 @@ class PendingSellSubmissionService {
   Future<SellCancelOutcome?> cancelSubmission(String draftId) async {
     final id = draftId.trim().isEmpty ? 'default' : draftId.trim();
     final record = await SellSubmissionStatePrefs.load(id);
-    if (record == null || record.isEdit) return null;
+    // Submit was pressed but the intent record is not written yet (the
+    // first awaits of [_prepareSubmissionRecord]): this used to be a silent
+    // no-op. Record the intent; the prepare step applies it deterministically
+    // once its own write has landed. Edit submissions are never cancellable.
+    if (record == null) {
+      if (_preparingDrafts.containsKey(id) && !_preparingEdits.contains(id)) {
+        _cancelRequested.add(id);
+        return SellCancelOutcome.draftKept;
+      }
+      return null;
+    }
+    if (record.isEdit) return null;
     if (record.status == SellSubmissionStatus.needsAttention ||
         record.status == SellSubmissionStatus.completed) {
       return null;
@@ -528,9 +539,11 @@ class PendingSellSubmissionService {
         : SellCancelOutcome.listingNeedsAttention;
     _cancelRequested.add(id);
     if (carId.isNotEmpty) SellListingMediaUpload.cancelUploadsFor(carId);
-    if (_activeRuns.containsKey(id)) {
+    if (_activeRuns.containsKey(id) || _preparingDrafts.containsKey(id)) {
       // The running worker applies the terminal state at its next
-      // checkpoint (see the catch block in [_runSubmission]).
+      // checkpoint (see the catch block in [_runSubmission]); a draft that
+      // is still being prepared applies it right after its final write
+      // (see [_prepareSubmissionRecord]) so the record cannot be resurrected.
       return outcome;
     }
     await _applyCancelTerminal(id, record, carId);
@@ -668,13 +681,35 @@ class PendingSellSubmissionService {
     // whatever that worker had already advanced (carId/status). While a
     // draft is preparing, no worker may start for it.
     _preparingDrafts[id] = (_preparingDrafts[id] ?? 0) + 1;
+    final isEditPrepare = (editListingId ?? '').trim().isNotEmpty;
+    if (isEditPrepare) _preparingEdits.add(id);
+    // F-41: a stale cancel flag (the user cancelled an earlier attempt that
+    // has already ended) must never kill this brand-new submission. A
+    // cancel for a worker that is still running is left untouched.
+    if (!_activeRuns.containsKey(id)) _cancelRequested.remove(id);
     try {
-      return await _prepareSubmissionRecordInner(
+      final prepared = await _prepareSubmissionRecordInner(
         id,
         carData: carData,
         editListingId: editListingId,
       );
+      // F-41: the user pressed Cancel while the intent record / durable
+      // media copy was being prepared. The prepare step's own final write
+      // has now landed, so apply the terminal state HERE (after it) -- doing
+      // it earlier would let that write resurrect the removed record. No
+      // network call was made, so the draft is kept and nothing is created.
+      if (!isEditPrepare &&
+          !_activeRuns.containsKey(id) &&
+          _cancelRequested.contains(id)) {
+        _cancelRequested.remove(id);
+        final carId = (prepared.carId ?? '').trim();
+        if (carId.isNotEmpty) SellListingMediaUpload.clearCancelFor(carId);
+        await _applyCancelTerminal(id, prepared, carId);
+        throw const SellSubmissionCancelledException();
+      }
+      return prepared;
     } finally {
+      if (isEditPrepare) _preparingEdits.remove(id);
       final left = (_preparingDrafts[id] ?? 1) - 1;
       if (left <= 0) {
         _preparingDrafts.remove(id);
@@ -829,6 +864,10 @@ class PendingSellSubmissionService {
   /// draftId -> number of in-flight [_prepareSubmissionRecord] calls. No
   /// worker may start for a draft while it is still being prepared.
   final Map<String, int> _preparingDrafts = <String, int>{};
+
+  /// Draft ids whose in-flight prepare is an EDIT of an existing listing
+  /// (never cancellable -- the PUT may already have been applied).
+  final Set<String> _preparingEdits = <String>{};
 
   bool isPreparing(String draftId) => _preparingDrafts.containsKey(draftId);
 

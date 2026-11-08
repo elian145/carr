@@ -142,6 +142,14 @@ mixin _SellStep5Logic on _SellStep5Fields {
     // affects this widget *instance* (harmless / a no-op once it is
     // disposed); the durable record created by the service below is what
     // actually survives navigation, backgrounding, or a process kill.
+    // F-41: Cancel pressed before the service was called -- stop here; the
+    // draft was never handed over, so nothing exists to clean up. (No await
+    // between this check and the `submitFast` call below, so a later cancel
+    // is handled by the service itself.)
+    if (!isEdit && submitCancelRequested) {
+      submitCancelRequested = false;
+      throw const SellSubmissionCancelledException();
+    }
     if (!isEdit) {
       parentState?._beginSubmitDraftHandoff();
     }
@@ -252,7 +260,11 @@ mixin _SellStep5Logic on _SellStep5Fields {
     final draftId = (pageState?._currentDraftId.isNotEmpty ?? false)
         ? pageState!._currentDraftId
         : 'default';
-    await PendingSellSubmissionService.instance.cancelSubmission(draftId);
+    final outcome =
+        await PendingSellSubmissionService.instance.cancelSubmission(draftId);
+    // Nothing in the service yet (still verifying phones / validating): make
+    // the submit flow stop before it ever hands the draft over.
+    if (outcome == null && isSubmitting) submitCancelRequested = true;
   }
   Future<void> _precacheSubmittedListingImages(Map<String, dynamic> car) async {
     final List<String> urls = <String>[];
