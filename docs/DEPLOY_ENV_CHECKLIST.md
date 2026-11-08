@@ -102,7 +102,7 @@ Admin login uses `POST /api/admin-session` (JWT never stored in `localStorage`).
 
 - `API_BASE=https://<your-host>` (no `/api` suffix)
 - Optional crash reporting: `--dart-define=SENTRY_DSN=https://…` (Flutter; see `lib/services/config.dart` and `lib/app/bootstrap.dart`)
-- Restrict Google Maps keys to `com.carzo.app` + release SHA-1
+- Restrict Google Maps keys to Android `com.carnetiq.app` + release SHA-1 (production package; `com.carzo.app.dev` / `.stage` + debug SHA-1 only for dev/stage keys) and iOS `com.carzo.app`
 - Disclose **Airbridge** in App Store / Play privacy forms
 
 ## Preflight commands

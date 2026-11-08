@@ -24,7 +24,7 @@ Committed config files contain API keys that are extractable from APK/IPA builds
 | iOS | `IOS_GOOGLE_MAPS_API_KEY`, `IOS_GOOGLE_PLACES_API_KEY` at build time |
 
 Restrict each key to:
-- Application restriction: Android apps (`com.carzo.app` + SHA-1) or iOS apps (`com.carzo.app`)
+- Application restriction: Android apps (production `com.carnetiq.app` + release/Play-signing SHA-1; dev/stage `com.carzo.app.dev` / `com.carzo.app.stage` + debug SHA-1) or iOS apps (`com.carzo.app`). A key restricted only to the legacy `com.carzo.app` Android package rejects the production app.
 - API restriction: Maps SDK for Android/iOS, Places API only
 
 ## Verify after Play upload

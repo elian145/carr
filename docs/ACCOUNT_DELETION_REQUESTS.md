@@ -45,5 +45,7 @@ email alone.
 
 ## Rollback / downgrade
 
-Downgrading below `a7d3e1c9b5f2` drops this table. Export pending rows first: see
-`docs/ROLLBACK.md` ("Database head `a7d3e1c9b5f2`").
+Downgrading below `a7d3e1c9b5f2` drops this table **with every request, pending and
+completed**. A code-only rollback does not need a downgrade. Export all rows first and
+process every pending request: see `docs/ROLLBACK.md` ("Database", Option 1 and the
+required exports; current head `b8e4f2a6c1d3`).

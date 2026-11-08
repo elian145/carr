@@ -5,7 +5,8 @@ Use this document when completing Google Play Data Safety, Apple App Privacy, an
 ## Store Listing Inputs
 
 - App name: `CarNet`
-- Bundle/package ID: `com.carzo.app`
+- Package ID (Google Play, production): `com.carnetiq.app`
+- Bundle ID (App Store, unchanged): `com.carzo.app`
 - Category: Auto & Vehicles / Shopping marketplace
 - Support email: set `SUPPORT_EMAIL` on the backend to your real monitored inbox (production: `carzo@mycarzoiq.com`). Required — the app now fails to boot in production if `SUPPORT_EMAIL` is unset; there is no fallback address.
 - Privacy policy URL: required before submission. Hosted at `{API_BASE}/privacy` after deploy (or set `PRIVACY_URL`).
@@ -65,7 +66,7 @@ Verified from `kk/routes/auth.py::delete_account` (no behaviour change here). Fu
 
 ## Hard Blockers Before Upload
 
-- `android/app/src/prod/google-services.json` must exist and target `com.carzo.app`.
+- `android/app/src/prod/google-services.json` must exist and target `com.carnetiq.app` (it also lists the legacy `com.carzo.app*` clients).
 - `https://<your-host>/.well-known/assetlinks.json` must return 200 with the Play App Signing SHA-256 fingerprint (`ANDROID_SHA256_CERT_FINGERPRINTS` on Render). Until set, the file returns 404 by design.
 - `https://<your-host>/.well-known/apple-app-site-association` must return 200 (`APPLE_TEAM_ID` on Render).
 - Privacy policy URL and support contact must be real and reachable.

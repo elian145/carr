@@ -43,10 +43,11 @@
 #
 # Also provision separately in the Render dashboard (not in this minimal blueprint):
 #   - Redis instance → set REDIS_URL on the web service (required at boot)
-#   - Background Worker running: celery -A kk.tasks.celery_app.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=50 --max-memory-per-child=200000
-#     (BE-13: explicit concurrency/recycling for 512 MB instances; see carr-worker below.)
-#   - Background Worker/cron for beat if you use scheduled notifications:
-#       celery -A kk.tasks.celery_app.celery_app beat --loglevel=info
+#   - Celery worker and beat are defined below as carr-worker-fra / carr-beat-fra
+#     (Frankfurt, next to carr-redis). The worker runs --concurrency=1 on Render
+#     (BE-13: 512 MB instance); the Procfile's generic worker line uses 2.
+#     Beat runs exactly one instance and never creates the Flask app, so it needs
+#     only APP_ENV and REDIS_URL.
 #
 # Admin dashboard (admin-web): second web service below (carr-admin).
 # LEGACY (still the default): on the carr-admin service set JWT_SECRET_KEY to the
@@ -75,6 +76,51 @@ services:
     startCommand: bash start_render.sh
     healthCheckPath: /health
     envVars:
+      # Boot-required declarations (kk/config.py::validate_required_secrets and
+      # the persistence/Redis checks it calls from create_app). EVERY entry in this
+      # block is sync:false: Render never stores a value for them in Git, and a
+      # Blueprint sync does not overwrite a value already set in the dashboard.
+      # Do not replace any of them with a literal. They are declared here so a
+      # rebuilt/cloned service is prompted for them instead of failing at boot.
+      # Guarded by kk/tests/test_deploy_docs_render_guard.py; see
+      # docs/RELEASE_DEPLOY_ORDER.md.
+      - key: APP_ENV
+        sync: false  # must be exactly: production
+      - key: SECRET_KEY
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPPORT_EMAIL
+        sync: false
+      # Redis must be reachable at boot (PING) and live in the same Render
+      # region as this service (internal hostname); carr-redis is Frankfurt.
+      - key: REDIS_URL
+        sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_BUCKET_NAME
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false
+      - key: R2_CHAT_BUCKET_NAME
+        sync: false
+      - key: R2_CHAT_ACCESS_KEY_ID
+        sync: false
+      - key: R2_CHAT_SECRET_ACCESS_KEY
+        sync: false
+      # Not boot-required (push is disabled when unset), but production push
+      # needs them: service-account credentials for the production Firebase
+      # project and the project ID the backend must match.
+      - key: FIREBASE_SERVICE_ACCOUNT_BASE64
+        sync: false
+      - key: FIREBASE_EXPECTED_PROJECT_ID
+        sync: false
       # Non-secret, but dashboard-managed (sync:false): the value is set in the
       # Render dashboard and a Blueprint sync must never overwrite it. Do not
       # put a literal value back here (a literal previously reverted the live
@@ -197,6 +243,17 @@ services:
       - key: R2_CHAT_ACCESS_KEY_ID
         sync: false
       - key: R2_CHAT_SECRET_ACCESS_KEY
+        sync: false
+      # Every Celery task builds the Flask app (get_celery_flask_app -> create_app),
+      # so the worker needs the same boot-required values as carr, including
+      # SUPPORT_EMAIL (without it the worker exits at boot).
+      - key: SUPPORT_EMAIL
+        sync: false
+      # Not boot-required, but the worker sends saved-search / scheduled / retention
+      # push notifications; unset = push silently disabled on the worker.
+      - key: FIREBASE_SERVICE_ACCOUNT_BASE64
+        sync: false
+      - key: FIREBASE_EXPECTED_PROJECT_ID
         sync: false
 
   # Celery beat, Frankfurt (BE-13 region fix). Same reasoning as carr-worker-fra

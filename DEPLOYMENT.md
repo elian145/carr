@@ -21,6 +21,16 @@ Set these for `APP_ENV=production`:
 - `SECRET_KEY=<long random>`
 - `JWT_SECRET_KEY=<long random>`
 - `DATABASE_URL=<postgresql://...>` (recommended) **or** `DB_PATH=<path-to-sqlite>`
+- `SUPPORT_EMAIL=<monitored inbox>` — the app refuses to boot in production without it
+- `REDIS_URL=redis://...` — required at boot in production (the app PINGs it)
+- Cloudflare R2 for listing photos: `R2_ACCOUNT_ID`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_PUBLIC_URL` (or an absolute `UPLOAD_FOLDER` on a persistent disk)
+- Private chat-media bucket, all required together: `R2_CHAT_BUCKET_NAME`, `R2_CHAT_ACCESS_KEY_ID`, `R2_CHAT_SECRET_ACCESS_KEY` (plus `R2_ACCOUNT_ID`)
+
+Every process that builds the Flask app needs all of the above: the web service **and** the
+Celery worker (`get_celery_flask_app` -> `create_app`). Celery beat does not build the app
+and needs only `APP_ENV` and `REDIS_URL`. `render.yaml` declares them (all `sync: false`)
+and `kk/tests/test_deploy_docs_render_guard.py` enforces it. Deploy order and post-deploy
+checks: [`docs/RELEASE_DEPLOY_ORDER.md`](docs/RELEASE_DEPLOY_ORDER.md).
 
 Recommended for scale:
 
@@ -222,7 +232,7 @@ If you enable async image jobs (e.g. `?async=1`), run a worker:
 
 Workers reuse one Flask app per process (`FlaskContextTask` / `get_celery_flask_app`) so tasks do not call `create_app()` on every job.
 
-BE-13: on a 512 MB Render instance, Celery's default concurrency (`multiprocessing.cpu_count()`) can reflect the *host* machine's core count rather than this instance's actual allocation, spawning far more prefork children than 512 MB can hold (each child rebuilds the full Flask app and, for image tasks, loads OpenCV/NumPy/Pillow/boto3). Keep `--concurrency` low (2) and `--max-tasks-per-child`/`--max-memory-per-child` set so child processes are recycled instead of the whole instance being OOM-killed.
+BE-13: on a 512 MB Render instance, Celery's default concurrency (`multiprocessing.cpu_count()`) can reflect the *host* machine's core count rather than this instance's actual allocation, spawning far more prefork children than 512 MB can hold (each child rebuilds the full Flask app and, for image tasks, loads OpenCV/NumPy/Pillow/boto3). Keep `--concurrency` low (2) and `--max-tasks-per-child`/`--max-memory-per-child` set so child processes are recycled instead of the whole instance being OOM-killed. (The Render service `carr-worker-fra` in `render.yaml` deliberately runs `--concurrency=1`; the Procfile's generic line uses 2. The Render value is the one in production.)
 
 Minimum env:
 - `REDIS_URL=redis://...` (recommended; memory broker is dev-only)

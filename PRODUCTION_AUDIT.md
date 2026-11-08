@@ -6,6 +6,8 @@
 **App version:** `pubspec.yaml` → `1.0.0+3`
 **Method:** Read-only static analysis of every layer, plus live checks (`flutter test`, `flutter analyze`, `pytest kk/tests`, Alembic upgrade run, production host HTTP probes). No code was modified.
 
+> **Superseded identifier (historical log, not rewritten):** entries below that name `com.carzo.app` as the Android *production* package describe the state on the audit date. The current Android production package is **`com.carnetiq.app`** (`prod` flavor); `com.carzo.app` remains the iOS bundle ID and the Android namespace/legacy client. See `docs/PUBLISH_READY_CHECKLIST.md` and `docs/ANDROID_APP_LINKS_SETUP.md`.
+
 ---
 
 ## 0. VERDICT
