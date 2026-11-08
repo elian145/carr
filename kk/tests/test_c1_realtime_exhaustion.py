@@ -784,7 +784,7 @@ class TestSocketPayloadValidation:
         errors = [e for e in c.get_received() if e["name"] == "error"]
         assert any(e["args"][0].get("message") == "car_id required" for e in errors)
 
-    def test_oversized_listing_preview_is_dropped_not_stored(
+    def test_oversized_listing_preview_is_rejected_not_stored(
         self, ctx, world, sh, monkeypatch
     ):
         _with_limits(monkeypatch, sh)
@@ -799,9 +799,12 @@ class TestSocketPayloadValidation:
                 "listing_preview": {"title": "x" * 20000},
             },
         )
-        sent = _named(c, "message_sent")
-        assert len(sent) == 1
-        assert sent[0]["args"][0]["message"].get("listing_preview") in (None, {})
+        # N-1: oversized preview input is a clear error (shared limit), not a
+        # silently dropped preview; nothing is sent or stored.
+        received = c.get_received()
+        assert not [e for e in received if e["name"] == "message_sent"]
+        errs = [e["args"][0] for e in received if e["name"] == "error"]
+        assert errs and errs[0]["code"] == "payload_too_large"
 
     def test_small_listing_preview_is_kept(self, ctx, world, sh, monkeypatch):
         _with_limits(monkeypatch, sh)
@@ -816,8 +819,12 @@ class TestSocketPayloadValidation:
                 "listing_preview": {"title": "Corolla 2021"},
             },
         )
+        # N-1: the preview is derived server-side (only the listing id / an
+        # empty-ish hint is honoured; the client's title is ignored).
         sent = _named(c, "message_sent")
-        assert sent[0]["args"][0]["message"]["listing_preview"] == {"title": "Corolla 2021"}
+        preview = sent[0]["args"][0]["message"]["listing_preview"]
+        assert preview["id"] == world["car"]
+        assert preview["title"] == "toyota corolla 2021"  # from the Car row
 
 
 class TestJsonBodyCap:

@@ -15,6 +15,7 @@ from flask_socketio import ConnectionRefusedError  # socketio.exceptions one, NO
 from flask_socketio import disconnect as sio_disconnect
 from flask_socketio import emit, join_room, leave_room
 
+from . import chat_payload
 from .auth import phone_verification_error_payload
 from .localization import get_background_locale, translate
 from .chat_realtime import (
@@ -91,24 +92,12 @@ _LIMIT_SEND_USER = (120, 600.0)
 _LIMIT_JOIN = (30, 60.0)
 _LIMIT_LEAVE = (60, 60.0)
 _LIMIT_TYPING = (20, 10.0)
-# A listing preview is display metadata; refuse anything bigger than this.
-_MAX_LISTING_PREVIEW_BYTES = 4096
 
 
 def _payload_dict(payload) -> dict:
     """Event payloads are client controlled: only a JSON object is meaningful."""
     return payload if isinstance(payload, dict) else {}
 
-
-def _listing_preview_ok(preview) -> bool:
-    if not isinstance(preview, dict):
-        return False
-    try:
-        import json
-
-        return len(json.dumps(preview, ensure_ascii=False, default=str)) <= _MAX_LISTING_PREVIEW_BYTES
-    except Exception:
-        return False
 
 
 def _throttled(
@@ -631,13 +620,18 @@ def register_socketio_handlers(socketio) -> None:
             emit("error", verify_err)
             return
 
+        # N-1: shared total-payload cap (kk/chat_payload.py), before any parsing.
+        try:
+            chat_payload.check_socket_payload_size(payload)
+        except chat_payload.ChatPayloadError as exc:
+            emit("error", exc.body())
+            return
+
         data = validate_input_sanitization(_payload_dict(payload))
         car_id_raw = str(data.get("car_id") or "").strip()
         content = str(data.get("content") or "").strip()
         receiver_public = str(data.get("receiver_id") or "").strip()
-        listing_preview = data.get("listing_preview")
-        if not _listing_preview_ok(listing_preview):
-            listing_preview = None
+        raw_listing_preview = data.get("listing_preview")
         reply_to_public = str(data.get("reply_to_message_id") or "").strip()
 
         if not car_id_raw:
@@ -646,8 +640,10 @@ def register_socketio_handlers(socketio) -> None:
         if not content:
             emit("error", {"message": "content required"})
             return
-        if len(content) > 4000:
-            emit("error", {"message": "content too long"})
+        try:
+            chat_payload.check_content(content)
+        except chat_payload.ChatPayloadError as exc:
+            emit("error", exc.body())
             return
 
         car = resolve_car_for_chat(car_id_raw)
@@ -671,6 +667,15 @@ def register_socketio_handlers(socketio) -> None:
                 emit("error", {"message": "Reply target not found"})
                 return
 
+        # N-1: the preview is derived from the Car row; client fields ignored.
+        try:
+            listing_preview = chat_payload.resolve_listing_preview(
+                raw_listing_preview, me=me, receiver=receiver, conversation_car=car
+            )
+        except chat_payload.ChatPayloadError as exc:
+            emit("error", exc.body())
+            return
+
         msg = Message(
             sender_id=me.id,
             receiver_id=receiver.id,
@@ -679,7 +684,7 @@ def register_socketio_handlers(socketio) -> None:
             reply_to=reply_to,
             content=content,
             message_type="text",
-            listing_preview=listing_preview if isinstance(listing_preview, dict) else None,
+            listing_preview=listing_preview,
             is_read=False,
             created_at=utcnow(),
         )
