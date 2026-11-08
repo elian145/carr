@@ -366,6 +366,27 @@ class SellListingMediaUpload {
     return dropped;
   }
 
+  /// F-41: car ids whose in-flight media upload the user cancelled. Checked
+  /// between chunks and before every retry so a cancel never triggers another
+  /// network call (see [cancelUploadsFor]).
+  static final Set<String> _cancelledCarIds = <String>{};
+
+  /// F-41: ask in-flight uploads for [carId] to stop at their next checkpoint.
+  static void cancelUploadsFor(String carId) {
+    if (carId.trim().isNotEmpty) _cancelledCarIds.add(carId.trim());
+  }
+
+  /// F-41: forget a cancel request once the run for [carId] has ended.
+  static void clearCancelFor(String carId) =>
+      _cancelledCarIds.remove(carId.trim());
+
+  static bool isCancelled(String carId) =>
+      _cancelledCarIds.contains(carId.trim());
+
+  static void _throwIfCancelled(String carId) {
+    if (isCancelled(carId)) throw const SellSubmissionCancelledException();
+  }
+
   /// F-41: max photos per multipart enqueue request.
   @visibleForTesting
   static int uploadChunkSize = 3;
@@ -488,6 +509,7 @@ class SellListingMediaUpload {
       for (var start = 0;
           start < freshFiles.length;
           start += uploadChunkSize) {
+        _throwIfCancelled(carId);
         final end = (start + uploadChunkSize < freshFiles.length)
             ? start + uploadChunkSize
             : freshFiles.length;
@@ -520,7 +542,9 @@ class SellListingMediaUpload {
               'enqueue failed (${attempt + 1}/$uploadChunkAttempts): $e',
             );
             if (attempt + 1 < uploadChunkAttempts) {
+              _throwIfCancelled(carId);
               await Future<void>.delayed(uploadChunkRetryDelay(attempt));
+              _throwIfCancelled(carId);
             }
           }
         }
@@ -653,8 +677,10 @@ class SellListingMediaUpload {
           );
           return <String, dynamic>{'images': <dynamic>[]};
         }
+        _throwIfCancelled(carId);
         ApiService.recycleProductionHttpClient();
         await Future<void>.delayed(Duration(seconds: attempt * 2));
+        _throwIfCancelled(carId);
       }
       try {
         return await _uploadImagesViaAsyncJobs(
@@ -667,6 +693,7 @@ class SellListingMediaUpload {
           skipBlur: skipBlur,
         );
       } catch (e, st) {
+        if (e is SellSubmissionCancelledException) rethrow;
         lastError = e;
         lastStack = st;
         final landed = await _remoteImageCount(carId, kind);
@@ -1035,9 +1062,11 @@ class SellListingMediaUpload {
     Object? lastError;
     StackTrace? lastStack;
     for (var attempt = 0; attempt < 3; attempt++) {
+      _throwIfCancelled(carId);
       if (attempt > 0) {
         ApiService.recycleProductionHttpClient();
         await Future<void>.delayed(Duration(seconds: attempt * 2));
+        _throwIfCancelled(carId);
       }
       try {
         final enqueueResponse = await ApiService.uploadCarImages(
@@ -2068,4 +2097,14 @@ class SellListingMediaUpload {
     }
     return listingMediaConfirmed;
   }
+}
+
+/// F-41: thrown (and only ever thrown) when the user cancels an in-flight
+/// listing submission. Never retryable; the submission service turns it into a
+/// terminal state instead of scheduling another attempt.
+class SellSubmissionCancelledException implements Exception {
+  const SellSubmissionCancelledException();
+
+  @override
+  String toString() => 'Listing upload cancelled by the user.';
 }

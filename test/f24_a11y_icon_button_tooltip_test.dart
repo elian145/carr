@@ -2,12 +2,9 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// F-24: every IconButton outside the listing-upload (sell) flow needs a
-/// tooltip so screen readers announce it. Sell-flow files are owned by the
-/// upload/reliability workstream and are intentionally excluded here.
+/// F-24: every IconButton needs a tooltip so screen readers announce it.
+/// The sell flow used to be excluded here; it is now covered too.
 void main() {
-  final skip = RegExp(r'[\\/]features[\\/]sell[\\/]');
-
   List<String> missingTooltip() {
     final out = <String>[];
     final re = RegExp(r'(?<![A-Za-z])IconButton(\.(?!styleFrom)\w+)?\(');
@@ -15,7 +12,7 @@ void main() {
         .listSync(recursive: true)
         .whereType<File>()
         .where((f) => f.path.endsWith('.dart'))) {
-      if (skip.hasMatch(f.path) || f.path.contains('l10n')) continue;
+      if (f.path.contains('l10n')) continue;
       final s = f.readAsStringSync();
       for (final m in re.allMatches(s)) {
         var i = m.end, depth = 1;
@@ -32,7 +29,7 @@ void main() {
     return out;
   }
 
-  test('no IconButton without tooltip outside the sell flow', () {
+  test('no IconButton without tooltip (sell flow included)', () {
     expect(missingTooltip(), isEmpty);
   });
 

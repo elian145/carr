@@ -116,7 +116,16 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                                 ),
                               );
                             },
-                            child: Container(
+                            child: Semantics(
+                              button: true,
+                              label: AppLocalizations.of(context)!
+                                  .a11yPhotoXOfY(
+                                    index + 1,
+                                    _selectedImages.length,
+                                  ),
+                              image: true,
+                              excludeSemantics: true,
+                              child: Container(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
@@ -174,6 +183,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                                       height: double.infinity,
                                     ),
                             ),
+                            ),
                           ),
                           if (isPrimary)
                             Positioned(
@@ -211,53 +221,24 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                             )
                           else
                             Positioned(
-                              left: 6,
-                              bottom: 6,
-                              child: Semantics(
-                                button: true,
+                              left: 0,
+                              bottom: 0,
+                              child: SellMediaOverlayButton(
+                                icon: Icons.star_border,
                                 label: AppLocalizations.of(context)!.coverImage,
-                                child: InkWell(
-                                  onTap: () => _setPrimaryImage(index),
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.black54,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    padding: const EdgeInsets.all(6),
-                                    child: const Icon(
-                                      Icons.star_border,
-                                      size: 18,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
+                                roundedRect: true,
+                                onTap: () => _setPrimaryImage(index),
                               ),
                             ),
                           Positioned(
-                            right: 6,
-                            top: 6,
-                            child: Semantics(
-                              button: true,
+                            right: 0,
+                            top: 0,
+                            child: SellMediaOverlayButton(
+                              icon: Icons.close,
                               label: AppLocalizations.of(context)!.removeAction,
-                              child: InkWell(
-                        onTap: () {
+                              onTap: () {
                           unawaited(_removePhotoAt(index));
                         },
-                              borderRadius: BorderRadius.circular(20),
-                              child: Container(
-                                decoration: const BoxDecoration(
-                                  color: Colors.black54,
-                                  shape: BoxShape.circle,
-                                ),
-                                padding: const EdgeInsets.all(6),
-                                child: const Icon(
-                                  Icons.close,
-                                  size: 18,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
                             ),
                           ),
                         ],

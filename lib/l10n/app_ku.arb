@@ -991,5 +991,16 @@
   "unableToChangePasswordTryLater": "نەتوانرا وشەی نهێنی بگۆڕدرێت. تکایە دواتر دووبارە هەوڵ بدەرەوە.",
   "sendingEllipsis": "دەنێردرێت...",
   "videoBadge": "ڤیدیۆ",
-  "viewDetailsButton": "بینینی وردەکاری"
+  "viewDetailsButton": "بینینی وردەکاری",
+  "a11yPhotoXOfY": "وێنەی {index} لە {total}",
+  "@a11yPhotoXOfY": {
+    "placeholders": {
+      "index": { "type": "int", "example": "1" },
+      "total": { "type": "int", "example": "5" }
+    }
+  },
+  "a11yCancelUpload": "هەڵوەشاندنەوەی بارگیری",
+  "a11yCancelUploadConfirm": "بارگیری بوەستێنیت؟ ئەگەر ڕێکلامەکەت هێشتا دروست نەکرابێت، ڕەشنووسەکە دەپارێزرێت.",
+  "a11yKeepUploading": "بەردەوامبە لە بارگیری",
+  "a11yUploadCancelledDraftKept": "بارگیری هەڵوەشێنرایەوە. ڕەشنووسەکە پارێزرا."
 }

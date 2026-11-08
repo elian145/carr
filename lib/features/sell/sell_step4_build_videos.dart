@@ -90,29 +90,14 @@ mixin _SellStep4BuildVideos on _SellStep4BuildDamage {
                               ),
                       ),
                       Positioned(
-                        right: 6,
-                        top: 6,
-                        child: Semantics(
-                          button: true,
+                        right: 0,
+                        top: 0,
+                        child: SellMediaOverlayButton(
+                          icon: Icons.close,
                           label: AppLocalizations.of(context)!.removeAction,
-                          child: InkWell(
-                            onTap: () {
+                          onTap: () {
                               unawaited(_removeExistingVideoAt(index));
                             },
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
-                              ),
-                              padding: const EdgeInsets.all(6),
-                              child: const Icon(
-                                Icons.close,
-                                size: 18,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
                         ),
                       ),
                     ],
@@ -197,32 +182,17 @@ mixin _SellStep4BuildVideos on _SellStep4BuildDamage {
                         ),
                       ),
                       Positioned(
-                        right: 6,
-                        top: 6,
-                        child: Semantics(
-                          button: true,
+                        right: 0,
+                        top: 0,
+                        child: SellMediaOverlayButton(
+                          icon: Icons.close,
                           label: AppLocalizations.of(context)!.removeAction,
-                          child: InkWell(
-                            onTap: () {
+                          onTap: () {
                               setState(() {
                                 _selectedVideos.removeAt(index);
                               });
                               unawaited(_syncMediaDraftToParent());
                             },
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
-                              ),
-                              padding: const EdgeInsets.all(6),
-                              child: const Icon(
-                                Icons.close,
-                                size: 18,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
                         ),
                       ),
                     ],
@@ -322,29 +292,14 @@ mixin _SellStep4BuildVideos on _SellStep4BuildDamage {
                         ),
                       ),
                       Positioned(
-                        right: 6,
-                        top: 6,
-                        child: Semantics(
-                          button: true,
+                        right: 0,
+                        top: 0,
+                        child: SellMediaOverlayButton(
+                          icon: Icons.close,
                           label: AppLocalizations.of(context)!.removeAction,
-                          child: InkWell(
-                            onTap: () {
+                          onTap: () {
                               _removePendingServerTranscodeVideoAt(index);
                             },
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
-                              ),
-                              padding: const EdgeInsets.all(6),
-                              child: const Icon(
-                                Icons.close,
-                                size: 18,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
                         ),
                       ),
                     ],

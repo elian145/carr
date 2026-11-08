@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -2943,4 +2944,23 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get viewDetailsButton => 'بینینی وردەکاری';
+
+  @override
+  String a11yPhotoXOfY(int index, int total) {
+    return 'وێنەی $index لە $total';
+  }
+
+  @override
+  String get a11yCancelUpload => 'هەڵوەشاندنەوەی بارگیری';
+
+  @override
+  String get a11yCancelUploadConfirm =>
+      'بارگیری بوەستێنیت؟ ئەگەر ڕێکلامەکەت هێشتا دروست نەکرابێت، ڕەشنووسەکە دەپارێزرێت.';
+
+  @override
+  String get a11yKeepUploading => 'بەردەوامبە لە بارگیری';
+
+  @override
+  String get a11yUploadCancelledDraftKept =>
+      'بارگیری هەڵوەشێنرایەوە. ڕەشنووسەکە پارێزرا.';
 }
