@@ -2,7 +2,7 @@
 WSGI entrypoint for production servers (gunicorn/uwsgi).
 Do not call eventlet.monkey_patch() here. Default production setup is
 gthread + Socket.IO threading (see gunicorn.conf.py / app_factory).
-Eventlet requires SOCKETIO_ALLOW_EVENTLET=1 and is not recommended.
+Eventlet is not supported (Gunicorn >= 26 removed its worker).
 """
 from __future__ import annotations
 

@@ -39,7 +39,7 @@ Recommended for scale:
 | `GUNICORN_THREADS` | unset (default `32`) | Scale concurrent HTTP/API work here. Default raised from 4 (C-1): see "Socket resource limits". |
 | `REDIS_URL` | set (Celery / rate limit / JWT blocklist) | Also used as Socket.IO message queue in production. |
 | `SOCKETIO_ASYNC_MODE` | unset / `threading` | Must match `gthread`. |
-| `SOCKETIO_ALLOW_EVENTLET` | unset | Eventlet break-glass only; causes Render 502s. |
+| `SOCKETIO_ALLOW_EVENTLET` | unset | Legacy; the eventlet worker was removed in Gunicorn 26 and this no longer enables anything (gevent break-glass only, with Redis MQ). |
 
 Why not 2 workers by default when Redis exists?
 
@@ -126,8 +126,8 @@ a 500k-message flood never made an HTTP request slower than ~250 ms.
 
 **Capacity note:** 16 *engaged* conversations is a launch-sized number, not a
 growth-sized one. Beyond it chat degrades to REST polling (still correct), and
-real scale needs an async worker (eventlet/gevent, currently blocked on Render,
-see below) or a separate realtime service. Load test before raising
+real scale needs an async worker (gevent, not shipped or load-tested here;
+eventlet was removed with Gunicorn 26) or a separate realtime service. Load test before raising
 `SOCKETIO_MAX_CONNECTIONS`; watch the `Socket.IO released ... idle` and
 `connect refused: server_busy` log lines.
 
@@ -136,10 +136,11 @@ see below) or a separate realtime service. Load test before raising
 **Default (required on Render):** leave `SOCKETIO_ASYNC_MODE` unset (or set
 `threading`). Gunicorn uses `gthread` and Socket.IO uses `threading`.
 
-Do **not** set `SOCKETIO_ASYNC_MODE=eventlet` on Render. Eventlet is deprecated
-and currently breaks boot (`monkey_patch` after Flask import → LocalProxy/RLock
-errors and 502s). `SOCKETIO_ASYNC_MODE=eventlet` is ignored unless you also set
-the break-glass flag `SOCKETIO_ALLOW_EVENTLET=1` and a Redis message queue.
+Do **not** set `SOCKETIO_ASYNC_MODE=eventlet`. Gunicorn 26 removed the eventlet
+worker and the `eventlet` package is no longer installed, so the value is always
+ignored: `gunicorn.conf.py` logs a warning and boots `gthread`, and Socket.IO
+uses `threading`. After any Gunicorn upgrade re-run
+`python scripts/c1_edge_load_check.py` (Linux) against real Gunicorn.
 
 ## Recommended Gunicorn commands
 
