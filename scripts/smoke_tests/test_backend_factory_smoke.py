@@ -2177,10 +2177,28 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 "a token in the query string must be refused in production",
             )
 
-            # No credentials at all: still an intentional anonymous guest.
-            guest = self.socketio.test_client(
+            # C-1: anonymous sockets are refused unless explicitly enabled.
+            default_guest = self.socketio.test_client(
                 self.app, flask_test_client=self.client
             )
+            self.assertFalse(
+                default_guest.is_connected(),
+                "anonymous sockets must be refused by default (C-1)",
+            )
+
+            # No credentials at all: an intentional anonymous guest, but only
+            # when the operator opts in with SOCKETIO_ALLOW_ANONYMOUS=1.
+            prev_anon = os.environ.get("SOCKETIO_ALLOW_ANONYMOUS")
+            os.environ["SOCKETIO_ALLOW_ANONYMOUS"] = "1"
+            try:
+                guest = self.socketio.test_client(
+                    self.app, flask_test_client=self.client
+                )
+            finally:
+                if prev_anon is None:
+                    os.environ.pop("SOCKETIO_ALLOW_ANONYMOUS", None)
+                else:
+                    os.environ["SOCKETIO_ALLOW_ANONYMOUS"] = prev_anon
             self.assertTrue(guest.is_connected())
             connected = [
                 evt for evt in guest.get_received() if evt.get("name") == "connected"
