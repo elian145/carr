@@ -57,12 +57,17 @@ class SellSubmissionUiStatus {
     required this.phase,
     required this.completedMediaCount,
     required this.totalMediaCount,
+    this.isEdit = false,
   });
 
   final String draftId;
   final SellSubmissionPhase phase;
   final int completedMediaCount;
   final int totalMediaCount;
+
+  /// Edits of an existing listing cannot be cancelled (see
+  /// [PendingSellSubmissionService.canCancel]).
+  final bool isEdit;
 }
 
 /// One-shot terminal outcome of a submission run, for a global
@@ -1671,6 +1676,7 @@ class PendingSellSubmissionService {
         phase: phase,
         completedMediaCount: completed,
         totalMediaCount: totalMedia,
+        isEdit: record.isEdit,
       );
       appLog(
         '[SELL RUN] UI progress=$completed/$totalMedia phase=${phase.name} '
@@ -1741,6 +1747,7 @@ class PendingSellSubmissionService {
         phase: currentUiPhase,
         completedMediaCount: completed,
         totalMediaCount: totalMedia,
+        isEdit: record.isEdit,
       );
     }
 

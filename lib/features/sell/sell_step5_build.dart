@@ -62,10 +62,18 @@ mixin _SellStep5Build on _SellStep5Logic {
           ),
           if (isSubmitting)
             Positioned.fill(
-              child: AbsorbPointer(
-                child: ColoredBox(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  child: Center(
+              // F-41: the barrier absorbs taps, but the card (with its
+              // Cancel button) sits outside the AbsorbPointer.
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: AbsorbPointer(
+                      child: ColoredBox(
+                        color: Colors.black.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ),
+                  Center(
                     child: Material(
                       color: isLight ? Colors.white : const Color(0xFF2A2A2A),
                       elevation: 8,
@@ -78,29 +86,67 @@ mixin _SellStep5Build on _SellStep5Logic {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const CircularProgressIndicator(
-                              color: AppColors.brandOrange,
+                            // F-41: one live-region node: message + percent.
+                            ValueListenableBuilder<SellSubmissionUiStatus?>(
+                              valueListenable: PendingSellSubmissionService
+                                  .instance
+                                  .statusNotifier,
+                              builder: (context, st, _) {
+                                final msg = submitStatusMessage.isNotEmpty
+                                    ? submitStatusMessage
+                                    : AppLocalizations.of(context)!.submitting;
+                                final total = st?.totalMediaCount ?? 0;
+                                final fraction = total > 0
+                                    ? ((st!.completedMediaCount) / total)
+                                        .clamp(0.0, 1.0)
+                                    : null;
+                                return Semantics(
+                                  liveRegion: true,
+                                  label: msg,
+                                  value: fraction == null
+                                      ? null
+                                      : '${(fraction * 100).round()}%',
+                                  excludeSemantics: true,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      CircularProgressIndicator(
+                                        color: AppColors.brandOrange,
+                                        value: fraction,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        msg,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: isLight
+                                              ? const Color(0xFF222222)
+                                              : Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              submitStatusMessage.isNotEmpty
-                                  ? submitStatusMessage
-                                  : AppLocalizations.of(context)!.submitting,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: isLight
-                                    ? const Color(0xFF222222)
-                                    : Colors.white,
+                            if (parentState?._isEditMode != true) ...[
+                              const SizedBox(height: 8),
+                              TextButton(
+                                onPressed: () =>
+                                    _onCancelUploadPressed(parentState),
+                                child: Text(
+                                  AppLocalizations.of(context)!.a11yCancelUpload,
+                                ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
         ],
@@ -408,6 +454,28 @@ mixin _SellStep5Build on _SellStep5Logic {
       }
     } catch (e) {
       if (!mounted) return;
+      if (e is SellSubmissionCancelledException) {
+        // F-41: user-initiated cancel. If a listing already exists the global
+        // banner announces the needs-attention state; otherwise the draft is
+        // intact and we just confirm that.
+        final cancelledDraftId =
+            (parentState?._currentDraftId.isNotEmpty ?? false)
+                ? parentState!._currentDraftId
+                : 'default';
+        final created = await PendingSellSubmissionService.instance
+            .hasCreatedListing(cancelledDraftId);
+        if (!mounted) return;
+        if (!created) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context)!.a11yUploadCancelledDraftKept,
+              ),
+            ),
+          );
+        }
+        return;
+      }
       // C-fix (real-device evidence: create succeeded, media completion
       // failed, but this page showed a plain "could not submit listing"
       // error even though the listing genuinely exists -- visible in My

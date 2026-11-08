@@ -224,6 +224,36 @@ mixin _SellStep5Logic on _SellStep5Fields {
     }
   }
 
+  /// F-41: user taps "Cancel upload" on the submitting overlay. Confirms,
+  /// then cancels safely through the service (draft kept when no listing was
+  /// created yet; listing parked in My Listings otherwise). The in-flight
+  /// [_onSellStep5SubmitPressed] unwinds via [SellSubmissionCancelledException].
+  Future<void> _onCancelUploadPressed(_SellCarPageState? parentState) async {
+    final loc = AppLocalizations.of(context)!;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dctx) => AlertDialog(
+        content: Text(loc.a11yCancelUploadConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dctx).pop(false),
+            child: Text(loc.a11yKeepUploading),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dctx).pop(true),
+            child: Text(loc.a11yCancelUpload),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final pageState =
+        parentState ?? context.findAncestorStateOfType<_SellCarPageState>();
+    final draftId = (pageState?._currentDraftId.isNotEmpty ?? false)
+        ? pageState!._currentDraftId
+        : 'default';
+    await PendingSellSubmissionService.instance.cancelSubmission(draftId);
+  }
   Future<void> _precacheSubmittedListingImages(Map<String, dynamic> car) async {
     final List<String> urls = <String>[];
     final String primary = (car['image_url'] ?? '').toString();

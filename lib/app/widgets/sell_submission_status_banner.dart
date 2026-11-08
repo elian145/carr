@@ -6,6 +6,14 @@ import '../../features/sell/pending_sell_submission_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../carzo_shared.dart' show productionNavigatorKey;
 
+/// F-41: determinate fraction for the banner spinner, or null (indeterminate)
+/// while the total is unknown.
+double? sellSubmissionProgressFraction(SellSubmissionUiStatus status) {
+  if (status.totalMediaCount <= 0) return null;
+  return (status.completedMediaCount / status.totalMediaCount)
+      .clamp(0.0, 1.0)
+      .toDouble();
+}
 /// Global, page-independent UI for `PendingSellSubmissionService` (req.
 /// #10): a persistent slim progress banner while a submission is actively
 /// uploading, plus one-shot success / needs-attention / retrying
@@ -110,6 +118,43 @@ class _SellSubmissionStatusBannerState
     super.dispose();
   }
 
+
+  static String? _progressValueText(SellSubmissionUiStatus status) {
+    final f = sellSubmissionProgressFraction(status);
+    return f == null ? null : '${(f * 100).round()}%';
+  }
+
+  /// F-41: ask before cancelling (accidental taps must not lose an upload).
+  Future<void> _confirmCancel(String draftId) async {
+    final ctx = productionNavigatorKey.currentContext;
+    if (ctx == null) return;
+    final loc = AppLocalizations.of(ctx);
+    if (loc == null) return;
+    final ok = await showDialog<bool>(
+      context: ctx,
+      builder: (dctx) => AlertDialog(
+        content: Text(loc.a11yCancelUploadConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dctx).pop(false),
+            child: Text(loc.a11yKeepUploading),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dctx).pop(true),
+            child: Text(loc.a11yCancelUpload),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final outcome =
+        await PendingSellSubmissionService.instance.cancelSubmission(draftId);
+    if (outcome == SellCancelOutcome.draftKept && mounted) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(loc.a11yUploadCancelledDraftKept)),
+      );
+    }
+  }
   String _phaseLabel(
     AppLocalizations? loc,
     SellSubmissionUiStatus status,
@@ -169,36 +214,62 @@ class _SellSubmissionStatusBannerState
               elevation: 1,
               child: SafeArea(
                 bottom: false,
-                child: Semantics(
-                  liveRegion: true,
-                  label: _phaseLabel(loc, status),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: fg,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            _phaseLabel(loc, status),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: fg,
-                              fontWeight: FontWeight.w600,
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.only(
+                    start: 16,
+                    end: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        // F-41: one announced node -- label + percentage value
+                        // (live region, so progress changes are spoken).
+                        child: Semantics(
+                          liveRegion: true,
+                          label: _phaseLabel(loc, status),
+                          value: _progressValueText(status),
+                          excludeSemantics: true,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: fg,
+                                    value: sellSubmissionProgressFraction(status),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _phaseLabel(loc, status),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: fg,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      if (!status.isEdit && loc != null)
+                        IconButton(
+                          tooltip: loc.a11yCancelUpload,
+                          constraints: const BoxConstraints(
+                            minWidth: 48,
+                            minHeight: 48,
+                          ),
+                          icon: Icon(Icons.close, color: fg),
+                          onPressed: () => _confirmCancel(status.draftId),
+                        )
+                      else
+                        const SizedBox(width: 12),
+                    ],
                   ),
                 ),
               ),
