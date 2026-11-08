@@ -28,9 +28,35 @@ from .chat_realtime import (
 )
 from .models import Message, Notification, User, db
 from .realtime_limits import ConnectionRegistry, EventRateLimiter, load_limits
+from .socket_account_admission import BAD_TOKENS, ESTABLISHED_KEY, REFUSED_KEY
 from .push import send_push
 from .security import _client_ip, validate_input_sanitization
 from .time_utils import utcnow
+
+
+#: how long a token / account the connect handler proved dead stays classified as
+#: "restricted" at the edge (N-2); the token's own expiry caps it for tokens.
+_BAD_TOKEN_TTL_SECONDS = 600.0
+_BAD_ACCOUNT_TTL_SECONDS = 60.0
+
+
+def _mark_refused(raw: str | None, code: str | None, claims: dict | None = None) -> None:
+    """N-2: a refused connect keeps its transport only briefly (the orphan reaper
+    uses ``REFUSED_KEY``) and a replayed revoked / dead-account token is charged
+    to the small restricted edge bucket instead of the account's live budget."""
+    try:
+        request.environ[REFUSED_KEY] = True
+        if code == "token_revoked" and raw:
+            decoded = decode_token(raw, allow_expired=True)  # signature already checked
+            ttl = _BAD_TOKEN_TTL_SECONDS
+            exp = decoded.get("exp")
+            if isinstance(exp, (int, float)):
+                ttl = max(1.0, min(ttl, float(exp) - _now()))
+            BAD_TOKENS.add_token(decoded.get("jti"), raw, ttl)
+        elif code == "invalid_token" and claims:  # signed + live token, account gone/inactive
+            BAD_TOKENS.add_account(str(claims.get("sub") or ""), _BAD_ACCOUNT_TTL_SECONDS)
+    except Exception:  # pragma: no cover - bookkeeping must never break connect
+        logger.debug("mark_refused failed", exc_info=True)
 
 
 def _allow_anonymous() -> bool:
@@ -435,6 +461,7 @@ def register_socketio_handlers(socketio) -> None:
             admission = _REGISTRY.admit(request.sid, _client_ip(), None)
             if admission.refused:
                 logger.info("Socket.IO guest refused: %s", admission.refused)
+                _mark_refused(None, admission.refused)
                 raise ConnectionRefusedError(admission.refused)
             _ensure_idle_sweeper(socketio)
             emit("connected", {"authenticated": False, "user_id": None})
@@ -444,6 +471,7 @@ def register_socketio_handlers(socketio) -> None:
         if err is not None or user is None:
             code = err or "invalid_token"
             logger.info("Socket.IO connect refused: %s", code)
+            _mark_refused(raw, code, claims)
             raise ConnectionRefusedError(code)
         sid = request.sid
         # C-1: per-user cap (oldest socket is evicted) and a global ceiling that
@@ -451,7 +479,14 @@ def register_socketio_handlers(socketio) -> None:
         admission = _REGISTRY.admit(sid, _client_ip(), user.public_id)
         if admission.refused:
             logger.info("Socket.IO connect refused: %s", admission.refused)
+            _mark_refused(None, admission.refused)
             raise ConnectionRefusedError(admission.refused)
+        try:
+            # N-2: from now on the edge treats this session's requests as an
+            # established socket (never refused by the account cap, evicted last).
+            request.environ[ESTABLISHED_KEY] = True
+        except Exception:  # pragma: no cover
+            pass
         for old_sid in admission.evict:
             _evict_socket(socketio, old_sid)
         for idle_sid in admission.released:

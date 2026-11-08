@@ -43,6 +43,19 @@ import urllib.parse
 from dataclasses import dataclass
 from typing import Any, Callable, Mapping
 
+from .socket_account_admission import (
+    ACCOUNT_KEY,
+    BAD_TOKENS,
+    BUCKET_LIVE,
+    BUCKET_RESTRICTED,
+    ESTABLISHED_KEY,
+    IDENTITY_KEY,
+    REFUSE_ACCOUNT_BUSY,
+    REFUSED_KEY,
+    AccountLedger,
+    Identity,
+    shutdown_transport,
+)
 from .socketio_deploy import resolve_gunicorn_threads
 
 logger = logging.getLogger(__name__)
@@ -76,6 +89,17 @@ class EdgeConfig:
     allow_anonymous: bool
     auth_deadline: float  # seconds; 0 disables the orphan reaper
     reaper_interval: float
+    # N-2 per-account admission (kk/socket_account_admission.py). 0 disables the
+    # live-account cap (the restricted buckets below are only used with a ledger).
+    account_limit: int = 0
+    #: slots one account may hold with an expired / known-dead token
+    restricted_per_account: int = 2
+    #: restricted slots across ALL accounts (0 = unlimited)
+    restricted_total: int = 0
+    #: a refused connect (CONNECT_ERROR) keeps its transport this long, not auth_deadline
+    refused_grace: float = 3.0
+    #: a non-websocket request still in flight after this long is a stalled handshake
+    stall_seconds: float = 60.0
 
 
 def compute_edge_limit(threads: int, max_total: int) -> int:
@@ -85,12 +109,37 @@ def compute_edge_limit(threads: int, max_total: int) -> int:
     return max(0, min(max_total + overflow, threads - EDGE_HTTP_RESERVED_THREADS))
 
 
-def load_edge_config(env: Mapping[str, str] | None = None, *, max_total: int) -> EdgeConfig:
+def compute_account_limit(edge_limit: int, max_per_user: int) -> int:
+    """Edge slots ONE account may hold: its per-user socket cap plus one in-flight
+    reconnect, but never more than a third of the edge limit (so three accounts
+    can never exhaust it), and at least 2 (a reconnect needs a spare slot)."""
+    return max(2, min(max_per_user + 1, edge_limit // 3))
+
+
+def load_edge_config(
+    env: Mapping[str, str] | None = None, *, max_total: int, max_per_user: int | None = None
+) -> EdgeConfig:
     env = os.environ if env is None else env
     threads = resolve_gunicorn_threads(env.get("GUNICORN_THREADS"))
+    edge_limit = compute_edge_limit(threads, max_total)
+    if max_per_user is None:
+        from .realtime_limits import load_limits
+
+        max_per_user = load_limits(env).max_per_user
+    raw_limit = (env.get("SOCKETIO_EDGE_MAX_PER_ACCOUNT") or "").strip()
+    try:
+        account_limit = max(0, int(raw_limit)) if raw_limit else compute_account_limit(edge_limit, max_per_user)
+    except ValueError:
+        account_limit = compute_account_limit(edge_limit, max_per_user)
+    restricted_per_account = int(_env_float(env, "SOCKETIO_EDGE_RESTRICTED_PER_ACCOUNT", 2))
     return EdgeConfig(
         threads=threads,
-        edge_limit=compute_edge_limit(threads, max_total),
+        edge_limit=edge_limit,
+        account_limit=account_limit,
+        restricted_per_account=max(1, restricted_per_account),
+        restricted_total=max(2, edge_limit // 4),
+        refused_grace=_env_float(env, "SOCKETIO_EDGE_REFUSED_GRACE_SECONDS", 3.0),
+        stall_seconds=_env_float(env, "SOCKETIO_EDGE_STALL_SECONDS", 60.0),
         allow_anonymous=(env.get("SOCKETIO_ALLOW_ANONYMOUS") or "").strip().lower() in _TRUE,
         auth_deadline=_env_float(env, "SOCKETIO_AUTH_DEADLINE_SECONDS", 10.0),
         reaper_interval=max(0.2, _env_float(env, "SOCKETIO_REAPER_INTERVAL_SECONDS", 2.0)),
@@ -154,6 +203,13 @@ def make_handshake_authenticator(
             return AUTH_INVALID, REFUSE_AUTH
         if claims.get("type") not in (None, "access") or not claims.get("sub"):
             return AUTH_INVALID, REFUSE_AUTH
+        exp = claims.get("exp")
+        # N-2: the signature-verified account, for per-account admission
+        environ[IDENTITY_KEY] = Identity(
+            sub=str(claims["sub"]),
+            jti=str(claims["jti"]) if claims.get("jti") else None,
+            exp=float(exp) if isinstance(exp, (int, float)) else None,
+        )
         return AUTH_OK, ""
 
     return authenticate
@@ -213,6 +269,10 @@ class SocketEdgeMiddleware:
         authenticate: Callable[[Any], tuple[str, str]],
         on_first_request: Callable[[], None] | None = None,
         prefix: str = "/socket.io",
+        ledger: AccountLedger | None = None,
+        session_env: Callable[[str], dict | None] | None = None,
+        now: Callable[[], float] = time.time,
+        on_evict: Callable[[Any], None] | None = None,
     ):
         self.app = app
         self.config = config
@@ -220,6 +280,60 @@ class SocketEdgeMiddleware:
         self.authenticate = authenticate
         self.on_first_request = on_first_request
         self.prefix = prefix.rstrip("/")
+        #: N-2 per-account admission (``None`` = only the global ceiling)
+        self.ledger = ledger
+        #: ``sid -> handshake environ`` kept by python-socketio for each session
+        self.session_env = session_env
+        self._now = now
+        #: closes an evicted ticket's session + transport (default: transport only)
+        self.on_evict = on_evict or (lambda t: shutdown_transport(t.raw))
+
+    def _account_ticket(self, environ, query, is_ws: bool, authenticated: bool):
+        """Reserve the caller's per-account slot. ``(ticket, refusal_or_None)``."""
+        identity = environ.pop(IDENTITY_KEY, None) if authenticated else None
+        sid = (query.get("sid") or [""])[0]
+        state_env = None
+        if sid and self.session_env is not None:
+            try:
+                state_env = self.session_env(sid)
+            except Exception:  # pragma: no cover - never block on a lookup
+                state_env = None
+        account = bucket = None
+        protected = False
+        owner = state_env.get(ACCOUNT_KEY) if isinstance(state_env, dict) else None
+        if owner:
+            bucket, account = owner  # the session's creator, not whoever sends the request
+            protected = bool(state_env.get(ESTABLISHED_KEY))
+        elif identity is not None:
+            account = identity.sub
+            bucket = (
+                BUCKET_RESTRICTED
+                if identity.expired(self._now()) or BAD_TOKENS.is_bad(identity)
+                else BUCKET_LIVE
+            )
+            if not sid:
+                state_env = environ  # python-socketio keeps this very dict per session
+                environ[ACCOUNT_KEY] = (bucket, account)
+        if account is None:
+            return None, None  # unattributable (unknown sid / anonymous opt-in): global ceiling only
+        raw = environ.get("gunicorn.socket") or environ.get("werkzeug.socket")
+        ticket, victims = self.ledger.reserve(
+            account, bucket, is_ws=is_ws, raw=raw, state_env=state_env, protected=protected
+        )
+        for v in victims:  # a legitimate reconnect replaces the account's oldest transport
+            try:
+                self.on_evict(v)
+            except Exception:  # pragma: no cover - the new request must still be served
+                logger.exception("socket edge guard: eviction failed")
+                shutdown_transport(v.raw)
+        if victims:
+            logger.info(
+                "socket edge guard: account at its limit; closed %d older transport(s)", len(victims)
+            )
+        if ticket is None:
+            logger.info("socket edge guard: per-account limit reached (%s bucket)", bucket)
+            return None, REFUSE_ACCOUNT_BUSY
+        return ticket, None
 
     def __call__(self, environ, start_response):
         path = environ.get("PATH_INFO") or ""
@@ -247,7 +361,22 @@ class SocketEdgeMiddleware:
                     "A valid access token is required for realtime connections.",
                 )
 
+        ticket = None
+        if self.ledger is not None and not preflight:
+            ticket, refusal = self._account_ticket(
+                environ, query, is_ws, authenticated=not self.config.allow_anonymous and (is_ws or new_session)
+            )
+            if refusal:
+                return _refuse(
+                    start_response,
+                    "503 Service Unavailable",
+                    refusal,
+                    "Too many realtime connections for this account; retry shortly.",
+                    retry_after=3,
+                )
+
         if not self.slots.acquire():
+            self.ledger.release(ticket) if self.ledger is not None else None
             return _refuse(
                 start_response,
                 "503 Service Unavailable",
@@ -255,12 +384,20 @@ class SocketEdgeMiddleware:
                 "Realtime capacity is full; use HTTP polling and retry later.",
                 retry_after=5,
             )
+
+        def release() -> None:
+            try:
+                if self.ledger is not None:
+                    self.ledger.release(ticket)
+            finally:
+                self.slots.release()
+
         try:
             result = self.app(environ, start_response)
         except BaseException:
-            self.slots.release()
+            release()
             raise
-        return _ReleasingIterable(result, self.slots.release)
+        return _ReleasingIterable(result, release)
 
 
 class OrphanReaper:
@@ -274,6 +411,9 @@ class OrphanReaper:
         self._lock = threading.Lock()
         self._started_pid: int | None = None
         self.closed_total = 0
+        #: N-2: set by ``install_socket_edge_guard`` (stalled-request sweep)
+        self.ledger: AccountLedger | None = None
+        self.stalled_total = 0
 
     def ensure_started(self) -> None:
         if self.config.auth_deadline <= 0:
@@ -343,10 +483,41 @@ class OrphanReaper:
         except (OSError, AttributeError):
             pass  # already closed / not a real socket
 
+    def _deadline_for(self, server, eio_sid: str) -> float:
+        """A session whose ``connect`` was refused (CONNECT_ERROR) only needs its
+        transport long enough for the client to read the reason (N-2: refusals
+        must not keep a thread for the full auth deadline)."""
+        deadline = self.config.auth_deadline
+        try:
+            env = (getattr(server, "environ", None) or {}).get(eio_sid) or {}
+            if env.get(REFUSED_KEY):
+                return min(deadline, self.config.refused_grace)
+        except Exception:  # pragma: no cover
+            pass
+        return deadline
+
+    def reap_stalled_requests(self) -> int:
+        """Shut down non-websocket requests (handshake / long-poll / body read)
+        that have been in flight far longer than Engine.IO ever holds one."""
+        if self.ledger is None:
+            return 0
+        n = 0
+        for t in self.ledger.stalled(self.config.stall_seconds):
+            shutdown_transport(t.raw)
+            n += 1
+        if n:
+            self.stalled_total += n
+            logger.info("socket edge guard: shut down %d stalled request(s)", n)
+        return n
+
     def scan_once(self) -> int:
         server = getattr(self.socketio, "server", None)
         if server is None:
             return 0
+        try:
+            self.reap_stalled_requests()
+        except Exception:  # pragma: no cover - never break the reaper
+            logger.exception("stalled request sweep failed")
         eio, manager = server.eio, server.manager
         now = self._clock()
         live = list(eio.sockets.keys())
@@ -361,7 +532,7 @@ class OrphanReaper:
                 self._orphan_since.pop(eio_sid, None)
                 continue
             since = self._orphan_since.setdefault(eio_sid, now)
-            if now - since >= self.config.auth_deadline:
+            if now - since >= self._deadline_for(server, eio_sid):
                 self._orphan_since.pop(eio_sid, None)
                 # Read BEFORE disconnect: python-socketio forgets the request
                 # environ as soon as the Engine.IO session is closed.
@@ -387,14 +558,44 @@ def install_socket_edge_guard(app, socketio, config: EdgeConfig) -> dict:
 
     slots = SlotCounter(config.edge_limit)
     reaper = OrphanReaper(socketio, config)
+    ledger = AccountLedger(
+        per_account=config.account_limit,
+        restricted_per_account=config.restricted_per_account,
+        restricted_total=config.restricted_total,
+    )
+    reaper.ledger = ledger
+
+    def session_env(sid: str):
+        server = getattr(socketio, "server", None)
+        return (getattr(server, "environ", None) or {}).get(sid)
+
+    def evict(ticket) -> None:
+        """Close an evicted websocket's Engine.IO session (so the registry and
+        the auth binding are released at once) AND its transport (so the
+        gthread request thread parked in ``ws.receive()`` returns)."""
+        server = getattr(socketio, "server", None)
+        try:
+            if server is not None and ticket.state_env is not None:
+                for eio_sid, env in list(getattr(server, "environ", {}).items()):
+                    if env is ticket.state_env:
+                        OrphanReaper._close_session(server.eio, eio_sid)
+                        break
+        except Exception:  # pragma: no cover - already gone
+            logger.debug("evicted session close failed", exc_info=True)
+        finally:
+            shutdown_transport(ticket.raw)
+
     app.wsgi_app = SocketEdgeMiddleware(
         app.wsgi_app,
         config=config,
         slots=slots,
         authenticate=make_handshake_authenticator(app, _allow_socket_query_token),
         on_first_request=reaper.ensure_started,
+        ledger=ledger,
+        session_env=session_env,
+        on_evict=evict,
     )
-    guard = {"config": config, "slots": slots, "reaper": reaper}
+    guard = {"config": config, "slots": slots, "reaper": reaper, "ledger": ledger}
     app.extensions[EXTENSION_KEY] = guard
     if config.edge_limit < 8:
         app.logger.warning(
@@ -405,9 +606,10 @@ def install_socket_edge_guard(app, socketio, config: EdgeConfig) -> dict:
             config.edge_limit,
         )
     app.logger.info(
-        "socket edge guard: threads=%s edge_limit=%s anonymous=%s auth_deadline=%ss",
+        "socket edge guard: threads=%s edge_limit=%s per_account=%s anonymous=%s auth_deadline=%ss",
         config.threads,
         config.edge_limit,
+        config.account_limit,
         config.allow_anonymous,
         config.auth_deadline,
     )
