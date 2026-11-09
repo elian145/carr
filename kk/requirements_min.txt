@@ -15,7 +15,7 @@ Flask-Bcrypt==1.0.1
 python-dotenv==1.2.2
 Pillow==13.0.0
 python-multipart==0.0.31
-redis==5.0.1
+redis==6.4.0
 celery==5.3.4
 gunicorn==26.2.0
 psycopg[binary]
