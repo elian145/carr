@@ -25,7 +25,11 @@ python-dotenv==1.2.2
 Pillow==13.0.0
 pillow-heif==1.8.1
 python-multipart==0.0.31
-redis==5.0.1
+# kombu 5.7.x (pulled in by celery) refuses to start its Redis transport on
+# redis-py < 6.1.0 (kombu.exceptions.VersionMismatch); kombu[redis] declares
+# redis>=6.4.0,<9. Kombu only constrains redis via that extra, so the resolver
+# does not catch a stale pin here - keep this >= 6.4.0 while kombu is >= 5.7.
+redis==6.4.0
 celery==5.3.4
 # 26.x: request-smuggling / chunked-body hardening; the eventlet worker is gone
 # (we run gthread - see gunicorn.conf.py). Re-run scripts/c1_edge_load_check.py
