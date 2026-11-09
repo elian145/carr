@@ -109,6 +109,10 @@ abstract class _CarDetailsPageFields extends State<CarDetailsPage> {
   String? _ownerUiUserId;
 
   bool isFavorite = false;
+
+  /// F-44: true while a favorite toggle request is in flight, so rapid taps
+  /// cannot send overlapping toggles that leave the heart out of sync.
+  bool _favoriteBusy = false;
   List<Map<String, dynamic>> similarCars = [];
   bool loadingSimilar = false;
   final PageController _imagePageController = PageController();

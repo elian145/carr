@@ -10,6 +10,7 @@ import 'package:car_listing_app/services/outgoing_chat_send_service.dart';
 import 'package:car_listing_app/shared/prefs/chat_pending_send_prefs.dart';
 
 import 'fake_api_server.dart';
+import 'support/test_jwt.dart';
 
 /// F-11 focused coverage for `OutgoingChatSendService`'s durable
 /// pending-send persistence and bounded retry behavior, using
@@ -23,7 +24,7 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await ApiService.setTokens(
-      accessToken: 'test_access_token',
+      accessToken: testJwt('owner_test'),
       refreshToken: 'test_refresh_token',
     );
     FakeApiServer.chatSendIdempotencyKeys.clear();
@@ -44,7 +45,7 @@ void main() {
   /// sleeping, so `OutgoingChatSendService.minAutoRetryInterval` no longer
   /// blocks the next `recoverPendingSends()` call from retrying [id].
   Future<void> ageOutBackoff(String conversationId, String id) async {
-    final all = await ChatPendingSendPrefs.loadForConversation(conversationId);
+    final all = await ChatPendingSendPrefs.loadForConversation(conversationId, ownerUserId: 'owner_test');
     final rec = all.firstWhere((r) => r.id == id);
     await ChatPendingSendPrefs.upsert(
       rec.copyWith(
@@ -78,7 +79,7 @@ void main() {
         expect(events.single.pendingRetry, isTrue);
 
         final pending =
-            await ChatPendingSendPrefs.loadForConversation('car_pending_1');
+            await ChatPendingSendPrefs.loadForConversation('car_pending_1', ownerUserId: 'owner_test');
         expect(pending, hasLength(1));
         expect(pending.single.kind, 'text');
         expect(pending.single.content, 'hello there');
@@ -113,7 +114,7 @@ void main() {
         expect(events.single.pendingRetry, isFalse);
         expect(events.single.restoredPlainText, 'will not retry');
         expect(
-          await ChatPendingSendPrefs.loadForConversation('car_pending_2'),
+          await ChatPendingSendPrefs.loadForConversation('car_pending_2', ownerUserId: 'owner_test'),
           isEmpty,
         );
       },
@@ -136,7 +137,7 @@ void main() {
 
         expect(events.single.success, isTrue);
         expect(
-          await ChatPendingSendPrefs.loadForConversation('car_pending_3'),
+          await ChatPendingSendPrefs.loadForConversation('car_pending_3', ownerUserId: 'owner_test'),
           isEmpty,
         );
       },
@@ -154,6 +155,7 @@ void main() {
         };
 
         OutgoingChatSendService.instance.startTextMessageSend(
+          receiverId: 'peer_known',
           conversationId: 'car_retry_1',
           content: 'retry me',
           tempMessageId: 'temp_retry_1',
@@ -163,7 +165,7 @@ void main() {
         final firstKey = FakeApiServer.chatSendIdempotencyKeys[0];
         expect(firstKey, isNotEmpty);
         expect(
-          await ChatPendingSendPrefs.loadForConversation('car_retry_1'),
+          await ChatPendingSendPrefs.loadForConversation('car_retry_1', ownerUserId: 'owner_test'),
           hasLength(1),
         );
 
@@ -184,7 +186,7 @@ void main() {
         );
         expect(events.single.success, isTrue);
         expect(
-          await ChatPendingSendPrefs.loadForConversation('car_retry_1'),
+          await ChatPendingSendPrefs.loadForConversation('car_retry_1', ownerUserId: 'owner_test'),
           isEmpty,
           reason: 'a successful retry must remove the pending record',
         );
@@ -198,6 +200,8 @@ void main() {
       () async {
         await ChatPendingSendPrefs.upsert(
           ChatPendingSendRecord(
+      receiverId: 'peer_known',
+      ownerUserId: 'owner_test',
             id: 'temp_restart_1',
             conversationId: 'car_restart_1',
             kind: 'text',
@@ -227,7 +231,7 @@ void main() {
             events.singleWhere((e) => e.tempMessageId == 'temp_restart_1');
         expect(ev.success, isTrue);
         expect(
-          await ChatPendingSendPrefs.loadForConversation('car_restart_1'),
+          await ChatPendingSendPrefs.loadForConversation('car_restart_1', ownerUserId: 'owner_test'),
           isEmpty,
         );
       },
@@ -241,6 +245,7 @@ void main() {
         FakeApiServer.chatSendOverride =
             (request, callIndex) => http.Response('', 503);
         OutgoingChatSendService.instance.startTextMessageSend(
+          receiverId: 'peer_known',
           conversationId: 'car_dedupe_1',
           content: 'dedupe me',
           tempMessageId: 'temp_dedupe_1',
@@ -258,7 +263,7 @@ void main() {
 
         expect(FakeApiServer.chatSendCallCount - before, 1);
         final pending =
-            await ChatPendingSendPrefs.loadForConversation('car_dedupe_1');
+            await ChatPendingSendPrefs.loadForConversation('car_dedupe_1', ownerUserId: 'owner_test');
         expect(pending, hasLength(1));
       },
     );
@@ -271,6 +276,7 @@ void main() {
         FakeApiServer.chatSendOverride =
             (request, callIndex) => http.Response('', 503);
         OutgoingChatSendService.instance.startTextMessageSend(
+          receiverId: 'peer_known',
           conversationId: 'car_exhaust_1',
           content: 'never lands',
           tempMessageId: 'temp_exhaust_1',
@@ -289,7 +295,7 @@ void main() {
         }
 
         final pending =
-            await ChatPendingSendPrefs.loadForConversation('car_exhaust_1');
+            await ChatPendingSendPrefs.loadForConversation('car_exhaust_1', ownerUserId: 'owner_test');
         expect(
           pending,
           hasLength(1),
@@ -332,6 +338,8 @@ void main() {
 
         await ChatPendingSendPrefs.upsert(
           ChatPendingSendRecord(
+      receiverId: 'peer_known',
+      ownerUserId: 'owner_test',
             id: 'temp_media_1',
             conversationId: 'car_media_1',
             kind: 'mediaGroup',
@@ -372,6 +380,7 @@ void main() {
         FakeApiServer.chatSendOverride =
             (request, callIndex) => http.Response('', 503);
         OutgoingChatSendService.instance.startTextMessageSend(
+          receiverId: 'peer_known',
           conversationId: 'car_conn_1',
           content: 'conn retry',
           tempMessageId: 'temp_conn_1',
@@ -407,13 +416,14 @@ void main() {
         FakeApiServer.chatSendOverride =
             (request, callIndex) => http.Response('', 500);
         OutgoingChatSendService.instance.startTextMessageSend(
+          receiverId: 'peer_known',
           conversationId: 'car_discard_1',
           content: 'to be recalled',
           tempMessageId: 'temp_discard_1',
         );
         await pumpEventQueue();
         expect(
-          await ChatPendingSendPrefs.loadForConversation('car_discard_1'),
+          await ChatPendingSendPrefs.loadForConversation('car_discard_1', ownerUserId: 'owner_test'),
           hasLength(1),
         );
 
@@ -423,7 +433,7 @@ void main() {
         await pumpEventQueue();
 
         expect(
-          await ChatPendingSendPrefs.loadForConversation('car_discard_1'),
+          await ChatPendingSendPrefs.loadForConversation('car_discard_1', ownerUserId: 'owner_test'),
           isEmpty,
         );
 

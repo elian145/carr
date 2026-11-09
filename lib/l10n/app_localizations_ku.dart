@@ -33,6 +33,22 @@ class AppLocalizationsKu extends AppLocalizations {
   String get navProfile => 'پرۆفایل';
 
   @override
+  String get homeLayoutList => 'لیست';
+
+  @override
+  String get homeLayoutGrid => 'تۆڕ';
+
+  @override
+  String get mainNavigationLabel => 'ناوبردنی سەرەکی';
+
+  @override
+  String get sellPhotoProcessingFailed =>
+      'پرۆسێسکردنی وێنەکان سەرنەکەوت. تکایە دووبارە هەوڵبدەرەوە.';
+
+  @override
+  String get sellSubmissionCancelledByUser => 'تۆ هەڵتوەشاندەوە';
+
+  @override
   String get addListingTitle => 'زیادکردنی ڕیکلام';
 
   @override
@@ -315,7 +331,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get value_fuel_plugin_hybrid => 'پڵەگ-ئین هایبرید';
 
   @override
-  String get value_title_clean => 'پاك';
+  String get value_title_clean => 'پاک';
 
   @override
   String get value_title_damaged => 'زیانلێکەوتوو';
@@ -500,6 +516,11 @@ class AppLocalizationsKu extends AppLocalizations {
   @override
   String get chatCarzoOwnListing =>
       'ناتوانیت پەیام بنێریت بە خۆت لەسەر ڕیکلامی خۆت.';
+
+  @override
+  String chatUserTyping(String name) {
+    return '$name دەنووسێت...';
+  }
 
   @override
   String get unableToOpenWhatsApp => 'ناتوانرێت واتساپ بکرێتەوە';
@@ -1345,6 +1366,20 @@ class AppLocalizationsKu extends AppLocalizations {
   String get noNotificationsYet => 'هێشتا هیچ ئاگادارکردنەوەیەک نییە';
 
   @override
+  String get notificationChannelChatName => 'پەیامەکانی چات';
+
+  @override
+  String get notificationChannelChatDescription =>
+      'ئاگادارکردنەوەی پەیامی نوێی چات';
+
+  @override
+  String get notificationChannelUpdatesName => 'نوێکارییەکانی هەژمار';
+
+  @override
+  String get notificationChannelUpdatesDescription =>
+      'نوێکاری گرنگی هەژمار و نمایشگاکان';
+
+  @override
   String get failedToLoadNotifications =>
       'بارکردنی ئاگادارکردنەوەکان شکستی هێنا';
 
@@ -1425,7 +1460,7 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String stepXOf5(Object step) {
-    return 'هەنگاوە $step لە ٦';
+    return 'هەنگاوی $step لە ٦';
   }
 
   @override
@@ -2405,6 +2440,13 @@ class AppLocalizationsKu extends AppLocalizations {
       'هیچ براند یان مۆدێلێک نەدۆزرایەوە.';
 
   @override
+  String get typeModelNameToSearch =>
+      'ناوی مۆدێلێک بنووسە بۆ گەڕان. دەتوانیت ناوی براندێکیش بنووسیت بۆ بینینی هەموو مۆدێلەکانی.';
+
+  @override
+  String get noModelsMatchYourSearch => 'هیچ مۆدێلێک نەدۆزرایەوە.';
+
+  @override
   String get make => 'براند';
 
   @override
@@ -2482,6 +2524,9 @@ class AppLocalizationsKu extends AppLocalizations {
   String get untitledDraftTitle => 'ڕەشنووسی بێناو';
 
   @override
+  String get yourListingFallbackTitle => 'ڕیکلامەکەت';
+
+  @override
   String get continueEditing => 'بەردەوامبوون لە دەستکاری';
 
   @override
@@ -2543,7 +2588,7 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get specDatabaseUnavailableRestartTheAppAfterFlutterPubGet =>
-      'بنکەی زانیاری مواسەفات بەردەست نییە. دوای flutter pub get ئەپەکە دووبارە بکەرەوە.';
+      'زانیاری تایبەتمەندی ئۆتۆمبێل ئێستا بەردەست نییە. تکایە ئەپەکە دووبارە بکەرەوە.';
 
   @override
   String get catalogAutoFill => 'پڕکردنەوەی خۆکاری کاتالۆگ';
@@ -2560,6 +2605,10 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get specsAvailableForThisYear => 'مواسەفات بۆ ئەم ساڵە بەردەستە.';
+
+  @override
+  String get noSpecRowForThisYear =>
+      'مواسەفات بۆ ئەم ساڵە نییە — ساڵێکی تر یان جۆرێکی تر تاقی بکەرەوە.';
 
   @override
   String get applySpecs => 'جێبەجێکردنی مواسەفات';
@@ -2884,4 +2933,53 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get softUpdateFallbackMessage => 'وەشانێکی نوێتری CarNet بەردەستە.';
+
+  @override
+  String get currentPasswordLabel => 'وشەی نهێنی ئێستا';
+
+  @override
+  String get pleaseEnterCurrentPassword => 'تکایە وشەی نهێنی ئێستات بنووسە';
+
+  @override
+  String get passwordChangedSuccessfully => 'وشەی نهێنی بە سەرکەوتوویی گۆڕدرا';
+
+  @override
+  String get unableToChangePasswordCheckCurrent =>
+      'نەتوانرا وشەی نهێنی بگۆڕدرێت. تکایە وشەی نهێنی ئێستا بپشکنە و دووبارە هەوڵ بدەرەوە.';
+
+  @override
+  String get unableToChangePasswordTryLater =>
+      'نەتوانرا وشەی نهێنی بگۆڕدرێت. تکایە دواتر دووبارە هەوڵ بدەرەوە.';
+
+  @override
+  String get sendingEllipsis => 'دەنێردرێت...';
+
+  @override
+  String get videoBadge => 'ڤیدیۆ';
+
+  @override
+  String get viewDetailsButton => 'بینینی وردەکاری';
+
+  @override
+  String a11yPhotoXOfY(int index, int total) {
+    return 'وێنەی $index لە $total';
+  }
+
+  @override
+  String get a11yCancelUpload => 'هەڵوەشاندنەوەی بارگیری';
+
+  @override
+  String get a11yCancelUploadConfirm =>
+      'بارگیری بوەستێنیت؟ ئەگەر ڕێکلامەکەت هێشتا دروست نەکرابێت، ڕەشنووسەکە دەپارێزرێت.';
+
+  @override
+  String get a11yKeepUploading => 'بەردەوامبە لە بارگیری';
+
+  @override
+  String get a11yUploadCancelledDraftKept =>
+      'بارگیری هەڵوەشێنرایەوە. ڕەشنووسەکە پارێزرا.';
+
+  @override
+  String get a11yUploadCancelTooLate =>
+      'درەنگە بۆ هەڵوەشاندنەوە: ڕێکلامەکەت ئێستا بڵاودەکرێتەوە.';
 }

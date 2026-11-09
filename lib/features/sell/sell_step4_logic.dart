@@ -50,7 +50,6 @@ mixin _SellStep4Logic on _SellStep4Fields {
           _pendingServerTranscodeVideos = [];
           _primaryImageIndex = 0;
           _imagesProcessed = false;
-          _isProcessingImages = false;
         });
       }
       if (parentState != null) {
@@ -180,7 +179,6 @@ mixin _SellStep4Logic on _SellStep4Fields {
             parentState?.carData['server_transcode_videos'],
           );
           _clampPrimaryImageIndex();
-          _isProcessingImages = false;
         });
       }
       if (parentState != null) {
@@ -1344,7 +1342,6 @@ mixin _SellStep4Logic on _SellStep4Fields {
           _selectedImages = [..._selectedImages, ...additions];
           _imagesProcessed = false;
           _blurredImages = [];
-          _isProcessingImages = false;
           // One-by-one-appearance fix (real-device evidence: "after I
           // choose multiple images, they appear slowly one-by-one while
           // background processing/upload is happening"): publication of

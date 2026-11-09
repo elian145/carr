@@ -66,6 +66,22 @@ def _local_pg_url() -> str | None:
     return url
 
 
+def _phone_forms(phone):
+    """Both stored spellings of a phone (SEC-003: new rows are canonical 10-digit)."""
+    d = "".join(ch for ch in str(phone) if ch.isdigit())
+    if len(d) == 11 and d.startswith("0"):
+        d = d[1:]
+    return [d, "0" + d]
+
+
+# NOTE (SEC-003): the OTP hash is keyed by the CANONICAL number
+# (``auth_routes._normalize_phone``) -- the route hashes what it normalised.
+# These tests create rows with a typed ``075xxxxxxxx`` phone (a legacy-style
+# stored spelling) and seed the OTP hash by hand, so they must derive the hash
+# input exactly like the route does; hashing the typed spelling would be a
+# different key than the one ``/signup`` and ``/phone/verify`` verify against.
+
+
 @pytest.fixture(scope="module")
 def app_ctx():
     tmp = tempfile.TemporaryDirectory(
@@ -149,7 +165,7 @@ def _expire_resend_cooldown(app_ctx, phone: str) -> None:
     """Skip the 60s OTP resend cooldown (never sleep in tests)."""
     app, _c, db, User = app_ctx
     with app.app_context():
-        u = User.query.filter_by(phone_number=phone).one()
+        u = User.query.filter(User.phone_number.in_(_phone_forms(phone))).one()
         u.phone_verification_last_sent_at = u.phone_verification_last_sent_at and (
             u.phone_verification_last_sent_at - timedelta(minutes=5)
         )
@@ -185,7 +201,7 @@ def _pw_login(client, ident: str, password: str):
 def _row(app_ctx, phone: str) -> dict | None:
     app, _c, db, User = app_ctx
     with app.app_context():
-        u = User.query.filter_by(phone_number=phone).first()
+        u = User.query.filter(User.phone_number.in_(_phone_forms(phone))).first()
         if u is None:
             return None
         from kk.models import DealerApplication
@@ -313,7 +329,7 @@ def test_f01_legacy_verify_phone_endpoint_also_revokes_planted_password(
     with app.app_context():
         user = User.query.filter_by(id=u["id"]).one()
         user.phone_verification_code_hash = auth_routes._hash_phone_verification_code(
-            u["phone"], "123456"
+            auth_routes._normalize_phone(u["phone"]), "123456"
         )
         from kk.time_utils import utcnow
 
@@ -393,9 +409,9 @@ def test_f01_legacy_otp_plus_signup_with_password_still_works(app_ctx, client):
     from kk.time_utils import utcnow
 
     with app.app_context():
-        user = User.query.filter_by(phone_number=phone).one()
+        user = User.query.filter(User.phone_number.in_(_phone_forms(phone))).one()
         user.phone_verification_code_hash = auth_routes._hash_phone_verification_code(
-            phone, "654321"
+            auth_routes._normalize_phone(phone), "654321"
         )
         user.phone_verification_expires_at = utcnow() + timedelta(minutes=10)
         db.session.commit()
@@ -433,7 +449,7 @@ def test_f01_signup_revokes_token_planted_before_ownership(app_ctx, client):
     with app.app_context():
         user = User.query.filter_by(id=u["id"]).one()
         user.phone_verification_code_hash = auth_routes._hash_phone_verification_code(
-            u["phone"], "111222"
+            auth_routes._normalize_phone(u["phone"]), "111222"
         )
         user.phone_verification_expires_at = utcnow() + timedelta(minutes=10)
         db.session.commit()
@@ -557,9 +573,9 @@ def test_f03_legacy_signup_flow_applies_dealer_only_after_otp(app_ctx, client):
 
     app, _c, db, User = app_ctx
     with app.app_context():
-        user = User.query.filter_by(phone_number=phone).one()
+        user = User.query.filter(User.phone_number.in_(_phone_forms(phone))).one()
         user.phone_verification_code_hash = auth_routes._hash_phone_verification_code(
-            phone, "222333"
+            auth_routes._normalize_phone(phone), "222333"
         )
         user.phone_verification_expires_at = utcnow() + timedelta(minutes=10)
         db.session.commit()
@@ -595,7 +611,7 @@ def test_f03_send_otp_with_dealer_fields_does_not_touch_existing_user(app_ctx, c
 def _user_identity(app_ctx, phone: str) -> dict:
     app, _c, _db, User = app_ctx
     with app.app_context():
-        u = User.query.filter_by(phone_number=phone).one()
+        u = User.query.filter(User.phone_number.in_(_phone_forms(phone))).one()
         return {
             "username": u.username,
             "first_name": u.first_name,
@@ -678,7 +694,7 @@ def test_b_signup_with_dealer_fields_never_resets_existing_dealer(app_ctx, clien
     with app.app_context():
         row = User.query.filter_by(id=u["id"]).one()
         row.phone_verification_code_hash = auth_routes._hash_phone_verification_code(
-            u["phone"], "333444"
+            auth_routes._normalize_phone(u["phone"]), "333444"
         )
         row.phone_verification_expires_at = utcnow() + timedelta(minutes=10)
         db.session.commit()

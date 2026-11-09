@@ -7,6 +7,8 @@ import '../features/comparison/state/car_comparison_store.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../theme_provider.dart';
+import '../shared/i18n/app_locale_resolution.dart';
+import '../shared/i18n/ku_delegates.dart';
 import '../shared/ui/responsive.dart';
 import '../navigation/app_page_route.dart';
 import '../widgets/edge_swipe_back.dart';
@@ -60,6 +62,9 @@ class MyApp extends StatelessWidget {
                 builder: (context, child) {
                   final shellColor = Theme.of(context).scaffoldBackgroundColor;
                   return ForceUpdateGate(
+                    // The gate sits above the Navigator: the soft-update
+                    // dialog must go through the root navigator's context.
+                    navigatorKey: productionNavigatorKey,
                     child: FirstRunOnboardingGate(
                       child: ConnectivityBanner(
                         child: SellSubmissionStatusBanner(
@@ -79,28 +84,26 @@ class MyApp extends StatelessWidget {
                   );
                 },
                 locale: locale,
-                supportedLocales: const [
-                  Locale('en'),
-                  Locale('ar'),
-                  Locale('ku'),
-                ],
-                localizationsDelegates: [
+                supportedLocales: kAppSupportedLocales,
+                // F-09: the Kurdish delegates are the genuine Sorani ones from
+                // `shared/i18n/ku_delegates.dart` (not an Arabic proxy).
+                localizationsDelegates: const [
                   AppLocalizations.delegate,
                   GlobalMaterialLocalizations.delegate,
                   GlobalWidgetsLocalizations.delegate,
                   GlobalCupertinoLocalizations.delegate,
-                  const KuMaterialLocalizationsDelegate(),
-                  const KuWidgetsLocalizationsDelegate(),
-                  const KuCupertinoLocalizationsDelegate(),
+                  KuMaterialLocalizationsDelegate(),
+                  KuWidgetsLocalizationsDelegate(),
+                  KuCupertinoLocalizationsDelegate(),
                 ],
-                localeResolutionCallback: (deviceLocale, supported) {
-                  if (locale != null) return locale;
-                  if (deviceLocale == null) return const Locale('en');
-                  for (final l in supported) {
-                    if (l.languageCode == deviceLocale.languageCode) return l;
-                  }
-                  return const Locale('en');
-                },
+                // F-09: `ckb` (Sorani, what Android/iOS report) resolves to the
+                // shipped `ku` locale; en/ar resolve exactly as before.
+                localeResolutionCallback: (deviceLocale, supported) =>
+                    resolveAppLocale(
+                      explicit: locale,
+                      device: deviceLocale,
+                      supported: supported,
+                    ),
                 theme: AppThemes.lightTheme,
                 darkTheme: AppThemes.darkTheme,
                 themeMode: themeProvider.themeMode,

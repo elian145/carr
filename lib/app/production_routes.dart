@@ -77,7 +77,9 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
       final args = readRouteArgs(context);
       final carId = (args?['carId'] ?? '').toString().trim();
       if (carId.isEmpty) {
-        return navigationErrorScaffold('Missing listing id');
+        return navigationErrorScaffold(
+          AppLocalizations.of(context)!.missingListingData,
+        );
       }
       return CarDetailsPage(
         carId: carId,
@@ -114,6 +116,7 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
         child: carzo_chat.ChatConversationPage(
           carId: rawId,
           receiverId: args?['receiverId']?.toString(),
+          peerKey: args?['peerKey']?.toString(),
           initialDraft: args?['initialDraft']?.toString(),
           initialListingPreview: args?['listingPreview'] is Map
               ? Map<String, dynamic>.from(

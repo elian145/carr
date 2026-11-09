@@ -157,13 +157,13 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 height: 1.35,
-                color: kFilterAccentColor,
+                color: AppColors.accentText(context),
               ),
             ),
             const SizedBox(height: 2),
             Text(
               AppLocalizations.of(context)!.youCanChangeTheseInStep2,
-              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              style: TextStyle(fontSize: 11, color: Colors.grey[700]),
             ),
           ] else if (canApply) ...[
             const SizedBox(height: 12),
@@ -172,7 +172,7 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: kFilterAccentColor,
+                color: AppColors.accentText(context),
               ),
             ),
           ],
@@ -182,7 +182,7 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
             child: ElevatedButton(
               onPressed: canApply ? _applyCatalogSpecsToFlow : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: kFilterAccentColor,
+                backgroundColor: AppColors.brandOrangeStrong,
                 foregroundColor: Colors.white,
                 disabledBackgroundColor:
                     kFilterAccentColor.withValues(alpha: 0.35),

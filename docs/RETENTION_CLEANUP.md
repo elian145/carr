@@ -1,0 +1,84 @@
+# Retention cleanup (audit F-16) and admin audit trail (F-17)
+
+## What is implemented
+
+`kk/retention.py`, run daily by Celery beat (`retention-cleanup`,
+`kk/tasks/retention_tasks.py`). **Safe by default - three gates must all be open
+before a row is deleted, and no retention period is built in or assumed:**
+
+1. `RETENTION_ENABLED=1` - master switch, **default OFF** (the whole job is a no-op).
+2. `RETENTION_DRY_RUN=0` - **dry-run is the default**. Without exactly this
+   (`0`/`false`/`no`/`off`) an enabled run only *counts* what it would delete;
+   unset, empty or a typo keeps dry-run on.
+3. The individual job below must be configured. A period that is unset, zero,
+   negative or not an integer is **skipped (never defaulted)** and listed under
+   `skipped_unconfigured` in the audit record.
+
+| Env var | Effect when set |
+|---|---|
+| `RETENTION_TOKEN_BLACKLIST_PURGE=1` | Delete `token_blacklist` rows whose JWT expired > 1 h ago (already dead; behaviour-neutral). |
+| `RETENTION_AUTH_TOKEN_PURGE=1` | Delete `password_reset` and `email_verification` rows (used or unused) whose expiry passed > 1 h ago. They can no longer be redeemed, so only the error text for a long-expired code changes. Also clears any leftover pre-F-29 plaintext reset rows (F-29). |
+| `RETENTION_USER_ACTION_DAYS=<n>` | Delete `user_action` analytics rows older than *n* days. `admin_*` actions are never deleted. |
+| `RETENTION_READ_NOTIFICATION_DAYS=<n>` | Delete **read** notifications older than *n* days. Unread are never deleted. |
+
+Recommended rollout once the owner has chosen periods: set `RETENTION_ENABLED=1`
+(leave dry-run on), read the `retention_run` audit rows / logs for a few days, and
+only then set `RETENTION_DRY_RUN=0`. The beat schedule exists but is inert until
+`RETENTION_ENABLED=1`.
+
+Limits: batches of 1000 rows, at most 100 batches per table per run (100k rows);
+the next daily run continues. Dry-run counts are capped the same way.
+
+Audit: every enabled run (dry or real, and a failed one with its partial counts and
+the exception *class* only) writes one append-only `admin_audit_log` row,
+`action_type=retention_run`, metadata `{mode, jobs:[{job, rows}], skipped_unconfigured,
+batch_size, max_batches[, error]}` (no row contents), plus a log line. A failure stops
+the run, is re-raised (task marked failed) and leaves already-committed batches in place.
+
+## Never touched by the job
+
+`admin_audit_log` (append-only; no FK to `user`, so user/listing deletes cannot
+cascade into it; PostgreSQL trigger rejects UPDATE/DELETE), chat messages and chat
+media (privacy policy: no automatic expiry, no stated period), reports, listings, users.
+
+## Owner decisions required (not made here)
+
+1. Retention period for `user_action` (analytics: views, logins) and whether the
+   privacy policy should state it.
+2. Period for read notifications (and whether unread ones should ever expire).
+3. Whether and when to set `RETENTION_ENABLED=1` (then, after reviewing dry-run counts, `RETENTION_DRY_RUN=0`) and whether to enable `RETENTION_TOKEN_BLACKLIST_PURGE` and `RETENTION_AUTH_TOKEN_PURGE` (both
+   are behaviour-neutral: they only remove already-dead rows; neither is on by default).
+4. Any retention for `admin_audit_log` (none implemented; append-only by design).
+5. Chat messages/media expiry remains a published-policy decision
+   (see `docs/PRIVACY_DRAFT_ACCOUNT_DELETION.md`).
+6. ~~Index on `user_action.user_id`~~ -- **already exists**: migration D-06
+   (`n5o6p7q8r9s0`, `ix_user_action_user_id`) is in the alembic chain and
+   covered by `kk/tests/test_d06_fk_report_status_indexes.py`; no further
+   migration is needed (a second one would only create a duplicate index).
+   Owner check only: confirm `ix_user_action_user_id` exists on the production
+   database (`\d user_action`).
+7. One-click "hide listing / suspend user" from a report (F-18 second half) is a
+   product decision; reports are still resolved manually.
+
+Requires a Celery **beat** process to be running (see `render.yaml` carr-beat).
+
+## `admin_audit_log` and personal data - what is stored, and the open owner decision
+
+Stored per row: the acting admin's numeric id and a **username snapshot** (staff
+identity), the action type, the target type/id (for users this is the target's
+`public_id`, a pseudonymous identifier), and bounded metadata. Metadata passes
+through `kk.auth.audit_safe_metadata`: values under personal-data-looking keys
+(email, phone, password, token, address, ...) are redacted, strings are truncated
+to 200 characters, containers and the whole document are size-capped, and the
+user- and listing-status endpoints log only an allowlist of fields, never the raw
+request body. Admin-written free text (e.g. a rejection `reason`) can still
+appear, truncated.
+
+The privacy draft's deletion matrix (`docs/PRIVACY_DRAFT_ACCOUNT_DELETION.md`)
+does not mention this table, so **keeping these rows after an account is deleted
+is not covered by any approved statement**. The table is append-only by design
+(a database trigger on PostgreSQL), so erasure is an operator action. Owner to
+decide: (a) disclose it in the privacy text with a stated purpose (security /
+abuse audit) and a retention period, or (b) approve a documented pseudonymisation
+procedure for the target id and admin username on erasure requests. Nothing here
+invents either choice.

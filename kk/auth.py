@@ -6,6 +6,15 @@ from datetime import datetime, timedelta
 import secrets
 import re
 
+from sqlalchemy import String as _SAString, type_coerce as _sa_type_coerce, update
+
+from .reset_token_crypto import (
+    HASH_PREFIX as _RESET_HASH_PREFIX,
+    hash_reset_token,
+    legacy_plaintext_enabled,
+    tokens_equal,
+)
+
 def validate_email(email):
     """Validate email format"""
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -163,6 +172,10 @@ def create_password_reset_token(user, *, channel: str = "sms"):
 
     SMS: 12-digit numeric (harder online guessing than 8-digit).
     Email / other: high-entropy URL-safe opaque token.
+
+    F-29: the RAW token is returned to the caller (to be sent to the user) but is never
+    persisted: ``PasswordReset.token`` is a ``HashedResetToken`` column, so the row holds
+    only ``h1$`` + HMAC-SHA256(pepper, token). Returned value/format/expiry are unchanged.
     """
     # Delete any existing tokens for this user
     PasswordReset.query.filter_by(user_id=user.id, is_used=False).delete()
@@ -218,18 +231,59 @@ def create_email_verification_token(user):
     
     return token
 
+def _find_legacy_plaintext_row(token):
+    """Pre-F-29 rows stored the raw token. REMOVABLE once no such row can still be valid
+    (tokens live 1 hour): delete this function, its call below and ``legacy_plaintext_enabled``.
+    """
+    if not isinstance(token, str) or not token or token.startswith(_RESET_HASH_PREFIX):
+        return None
+    # type_coerce bypasses HashedResetToken so the raw value is compared as-is.
+    row = PasswordReset.query.filter(
+        _sa_type_coerce(PasswordReset.token, _SAString()) == token,
+        PasswordReset.is_used.is_(False),
+    ).first()
+    if row is None or not isinstance(row.token, str) or not tokens_equal(row.token, token):
+        return None
+    return row
+
+
+def _scrub_legacy_row(row, token):
+    """Rewrite a legacy plaintext row to its hashed form so the plaintext is gone from the DB
+    (and so ``PasswordReset.query.filter_by(token=<raw>)`` in the reset route now finds it)."""
+    from sqlalchemy import literal
+
+    db.session.execute(
+        update(PasswordReset)
+        .where(PasswordReset.id == row.id)
+        .values(token=literal(hash_reset_token(token), _SAString()))
+    )
+    db.session.commit()
+    # Reload the instance so it no longer carries the stale plaintext attribute.
+    db.session.refresh(row)
+
+
 def verify_password_reset_token(token):
-    """Verify password reset token"""
+    """Verify password reset token (raw token in, user out; lookup is by hash)."""
+    expected = hash_reset_token(token)
+    # ``filter_by(token=token)`` binds hash_reset_token(token) via HashedResetToken.
     reset_token = PasswordReset.query.filter_by(token=token, is_used=False).first()
-    
+    if reset_token is not None and not tokens_equal(str(reset_token.token), expected):
+        reset_token = None  # defence in depth: constant-time confirmation of the DB match
+
+    if reset_token is None and legacy_plaintext_enabled():
+        legacy = _find_legacy_plaintext_row(token)
+        if legacy is not None:
+            _scrub_legacy_row(legacy, token)
+            reset_token = legacy
+
     if not reset_token:
         return None, "Invalid or expired token"
-    
+
     if reset_token.is_expired():
         reset_token.is_used = True
         db.session.commit()
         return None, "Token has expired"
-    
+
     # Models.PasswordReset does not define a relationship attribute; resolve the
     # user explicitly via user_id so this works across all DBs.
     user = User.query.get(reset_token.user_id)
@@ -237,9 +291,60 @@ def verify_password_reset_token(token):
         return None, "Invalid or expired token"
     return user, None
 
+
+def invalidate_password_reset_tokens(user_id):
+    """Mark every still-unused reset token of ``user_id`` as used (e.g. after a password change).
+
+    Keyed by ``user_id`` only, so it also covers legacy plaintext rows (pre-F-29, still in the
+    table until they expire) and rows that were never presented to ``verify_password_reset_token``.
+    Call it in the SAME transaction as the password write; the caller commits. A reset token
+    created afterwards (``create_password_reset_token``) is unaffected and works normally.
+    """
+    PasswordReset.query.filter_by(user_id=user_id, is_used=False).update(
+        {"is_used": True}, synchronize_session=False
+    )
+
+
+def consume_password_reset_token(token, user_id):
+    """Atomically claim ``token`` (single use): ``UPDATE ... SET is_used = true WHERE is_used = false``.
+
+    Returns True only for the one caller whose UPDATE flips the row. Concurrent redeemers (or a
+    password change that already invalidated the row) get rowcount 0 -> False, because the
+    database re-evaluates the ``is_used`` predicate after the competing transaction commits
+    (PostgreSQL READ COMMITTED row lock; SQLite serialises writers). Does not commit: call it in
+    the same transaction as the password write so a failed claim can be rolled back with it.
+    """
+    result = db.session.execute(
+        update(PasswordReset)
+        .where(
+            PasswordReset.token == token,  # HashedResetToken hashes the bound raw value
+            PasswordReset.user_id == user_id,
+            PasswordReset.is_used.is_(False),
+        )
+        .values(is_used=True)
+        .execution_options(synchronize_session=False)
+    )
+    return result.rowcount == 1
+
 def verify_email_verification_token(token):
-    """Verify email verification token"""
+    """Verify email verification token (raw token in; lookup is by HMAC hash, F-29 follow-up)."""
+    # ``filter_by(token=token)`` binds the hashed value via HashedEmailVerificationToken.
     verification_token = EmailVerification.query.filter_by(token=token, is_used=False).first()
+    if (
+        verification_token is None
+        and legacy_plaintext_enabled()
+        and isinstance(token, str)
+        and token
+        and not token.startswith(_RESET_HASH_PREFIX)
+    ):
+        # Rows created before this change hold the plaintext token (<= 1 day lifetime).
+        # type_coerce bypasses the hashing type so the raw value is compared as stored.
+        legacy = EmailVerification.query.filter(
+            _sa_type_coerce(EmailVerification.token, _SAString()) == token,
+            EmailVerification.is_used.is_(False),
+        ).first()
+        if legacy is not None and tokens_equal(str(legacy.token), token):
+            verification_token = legacy
     
     if not verification_token:
         return None, "Invalid or expired token"
@@ -274,6 +379,97 @@ def log_user_action(user, action_type, target_type=None, target_id=None, metadat
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error logging user action: {str(e)}")
+
+_AUDIT_REDACT_KEY = re.compile(
+    r"(e[-_]?mail|phone|mobile|password|passwd|token|secret|otp|address|authorization|"
+    r"cookie|session|national|passport|card|iban)",
+    re.IGNORECASE,
+)
+_AUDIT_MAX_STR = 200
+_AUDIT_MAX_ITEMS = 25
+_AUDIT_MAX_DEPTH = 3
+_AUDIT_MAX_JSON = 4000
+
+
+def audit_safe_metadata(value, _depth=0):
+    """Bound and de-identify metadata before it enters the append-only audit table.
+
+    ``admin_audit_log`` rows can never be edited or deleted, so whatever lands
+    there stays for good. Raw request bodies / free text must therefore not be
+    stored unbounded: values under personal-data-looking keys are redacted,
+    strings are truncated, containers are capped in size and depth, and the whole
+    document is capped (replaced by a key list if still too large).
+    """
+    import json
+
+    if _depth == 0:
+        out = audit_safe_metadata(value, 1)
+        try:
+            if len(json.dumps(out, default=str)) > _AUDIT_MAX_JSON:
+                keys = sorted(out.keys()) if isinstance(out, dict) else []
+                return {"_truncated": True, "keys": [str(k)[:60] for k in keys[:_AUDIT_MAX_ITEMS]]}
+        except (TypeError, ValueError):
+            return {"_unserializable": True}
+        return out
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, str):
+        return value if len(value) <= _AUDIT_MAX_STR else value[:_AUDIT_MAX_STR] + "...[truncated]"
+    if _depth >= _AUDIT_MAX_DEPTH + 1:
+        return "[nested]"
+    if isinstance(value, dict):
+        cleaned = {}
+        for i, (k, v) in enumerate(value.items()):
+            if i >= _AUDIT_MAX_ITEMS:
+                cleaned["_more_keys"] = len(value) - _AUDIT_MAX_ITEMS
+                break
+            key = str(k)[:60]
+            cleaned[key] = "[redacted]" if _AUDIT_REDACT_KEY.search(key) else audit_safe_metadata(v, _depth + 1)
+        return cleaned
+    if isinstance(value, (list, tuple, set)):
+        items = list(value)
+        cleaned = [audit_safe_metadata(v, _depth + 1) for v in items[:_AUDIT_MAX_ITEMS]]
+        if len(items) > _AUDIT_MAX_ITEMS:
+            cleaned.append(f"[+{len(items) - _AUDIT_MAX_ITEMS} more]")
+        return cleaned
+    return str(value)[:_AUDIT_MAX_STR]
+
+
+def log_admin_action(admin_user, action_type, target_type=None, target_id=None, metadata=None):
+    """Record an administrator action (F-17).
+
+    Writes the durable, append-only ``AdminAuditLog`` row (survives deletion of
+    the admin / target user) and also the legacy ``UserAction`` row that
+    existing admin UI/tests read. Failures are logged, never raised.
+    """
+    try:
+        from .models import AdminAuditLog, UserAction
+
+        db.session.add(
+            AdminAuditLog(
+                admin_user_id=getattr(admin_user, "id", None),
+                admin_username=(getattr(admin_user, "username", None) or None),
+                action_type=action_type,
+                target_type=target_type,
+                target_id=target_id,
+                action_metadata=audit_safe_metadata(metadata) if metadata is not None else None,
+            )
+        )
+        if getattr(admin_user, "id", None) is not None:
+            db.session.add(
+                UserAction(
+                    user_id=admin_user.id,
+                    action_type=action_type,
+                    target_type=target_type,
+                    target_id=target_id,
+                    action_metadata=metadata,
+                )
+            )
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error logging admin action: {str(e)}")
+
 
 def validate_user_input(data, required_fields=None):
     """Validate user input data"""

@@ -55,7 +55,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
     final String yearStr = data['year'] != null ? data['year'].toString() : '';
     final String titleWithYear = yearStr.isNotEmpty
         ? '$title ($yearStr)'
-        : (title.isEmpty ? 'Your listing' : title);
+        : (title.isEmpty ? AppLocalizations.of(context)!.yourListingFallbackTitle : title);
 
     final bool fullPage = widget.fullPage;
     return Container(
@@ -175,7 +175,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.brandOrange,
+                      color: AppColors.accentText(context),
                     ),
                   ),
                 SizedBox(height: 16),
@@ -188,7 +188,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
                     fontWeight: FontWeight.bold,
                     height: 1.35,
                     leadingDistribution: TextLeadingDistribution.even,
-                    color: AppColors.brandOrange,
+                    color: AppColors.brandOrangeIcon,
                   ),
                 ),
                 SizedBox(height: 12),

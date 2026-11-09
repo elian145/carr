@@ -18,10 +18,12 @@ import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../shared/maps/dealer_map_coords.dart';
 import '../shared/maps/open_google_maps.dart';
+import '../shared/phone/tel_uri.dart';
 import '../shared/i18n/opening_hours_time_parse.dart';
 import '../shared/media/media_url.dart';
 import '../app/widgets/listing_network_image.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
+import '../shared/ui/app_text_scale.dart';
 import '../shared/ui/responsive.dart';
 import '../features/listing/listing_mappers.dart';
 import '../features/home/home_feed_client_sort.dart';
@@ -90,6 +92,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
       final data = await ApiService.getDealerProfile(widget.dealerPublicId);
       final dealerRaw = data['dealer'];
       final listingsRaw = data['listings'];
+      if (!mounted) return;
       setState(() {
         _dealer = dealerRaw is Map
             ? Map<String, dynamic>.from(dealerRaw.cast<String, dynamic>())
@@ -99,6 +102,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
             : <Map<String, dynamic>>[];
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = userErrorText(
           context,
@@ -342,7 +346,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                               const SizedBox(height: 14),
                               OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.brandOrange,
+                                  foregroundColor: AppColors.accentText(context),
                                   side: BorderSide(
                                     color: AppColors.brandOrange.withValues(alpha: 0.45),
                                   ),
@@ -477,6 +481,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                             ListingLayoutPrefs.gridChildAspectRatioForWidth(
                                               listingColumns,
                                               screenWidth,
+                                              textScale: appTextScaleOf(context),
                                             ),
                                         crossAxisSpacing: 8,
                                         mainAxisSpacing: 16,

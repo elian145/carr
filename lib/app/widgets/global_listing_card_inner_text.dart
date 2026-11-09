@@ -24,6 +24,7 @@ class _ListingPriceBadgeStyle {
 _ListingPriceBadgeStyle _listingPriceBadgeStyle({
   required double rowWidth,
   required bool hasPrice,
+  double textScale = 1.0,
 }) {
   // Only shrink on very narrow tiles; otherwise keep the fuller pill size.
   final double tight = rowWidth < 130 ? 0.0 : 1.0;
@@ -31,9 +32,11 @@ _ListingPriceBadgeStyle _listingPriceBadgeStyle({
   final double fontSize = hasPrice ? 14.0 + 1.0 * tight : 11.0 + 1.0 * tight;
   final double horizontalPadding =
       hasPrice ? 7.0 + 1.0 * tight : 5.5 + 1.0 * tight;
-  final double badgeHeight = 24.0 + 2.0 * tight;
+  // The pill height is fixed so Roboto vs SF Pro metrics cannot change it,
+  // but it grows with the system text scale so scaled prices are not clipped.
+  final double badgeHeight = (24.0 + 2.0 * tight) * textScale;
   final double radius = 7.0 + 0.5 * tight;
-  final double footerHeight = 26.0 + 2.0 * tight;
+  final double footerHeight = (26.0 + 2.0 * tight) * textScale;
 
   return _ListingPriceBadgeStyle(
     fontSize: fontSize,
@@ -106,6 +109,9 @@ Widget _buildGridCarCardInnerText(
 }) {
   // Grid tiles: brand logo + title, trim, year/price, mileage/city.
   final bool compact = AppResponsive.isCompactPhone(context);
+  // System text scale (1.0..2.0, see SystemDisplayLock). Text inherits it;
+  // the fixed-height slots below grow by the same factor.
+  final double ts = appTextScaleOf(context);
   // Fixed title metrics so the brand logo sits at the same spot on every card.
   // 1.28 line height keeps Arabic/Kurdish descenders from clipping in the
   // fixed two-line slot (1.12 was too tight with forceStrutHeight).
@@ -115,7 +121,7 @@ Widget _buildGridCarCardInnerText(
   const double logoSize = 24;
   const double logoPad = 4.0;
   const double logoTitleGap = 6.0;
-  final double titleLineBoxHeight = titleFontSize * titleLineHeight;
+  final double titleLineBoxHeight = titleFontSize * titleLineHeight * ts;
   // +2px slack covers font metric rounding on the second line.
   final double reservedTitleHeight = titleLineBoxHeight * titleMaxLines + 2;
   final double sectionGap = compact ? 3.0 : 4.0;
@@ -134,7 +140,7 @@ Widget _buildGridCarCardInnerText(
   final textDirection = isRtl ? TextDirection.rtl : TextDirection.ltr;
   final double leadingShift = isRtl ? 6 : -6;
   final double trailingShift = isRtl ? -4 : 4;
-  const Color priceAccent = Color(0xFFFF5A00);
+  const Color priceAccent = AppColors.brandOrangeStrong;
 
   /// Spec chip that always hugs its label. Do not put a FittedBox inside a
   /// Flexible — that expands the pill to the flex share while shrinking text,
@@ -157,7 +163,6 @@ Widget _buildGridCarCardInnerText(
         value,
         textDirection: textDirection,
         textAlign: TextAlign.start,
-        textScaler: const TextScaler.linear(1.0),
         maxLines: 1,
         softWrap: false,
         overflow: TextOverflow.visible,
@@ -183,7 +188,7 @@ Widget _buildGridCarCardInnerText(
     final double iconGap = compact ? 3.0 : 3.5;
     final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
     final double chipFont = compact ? 11.0 : 13.0;
-    final double chipHeight = chipFont + (compact ? 10.0 : 12.0);
+    final double chipHeight = chipFont * ts + (compact ? 10.0 : 12.0);
     const TextDirection chipDir = TextDirection.ltr;
 
     return Container(
@@ -222,7 +227,6 @@ Widget _buildGridCarCardInnerText(
             value,
             textDirection: chipDir,
             textAlign: TextAlign.left,
-            textScaler: const TextScaler.linear(1.0),
             maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.visible,
@@ -239,7 +243,7 @@ Widget _buildGridCarCardInnerText(
     );
   }
 
-  double _yearMileageChipWidth(String value, double fontSize) {
+  double yearMileageChipWidth(String value, double fontSize) {
     final double iconSize = (fontSize * 0.92).clamp(10.0, 14.0);
     final double iconGap = compact ? 3.0 : 3.5;
     final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
@@ -254,7 +258,7 @@ Widget _buildGridCarCardInnerText(
         ),
       ),
       textDirection: TextDirection.ltr,
-      textScaler: TextScaler.noScaling,
+      textScaler: TextScaler.linear(ts),
       maxLines: 1,
     )..layout(minWidth: 0, maxWidth: double.infinity);
     final textW = painter.width;
@@ -288,16 +292,16 @@ Widget _buildGridCarCardInnerText(
 
         double mileageWidthForSizing(double fontSize) {
           if (mileageDisplay.isEmpty) return 0;
-          final actual = _yearMileageChipWidth(mileageDisplay, fontSize);
+          final actual = yearMileageChipWidth(mileageDisplay, fontSize);
           final reference =
-              _yearMileageChipWidth(referenceMileageDisplay, fontSize);
+              yearMileageChipWidth(referenceMileageDisplay, fontSize);
           return actual > reference ? actual : reference;
         }
 
         double rowWidthAt(double fontSize) {
           double total = 0;
           if (yearDisplay.isNotEmpty) {
-            total += _yearMileageChipWidth(yearDisplay, fontSize);
+            total += yearMileageChipWidth(yearDisplay, fontSize);
           }
           if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty) {
             total += gap;
@@ -311,13 +315,13 @@ Widget _buildGridCarCardInnerText(
         double paintedRowWidthAt(double fontSize) {
           double total = 0;
           if (yearDisplay.isNotEmpty) {
-            total += _yearMileageChipWidth(yearDisplay, fontSize);
+            total += yearMileageChipWidth(yearDisplay, fontSize);
           }
           if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty) {
             total += gap;
           }
           if (mileageDisplay.isNotEmpty) {
-            total += _yearMileageChipWidth(mileageDisplay, fontSize);
+            total += yearMileageChipWidth(mileageDisplay, fontSize);
           }
           return total;
         }
@@ -440,7 +444,6 @@ Widget _buildGridCarCardInnerText(
             child: Text(
               titleText,
               textDirection: textDirection,
-              textScaler: TextScaler.noScaling,
               textAlign: isRtl ? TextAlign.right : TextAlign.left,
               style: titleStyle,
               strutStyle: titleStrut,
@@ -512,6 +515,7 @@ Widget _buildGridCarCardInnerText(
       final priceStyle = _listingPriceBadgeStyle(
         rowWidth: constraints.maxWidth,
         hasPrice: hasPrice,
+        textScale: ts,
       );
       // Long prices need most of the footer; city can scale down.
       final double maxPriceWidth =
@@ -530,7 +534,7 @@ Widget _buildGridCarCardInnerText(
       final pricePainter = TextPainter(
         text: TextSpan(text: priceText, style: priceTextStyle),
         textDirection: TextDirection.ltr,
-        textScaler: TextScaler.noScaling,
+        textScaler: TextScaler.linear(ts),
         maxLines: 1,
       )..layout(minWidth: 0, maxWidth: double.infinity);
       final priceTextW = pricePainter.width;
@@ -542,7 +546,6 @@ Widget _buildGridCarCardInnerText(
       final Widget priceLabel = Text(
         priceText,
         textDirection: TextDirection.ltr,
-        textScaler: const TextScaler.linear(1.0),
         maxLines: 1,
         softWrap: false,
         overflow: TextOverflow.visible,
@@ -598,7 +601,6 @@ Widget _buildGridCarCardInnerText(
                         Text(
                           cityLine,
                           textDirection: textDirection,
-                          textScaler: const TextScaler.linear(1.0),
                           maxLines: 1,
                           softWrap: false,
                           overflow: TextOverflow.visible,
@@ -653,8 +655,10 @@ Widget _buildListCarCardInnerText(
 }) {
   final bool isLight = Theme.of(context).brightness == Brightness.light;
   final bool compact = AppResponsive.isCompactPhone(context);
+  // System text scale (1.0..2.0); fixed-height slots grow with it.
+  final double ts = appTextScaleOf(context);
   final double chipFontSize = compact ? 11.0 : 13.0;
-  final double sharedChipHeight = chipFontSize + (compact ? 10.0 : 12.0);
+  final double sharedChipHeight = chipFontSize * ts + (compact ? 10.0 : 12.0);
   final inheritedTextDirection = Directionality.of(context);
   final languageCode = Localizations.localeOf(context).languageCode;
   final bool isRtl =
@@ -673,7 +677,7 @@ Widget _buildListCarCardInnerText(
   final String yearText = yearDisplay.isNotEmpty ? yearDisplay : '—';
   final String mileageText = mileageDisplay.isNotEmpty ? mileageDisplay : '—';
   final String cityText = cityLine.isNotEmpty ? cityLine : '—';
-  const Color priceAccent = Color(0xFFFF5A00);
+  const Color priceAccent = AppColors.brandOrangeStrong;
   final bool showLogo =
       car['brand'] != null && car['brand'].toString().trim().isNotEmpty;
 
@@ -708,7 +712,6 @@ Widget _buildListCarCardInnerText(
         child: Text(
           titleText,
           textDirection: textDirection,
-          textScaler: TextScaler.noScaling,
           textAlign: isRtl ? TextAlign.right : TextAlign.left,
           style: TextStyle(
             fontWeight: FontWeight.w800,
@@ -746,7 +749,7 @@ Widget _buildListCarCardInnerText(
     final pricePainter = TextPainter(
       text: TextSpan(text: priceText, style: textStyle),
       textDirection: TextDirection.ltr,
-      textScaler: TextScaler.noScaling,
+      textScaler: TextScaler.linear(ts),
       maxLines: 1,
     )..layout(minWidth: 0, maxWidth: double.infinity);
     final priceTextW = pricePainter.width;
@@ -754,12 +757,11 @@ Widget _buildListCarCardInnerText(
     final priceNeeded = priceTextW + style.horizontalPadding * 2;
     final bool bounded =
         maxWidth != null && maxWidth.isFinite && maxWidth > 0;
-    final bool priceNeedsShrink = bounded && priceNeeded > maxWidth!;
+    final bool priceNeedsShrink = bounded && priceNeeded > maxWidth;
 
     final label = Text(
       priceText,
       textDirection: TextDirection.ltr,
-      textScaler: const TextScaler.linear(1.0),
       maxLines: 1,
       softWrap: false,
       overflow: TextOverflow.visible,
@@ -847,7 +849,6 @@ Widget _buildListCarCardInnerText(
             value,
             textDirection: chipDir,
             textAlign: TextAlign.left,
-            textScaler: const TextScaler.linear(1.0),
             maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.visible,
@@ -864,7 +865,7 @@ Widget _buildListCarCardInnerText(
     );
   }
 
-  double _yearMileageChipWidth(String value, double fontSize) {
+  double yearMileageChipWidth(String value, double fontSize) {
     final double iconSize = (fontSize * 0.92).clamp(10.0, 14.0);
     final double iconGap = compact ? 3.0 : 3.5;
     final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
@@ -879,7 +880,7 @@ Widget _buildListCarCardInnerText(
         ),
       ),
       textDirection: TextDirection.ltr,
-      textScaler: TextScaler.noScaling,
+      textScaler: TextScaler.linear(ts),
       maxLines: 1,
     )..layout(minWidth: 0, maxWidth: double.infinity);
     final textW = painter.width;
@@ -904,14 +905,14 @@ Widget _buildListCarCardInnerText(
           '${localizeDigits(context, decimalFormatterForLocale(context).format(999999))} $mileageUnit';
 
       double mileageWidthForSizing(double fontSize) {
-        final actual = _yearMileageChipWidth(mileageText, fontSize);
+        final actual = yearMileageChipWidth(mileageText, fontSize);
         final reference =
-            _yearMileageChipWidth(referenceMileageDisplay, fontSize);
+            yearMileageChipWidth(referenceMileageDisplay, fontSize);
         return actual > reference ? actual : reference;
       }
 
       double rowWidthAt(double fontSize) {
-        return _yearMileageChipWidth(yearText, fontSize) +
+        return yearMileageChipWidth(yearText, fontSize) +
             gap +
             mileageWidthForSizing(fontSize);
       }
@@ -971,7 +972,6 @@ Widget _buildListCarCardInnerText(
     return Text(
       value,
       textDirection: textDirection,
-      textScaler: const TextScaler.linear(1.0),
       maxLines: 1,
       softWrap: false,
       overflow: TextOverflow.visible,
@@ -1020,6 +1020,7 @@ Widget _buildListCarCardInnerText(
       final priceStyle = _listingPriceBadgeStyle(
         rowWidth: constraints.maxWidth,
         hasPrice: hasPrice,
+        textScale: ts,
       );
       final double maxPriceWidth =
           constraints.maxWidth * (hasPrice ? 0.72 : 0.52);
@@ -1047,7 +1048,6 @@ Widget _buildListCarCardInnerText(
                     Text(
                       cityText,
                       textDirection: textDirection,
-                      textScaler: const TextScaler.linear(1.0),
                       maxLines: 1,
                       softWrap: false,
                       overflow: TextOverflow.ellipsis,
@@ -1097,7 +1097,7 @@ Widget _buildListCarCardInnerText(
               ),
               maxLines: 1,
               textDirection: textDirection,
-              textScaler: TextScaler.noScaling,
+              textScaler: TextScaler.linear(ts),
             )..layout(maxWidth: availableTitleWidth);
             final singleLine = !titleProbe.didExceedMaxLines;
 
@@ -1264,7 +1264,7 @@ class _ListingCardFavoriteButtonState
         icon: Icon(
           _isFavorite ? Icons.favorite : Icons.favorite_border,
           size: 20,
-          color: _isFavorite ? AppColors.brandOrange : widget.idleColor,
+          color: _isFavorite ? AppColors.brandOrangeIcon : widget.idleColor,
         ),
       ),
     );

@@ -41,7 +41,10 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
     return [selected, ...rest];
   }
 
-  static const double _searchBrandRowHeight = 92;
+  /// Brand grid row height: 92 dp at text scale 1.0, taller for larger system
+  /// text (see [BrandTileLabel.rowHeightFor]).
+  static double _searchBrandRowHeight(BuildContext context) =>
+      BrandTileLabel.rowHeightFor(appTextScaleOf(context));
   static const double _searchBrandTileWidth = 72;
   static const double _searchBrandGridSpacing = 10;
   static const int _searchBrandExpandedVisibleRows = 4;
@@ -140,7 +143,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
             const SizedBox(height: 8),
             BrandTileLabel(
               display,
-              color: selected ? _searchAccent : labelColor,
+              color: selected ? AppColors.accentTextOnTint(context) : labelColor,
             ),
           ],
         ),
@@ -196,7 +199,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
                 builder: (context, constraints) {
                   final crossAxisCount =
                       _searchBrandGridCrossAxisCount(constraints.maxWidth);
-                  final expandedHeight = _searchBrandRowHeight *
+                  final expandedHeight = _searchBrandRowHeight(context) *
                           _searchBrandExpandedVisibleRows +
                       _searchBrandGridSpacing *
                           (_searchBrandExpandedVisibleRows - 1);
@@ -208,7 +211,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
                         crossAxisCount: crossAxisCount,
                         mainAxisSpacing: _searchBrandGridSpacing,
                         crossAxisSpacing: _searchBrandGridSpacing,
-                        mainAxisExtent: _searchBrandRowHeight,
+                        mainAxisExtent: _searchBrandRowHeight(context),
                       ),
                       itemCount: homeBrands.length + 1,
                       itemBuilder: (context, index) {
@@ -244,11 +247,11 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
               )
             else
               SizedBox(
-                height: _searchBrandRowHeight,
+                height: _searchBrandRowHeight(context),
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: collapsedBrands.length + 1,
-                  separatorBuilder: (_, __) =>
+                  separatorBuilder: (_, _) =>
                       const SizedBox(width: _searchBrandGridSpacing),
                   itemBuilder: (context, index) {
                     if (index == 0) {

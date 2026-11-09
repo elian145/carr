@@ -30,6 +30,7 @@ import 'dart:io';
 import 'package:car_listing_app/features/sell/pending_sell_submission_service.dart';
 import 'package:car_listing_app/features/sell/sell_server_transcode_video.dart';
 import 'package:car_listing_app/services/api_service.dart';
+import 'package:car_listing_app/services/auth_service.dart';
 import 'package:car_listing_app/shared/auth/token_store.dart';
 import 'package:car_listing_app/shared/prefs/sell_submission_state_prefs.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -118,6 +119,31 @@ void main() {
     f.writeAsBytesSync(List<int>.filled(bytes, 0x5));
     return f.path;
   }
+
+  /// Waits for [condition] instead of sleeping a fixed time. A fixed sleep is
+  /// only a guess at how long the submission pipeline (disk I/O, several
+  /// awaits) needs, and it failed (`Expected: <1> Actual: <0>`) when the whole
+  /// suite ran in parallel on a loaded machine. Fails loudly on timeout.
+  Future<void> waitUntil(
+    bool Function() condition, {
+    String reason = 'condition',
+    Duration timeout = const Duration(seconds: 15),
+  }) async {
+    final sw = Stopwatch()..start();
+    while (!condition()) {
+      if (sw.elapsed > timeout) {
+        fail('timed out after $timeout waiting for: $reason');
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+  }
+
+  /// Time for a second, overlapping call to get past its own durable-record
+  /// preparation (real disk I/O) and reach the per-draft dedup. Safe to make
+  /// generous: the test's gate keeps the first worker in flight, so waiting
+  /// longer can never turn a failing scenario into a passing one.
+  Future<void> letSecondCallRegister() =>
+      Future<void>.delayed(const Duration(milliseconds: 250));
 
   Future<void> seedRecord(SellSubmissionRecord record) =>
       SellSubmissionStatePrefs.upsert(record);
@@ -376,10 +402,12 @@ void main() {
       accessToken: 'test_access_token',
       refreshToken: 'test_refresh_token',
     );
+    await AuthService().adoptTestSession(user: {'id': 'sell_test_owner'});
   });
 
   tearDown(() async {
     await ApiService.clearTokens();
+    AuthService().resetTestSession();
     ApiService.testHttpClient = null;
     TokenStore.testMode = false;
     TokenStore.resetForTests();
@@ -497,6 +525,7 @@ void main() {
             status: SellSubmissionStatus.inProgress,
             carId: carId,
             carData: carData,
+            ownerUserId: 'sell_test_owner',
             idempotencyKey: 'sell-create-$draftId',
             createdAt: now,
             updatedAt: now,
@@ -573,6 +602,7 @@ void main() {
             status: SellSubmissionStatus.inProgress,
             carId: carId,
             carData: carData,
+            ownerUserId: 'sell_test_owner',
             idempotencyKey: 'sell-create-$draftId',
             createdAt: now,
             updatedAt: now,
@@ -601,7 +631,10 @@ void main() {
         // guarantees no false pass: call 1 CANNOT complete finalize until
         // the test explicitly completes `gate` below, no matter how long
         // this waits.
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await waitUntil(
+          () => finalizeCallsLog.length == 1,
+          reason: 'first resumeAll() trigger to reach the gated finalize call',
+        );
         expect(
           finalizeCallsLog.length,
           1,
@@ -612,7 +645,7 @@ void main() {
         // Second "reopen" trigger, fired while the first is still
         // genuinely in flight.
         final f2 = PendingSellSubmissionService.instance.resumeAll();
-        await Future<void>.delayed(const Duration(milliseconds: 20));
+        await letSecondCallRegister();
 
         // Release the gate and let both futures resolve.
         gate.complete();
@@ -665,14 +698,17 @@ void main() {
           draftId: draftId,
           carData: carData,
         );
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await waitUntil(
+          () => finalizeCallsLog.length == 1,
+          reason: 'first submit() to reach the gated finalize call',
+        );
         expect(finalizeCallsLog.length, 1);
 
         final f2 = PendingSellSubmissionService.instance.submit(
           draftId: draftId,
           carData: carData,
         );
-        await Future<void>.delayed(const Duration(milliseconds: 20));
+        await letSecondCallRegister();
 
         gate.complete();
         final results = await Future.wait([f1, f2]);

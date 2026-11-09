@@ -54,8 +54,8 @@ This cannot be fixed by editing code; it must be done in Google Cloud Console /
 Firebase Console by whoever owns the `carzo-prod` project.
 
 **Current state:** `android/app/src/{dev,stage,prod}/google-services.json` register
-three separate Android apps (`com.carzo.app`, `com.carzo.app.dev`,
-`com.carzo.app.stage`) inside one Firebase project, but all three currently
+separate Android apps (production `com.carnetiq.app`, legacy `com.carzo.app`,
+`com.carzo.app.dev`, `com.carzo.app.stage`) inside one Firebase project, but they currently
 share the exact same **unrestricted** API key. An unrestricted key extracted
 from a `.dev` or `.stage` APK (trivial via `apktool`/`strings`) can be reused
 against the `prod` app's package name, or against unrelated Google APIs

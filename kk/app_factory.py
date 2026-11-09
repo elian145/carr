@@ -17,6 +17,12 @@ from .logging_utils import configure_logging, install_api_error_handlers, instal
 from .monitoring import init_monitoring
 from .routes import register_blueprints
 from .routes.auth import init_jwt_callbacks
+from .socketio_deploy import (
+    resolve_json_max_content_length,
+    resolve_socketio_max_http_buffer_size,
+)
+from .realtime_limits import load_limits
+from .socket_edge_guard import install_socket_edge_guard, load_edge_config
 from .socketio_handlers import register_socketio_handlers
 
 
@@ -126,6 +132,43 @@ def _parse_cors_origins() -> list[str]:
         return []
     return [o.strip() for o in raw.split(",") if o.strip()]
 
+def _install_json_body_cap(app: Flask) -> None:
+    """C-1: cap ``application/json`` request bodies.
+
+    ``MAX_CONTENT_LENGTH`` (250 MB by default) exists for photo/video uploads,
+    but it also applied to every JSON endpoint, where Flask buffers the whole
+    body in memory: a few concurrent large JSON posts could exhaust a worker's
+    RAM. Multipart/binary uploads are untouched (they keep their own limits).
+    """
+    from flask import jsonify, request
+
+    limit = resolve_json_max_content_length(os.environ.get("JSON_MAX_CONTENT_LENGTH"))
+    app.config["JSON_MAX_CONTENT_LENGTH"] = limit
+
+    @app.before_request
+    def _cap_json_body():
+        if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
+            return None
+        mimetype = (request.mimetype or "").lower()
+        if mimetype != "application/json" and not mimetype.endswith("+json"):
+            return None
+        length = request.content_length
+        if length is not None and length > limit:
+            return (
+                jsonify(
+                    {
+                        "message": "Request body too large",
+                        "code": "payload_too_large",
+                        "max_bytes": limit,
+                    }
+                ),
+                413,
+            )
+        # Chunked bodies carry no Content-Length: enforce while reading.
+        request.max_content_length = limit
+        return None
+
+
 def _socketio_async_mode(env_name: str, has_message_queue: bool) -> str | None:
     """
     Socket.IO async mode selection.
@@ -136,10 +179,14 @@ def _socketio_async_mode(env_name: str, has_message_queue: bool) -> str | None:
     ``eventlet.monkey_patch()`` after Flask/Werkzeug are imported, which causes
     LocalProxy / RLock errors, worker hangs, and Render 502s.
 
-    Break-glass only (not recommended; eventlet is deprecated):
+    Break-glass only (not recommended):
       SOCKETIO_ALLOW_EVENTLET=1
-      SOCKETIO_ASYNC_MODE=eventlet  (or gevent)
+      SOCKETIO_ASYNC_MODE=gevent
       REDIS_URL / SOCKETIO_MESSAGE_QUEUE
+
+    ``eventlet`` is no longer selectable: Gunicorn >= 26 removed its worker and
+    the package is not installed, so a request for it always yields
+    ``threading`` (matching ``gunicorn.conf.py``, which then runs gthread).
     """
     raw = (os.environ.get("SOCKETIO_ASYNC_MODE") or "").strip().lower()
     allow_eventlet = (os.environ.get("SOCKETIO_ALLOW_EVENTLET") or "").strip().lower() in (
@@ -147,7 +194,9 @@ def _socketio_async_mode(env_name: str, has_message_queue: bool) -> str | None:
         "true",
         "yes",
     )
-    if raw in ("eventlet", "gevent"):
+    if raw == "eventlet":
+        return "threading"
+    if raw == "gevent":
         if allow_eventlet and has_message_queue:
             return raw
         return "threading"
@@ -233,6 +282,11 @@ def create_app():
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = _access_token_expires()
     app.config["JWT_REFRESH_TOKEN_EXPIRES"] = _refresh_token_expires()
     validate_required_secrets(env_name)
+    # F-19: reject a malformed/partial ADMIN_JWT_* configuration before any
+    # DB/migration work (no-op when the env vars are unset).
+    from .admin_tokens import validate_admin_token_config
+
+    validate_admin_token_config()
 
     configure_logging(app)
     install_request_id_and_access_log(app)
@@ -352,6 +406,10 @@ def create_app():
     cors_origins = _parse_cors_origins()
     sio_mq = _socketio_message_queue_url(env_name)
     sio_async = _socketio_async_mode(env_name, has_message_queue=bool(sio_mq))
+    # C-1: bound a single Socket.IO message (engine.io default is 1 MB).
+    sio_max_buffer = resolve_socketio_max_http_buffer_size(
+        os.environ.get("SOCKETIO_MAX_HTTP_BUFFER_SIZE")
+    )
     if env_name == "production":
         # When running behind a reverse proxy (Cloudflare/Nginx/etc), trust one hop of
         # X-Forwarded-* so URL generation, request.remote_addr, and scheme work correctly.
@@ -362,6 +420,7 @@ def create_app():
             cors_allowed_origins=cors_origins,
             message_queue=sio_mq,
             async_mode=sio_async,
+            max_http_buffer_size=sio_max_buffer,
         )
         if not sio_mq:
             workers = _detect_worker_count()
@@ -380,8 +439,18 @@ def create_app():
             cors_allowed_origins=cors_origins or "*",
             message_queue=sio_mq,
             async_mode=sio_async,
+            max_http_buffer_size=sio_max_buffer,
         )
         CORS(app, origins=cors_origins or "*")
+
+    # C-1: WSGI edge guard (thread ceiling, no anonymous sessions, orphan reaper).
+    # Installed last so it is the OUTERMOST wrapper (it must see raw requests
+    # before Engine.IO pins a worker thread).
+    install_socket_edge_guard(
+        app,
+        socketio,
+        load_edge_config(max_total=load_limits().max_total),
+    )
 
     # If the SQLite DB file is brand new, it has no tables and the API will 500.
     # In development/testing, auto-create tables to make local boot reliable.
@@ -525,6 +594,11 @@ def create_app():
     )
 
     init_jwt_callbacks(jwt)
+    # F-19: admin-scoped (ES256) token verification hook. No-op unless the
+    # ADMIN_JWT_* env vars are set, so legacy HS256 behaviour is unchanged.
+    from .admin_tokens import init_admin_tokens
+
+    init_admin_tokens(app, jwt)
     register_blueprints(app)
     register_socketio_handlers(socketio)
 
@@ -534,6 +608,8 @@ def create_app():
         log_fcm_startup_status()
     except Exception:
         pass
+
+    _install_json_body_cap(app)
 
     @app.after_request
     def _security_headers(response):

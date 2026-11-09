@@ -81,6 +81,6 @@ Manual on device:
 ## Store Submission Blockers
 
 - Do not submit until Android App Links return 200 for `assetlinks.json`.
-- Do not submit until Android Firebase prod config is present and targets `com.carzo.app`.
+- Do not submit until Android Firebase prod config is present and targets the Android production package `com.carnetiq.app`.
 - Do not submit until privacy policy and support URLs are live.
 - Do not submit until at least one physical Android device and one physical iPhone/TestFlight run pass this checklist.

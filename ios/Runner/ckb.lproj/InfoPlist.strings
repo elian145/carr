@@ -1,0 +1,5 @@
+/* Permission prompts shown by iOS (Sorani Kurdish). Keep keys in sync with Info.plist and the other *.lproj files. Needs native-speaker review. */
+"NSCameraUsageDescription" = "دەستگەیشتن بە کامێرا پێویستە بۆ گرتنی وێنەی ئۆتۆمبێل و ناردنی وێنە لە چاتدا.";
+"NSPhotoLibraryUsageDescription" = "دەستگەیشتن بە کتێبخانەی وێنە پێویستە بۆ هەڵبژاردنی وێنەی ئۆتۆمبێل.";
+"NSPhotoLibraryAddUsageDescription" = "مۆڵەتمان پێویستە بۆ پاشەکەوتکردنی وێنەی ئۆتۆمبێل.";
+"NSMicrophoneUsageDescription" = "دەستگەیشتن بە مایکرۆفۆن پێویستە بۆ نامەی دەنگی لە چاتدا و تۆمارکردنی ڤیدیۆ لەکاتی زیادکردنی ڕیکلام.";

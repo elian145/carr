@@ -50,9 +50,9 @@ mixin _ChatConversationPageBuildBodyComposer
       if (_otherUserTypingName != null && _otherUserTypingName!.isNotEmpty)
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-          alignment: Alignment.centerLeft,
+          alignment: AlignmentDirectional.centerStart,
           child: Text(
-            '${_otherUserTypingName!} is typing...',
+            AppLocalizations.of(context)!.chatUserTyping(_otherUserTypingName!),
             style: TextStyle(
               fontStyle: FontStyle.italic,
               fontSize: 12,

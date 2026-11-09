@@ -1,6 +1,6 @@
 part of 'edit_dealer_page.dart';
 
-const Color _editDealerAccent = AppColors.brandOrange;
+const Color _editDealerAccent = AppColors.brandOrangeIcon;
 const int _editDealerMaxPhones = 5;
 const int _editDealerMaxEmails = 5;
 

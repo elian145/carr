@@ -75,9 +75,9 @@ mixin _ProfilePageBodyAccount on _ProfilePageBodyGuest {
               height: 88,
               fit: BoxFit.cover,
               errorWidget:
-                  const Icon(Icons.person, size: 48, color: AppColors.brandOrange),
+                  const Icon(Icons.person, size: 48, color: AppColors.brandOrangeIcon),
             )
-          : const Icon(Icons.person, size: 48, color: AppColors.brandOrange),
+          : const Icon(Icons.person, size: 48, color: AppColors.brandOrangeIcon),
     );
     final name = Text(
       displayName,
@@ -182,7 +182,7 @@ mixin _ProfilePageBodyAccount on _ProfilePageBodyGuest {
             ? SizedBox(
                 height: 172,
                 child: Align(
-                  alignment: Alignment.bottomLeft,
+                  alignment: AlignmentDirectional.bottomStart,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -196,7 +196,7 @@ mixin _ProfilePageBodyAccount on _ProfilePageBodyGuest {
                             name,
                             const SizedBox(height: 8),
                             Align(
-                              alignment: Alignment.centerLeft,
+                              alignment: AlignmentDirectional.centerStart,
                               child: statusBadge,
                             ),
                           ],

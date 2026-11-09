@@ -1,5 +1,13 @@
 /**
- * Edge-compatible HS256 verification for Flask-JWT-Extended access tokens.
+ * Edge-compatible verification for Flask-JWT-Extended access tokens.
+ *
+ * Two signature schemes (F-19):
+ *  - ES256 (preferred): admin-scoped tokens signed by the API with a private key
+ *    that admin-web never sees. admin-web verifies with ADMIN_JWT_PUBLIC_KEY, so
+ *    compromising admin-web cannot mint any token.
+ *  - HS256 (legacy): needs the API's shared JWT_SECRET_KEY on the admin service
+ *    (the weakness F-19 removes). Only used while a deployment still configures
+ *    that secret; remove it from the admin service after the staged migration.
  */
 
 function b64urlToBytes(input: string): Uint8Array {
@@ -19,20 +27,96 @@ function decodeJsonPart<T>(part: string): T | null {
   }
 }
 
+const ES256_SIGNATURE_BYTES = 64; // JWS ES256 = raw r||s (IEEE P1363), 32+32
+
+const publicKeyCache = new Map<string, Promise<CryptoKey | null>>();
+
+/** Accepts a PEM (real or with literal `\\n`) or bare base64 SPKI. */
+function spkiBytesFromPem(pem: string): Uint8Array | null {
+  const body = (pem || "")
+    .replace(/\\[rn]/g, "")
+    .replace(/-----BEGIN [A-Z ]+-----/g, "")
+    .replace(/-----END [A-Z ]+-----/g, "")
+    .replace(/\s+/g, "");
+  if (!body) return null;
+  try {
+    const raw = atob(body.replace(/-/g, "+").replace(/_/g, "/"));
+    const out = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i += 1) out[i] = raw.charCodeAt(i);
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+function importAdminPublicKey(pem: string): Promise<CryptoKey | null> {
+  let cached = publicKeyCache.get(pem);
+  if (!cached) {
+    const der = spkiBytesFromPem(pem);
+    cached = der
+      ? crypto.subtle
+          .importKey(
+            "spki",
+            der as unknown as BufferSource,
+            { name: "ECDSA", namedCurve: "P-256" },
+            false,
+            ["verify"],
+          )
+          .catch(() => null)
+      : Promise.resolve(null);
+    publicKeyCache.set(pem, cached);
+  }
+  return cached;
+}
+
+/**
+ * Public (non-secret) defaults for the `iss` / `aud` of admin-signed ES256
+ * tokens. They MUST equal the API's `ADMIN_JWT_ISSUER` / `ADMIN_JWT_AUDIENCE`
+ * defaults (kk/config.py); override both services identically via env.
+ */
+export const ADMIN_JWT_DEFAULT_ISSUER = "carnet-api";
+export const ADMIN_JWT_DEFAULT_AUDIENCE = "carnet-admin-web";
+
+function audienceMatches(claim: unknown, expected: string): boolean {
+  if (typeof claim === "string") return claim === expected;
+  if (Array.isArray(claim)) {
+    return claim.some((a) => typeof a === "string" && a === expected);
+  }
+  return false;
+}
+
 export type AdminJwtCheck =
   | { ok: true; sub: string }
   | { ok: false; reason: string };
 
 /**
  * Verify an admin access JWT.
- * When `secret` is set, signature must match (HS256).
- * When `secret` is empty, only structure + exp are checked (dev fallback).
+ *  - alg ES256: signature MUST verify against `publicKey` (ADMIN_JWT_PUBLIC_KEY);
+ *    without a configured public key the token is rejected (never trusted
+ *    unverified) and the token must carry `account_scope=admin`.
+ *  - alg HS256 (legacy): when `secret` is set the signature must match. When
+ *    `secret` is empty AND no `publicKey` is configured the token is rejected
+ *    ("unverifiable") unless `options.allowUnsignedDev` is true (explicit
+ *    non-production dev opt-in; F-32). When a
+ *    `publicKey` is configured but `secret` is empty (the post-migration state)
+ *    HS256 tokens are rejected: admin-web cannot verify them.
  * Requires `is_admin` / `account_scope=admin` claim so a normal user JWT
  * cannot pass the admin edge gate.
+ * ES256 (admin-signed) tokens must additionally carry `iss` equal to
+ * `options.issuer` and `aud` containing `options.audience` (defaults above);
+ * a missing or different value is rejected. Legacy HS256 tokens are minted by
+ * flask-jwt-extended without `iss`/`aud`, so the legacy path cannot require
+ * them (it disappears with the F-19 migration).
  */
 export async function verifyAdminAccessJwt(
   token: string,
   secret: string,
+  publicKey: string = "",
+  options: {
+    allowUnsignedDev?: boolean;
+    issuer?: string;
+    audience?: string;
+  } = {},
 ): Promise<AdminJwtCheck> {
   const trimmed = (token || "").trim();
   if (!trimmed) return { ok: false, reason: "empty" };
@@ -46,17 +130,24 @@ export async function verifyAdminAccessJwt(
     exp?: number;
     sub?: string;
     type?: string;
+    iss?: unknown;
+    aud?: unknown;
     is_admin?: boolean;
     account_scope?: string;
   }>(payloadB64);
   if (!header || !payload) return { ok: false, reason: "decode" };
-  if ((header.alg || "HS256") !== "HS256") {
+  const alg = header.alg || "HS256";
+  if (alg !== "HS256" && alg !== "ES256") {
     return { ok: false, reason: "alg" };
   }
   if (payload.type && payload.type !== "access") {
     return { ok: false, reason: "type" };
   }
-  if (typeof payload.exp === "number" && payload.exp * 1000 <= Date.now()) {
+  // F-32: a token without a numeric `exp` would never expire; reject it.
+  if (typeof payload.exp !== "number" || !Number.isFinite(payload.exp)) {
+    return { ok: false, reason: "no_exp" };
+  }
+  if (payload.exp * 1000 <= Date.now()) {
     return { ok: false, reason: "expired" };
   }
   const sub = payload.sub != null ? String(payload.sub) : "";
@@ -69,8 +160,48 @@ export async function verifyAdminAccessJwt(
     return { ok: false, reason: "not_admin" };
   }
 
+  if (alg === "ES256") {
+    if (String(payload.account_scope || "").toLowerCase() !== "admin") {
+      return { ok: false, reason: "not_admin" };
+    }
+    if (!publicKey) return { ok: false, reason: "no_public_key" };
+    const issuer = (options.issuer || "").trim() || ADMIN_JWT_DEFAULT_ISSUER;
+    const audience =
+      (options.audience || "").trim() || ADMIN_JWT_DEFAULT_AUDIENCE;
+    if (payload.iss !== issuer) return { ok: false, reason: "issuer" };
+    if (!audienceMatches(payload.aud, audience)) {
+      return { ok: false, reason: "audience" };
+    }
+    try {
+      const key = await importAdminPublicKey(publicKey);
+      if (!key) return { ok: false, reason: "bad_public_key" };
+      const signature = b64urlToBytes(sigB64);
+      if (signature.length !== ES256_SIGNATURE_BYTES) {
+        return { ok: false, reason: "signature" };
+      }
+      const data = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
+      const valid = await crypto.subtle.verify(
+        { name: "ECDSA", hash: "SHA-256" },
+        key,
+        signature as unknown as BufferSource,
+        data,
+      );
+      if (!valid) return { ok: false, reason: "signature" };
+      return { ok: true, sub };
+    } catch {
+      return { ok: false, reason: "verify_error" };
+    }
+  }
+
+  // HS256 (legacy shared-secret) below.
   if (!secret) {
-    return { ok: true, sub };
+    // Public key configured, no shared secret: the migrated state. A
+    // structure-only pass here would accept ANY forged HS256 token.
+    if (publicKey) return { ok: false, reason: "hs256_unverifiable" };
+    // F-32: unsigned claims are only trusted when the caller explicitly opted
+    // in (non-production local dev); otherwise fail closed.
+    if (options.allowUnsignedDev === true) return { ok: true, sub };
+    return { ok: false, reason: "unverifiable" };
   }
 
   try {

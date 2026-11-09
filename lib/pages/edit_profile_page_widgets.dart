@@ -44,12 +44,12 @@ mixin _EditProfilePageWidgets on _EditProfilePageLoad {
                       )
                     : null,
               ),
-              Positioned(
+              PositionedDirectional(
                 bottom: 0,
-                right: 0,
+                end: 0,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.brandOrange,
+                    color: AppColors.brandOrangeStrong,
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: light ? Colors.white : const Color(0xFF1E222A),
@@ -118,10 +118,10 @@ mixin _EditProfilePageWidgets on _EditProfilePageLoad {
               fontSize: 16,
             ),
             decoration: InputDecoration(
-              prefixIcon: Icon(icon, color: AppColors.brandOrange),
+              prefixIcon: Icon(icon, color: AppColors.brandOrangeIcon),
               prefixText: prefixText,
               prefixStyle: TextStyle(
-                color: AppColors.brandOrange,
+                color: AppColors.accentText(context),
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -135,7 +135,7 @@ mixin _EditProfilePageWidgets on _EditProfilePageLoad {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.brandOrange, width: 2),
+                borderSide: BorderSide(color: AppColors.brandOrangeIcon, width: 2),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),

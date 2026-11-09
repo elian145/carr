@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kReleaseMode;
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'api_service.dart';
+import '../shared/auth/account_scope.dart';
+import '../shared/auth/auth_session.dart' show jwtExpiry;
+import '../shared/listings/listing_identity.dart';
 import 'config.dart';
 import '../shared/debug/app_log.dart';
 

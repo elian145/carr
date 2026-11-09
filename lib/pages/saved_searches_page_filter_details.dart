@@ -249,7 +249,7 @@ mixin _SavedSearchesPageFilterDetails on _SavedSearchesPageHelpers {
             '$label: ',
             style: TextStyle(
               fontWeight: FontWeight.w600,
-              color: AppColors.brandOrange,
+              color: AppColors.accentText(context),
               fontSize: 13,
             ),
           ),

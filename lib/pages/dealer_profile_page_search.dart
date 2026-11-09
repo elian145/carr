@@ -8,7 +8,7 @@ extension _DealerProfilePageSearch on _DealerProfilePageState {
     final searchPillBorder = isLight
         ? AppColors.brandOrange.withValues(alpha: 0.45)
         : Colors.white.withValues(alpha: 0.35);
-    final searchPillFg = isLight ? AppColors.brandOrange : Colors.white;
+    final searchPillFg = isLight ? AppColors.brandOrangeDeep : Colors.white;
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: 8),
       child: Material(
@@ -80,7 +80,7 @@ extension _DealerProfilePageSearch on _DealerProfilePageState {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.search, color: AppColors.brandOrange, size: 22),
+                  const Icon(Icons.search, color: AppColors.brandOrangeIcon, size: 22),
                   const SizedBox(width: 7),
                   Text(
                     loc.homeSearchHeading,
@@ -89,7 +89,7 @@ extension _DealerProfilePageSearch on _DealerProfilePageState {
                     overflow: TextOverflow.visible,
                     style: AppFonts.orbitronForLocale(
                       Localizations.localeOf(context),
-                      color: AppColors.brandOrange,
+                      color: isLight ? AppColors.brandOrangeDeep : AppColors.brandOrange,
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),

@@ -263,6 +263,13 @@ abstract final class AppResponsive {
   ///
   /// Prefer [FittedBox] over AutoSizeText here — AutoSizeText often paints at
   /// full size on the first frame and only shrinks after a rebuild (e.g. tap).
+  ///
+  /// F-10 RETAINED fixed scale (`TextScaler.linear(1.0)` below): this is the
+  /// caption of fixed-size icon tiles (filter / "More" tiles, 52 dp coin + one
+  /// caption line in a fixed-height row). It is a FittedBox(scaleDown) label,
+  /// i.e. it already shrinks to the tile width, so scaling it up would only
+  /// make it shrink straight back while growing the line box of fixed-height
+  /// rows. The tile glyph and caption are one fixed-size unit.
   static Widget fittedLabel(
     String text, {
     required TextStyle style,
@@ -276,9 +283,9 @@ abstract final class AppResponsive {
       child: FittedBox(
         fit: BoxFit.scaleDown,
         alignment: textAlign == TextAlign.end
-            ? Alignment.centerRight
+            ? AlignmentDirectional.centerEnd
             : (textAlign == TextAlign.start
-                  ? Alignment.centerLeft
+                  ? AlignmentDirectional.centerStart
                   : Alignment.center),
         child: Text(
           text,
@@ -337,7 +344,10 @@ abstract final class AppResponsive {
     );
   }
 
-  /// System text scale is ignored app-wide via [wrapApp].
+  /// LEGACY (F-10): these three constants and [clampAppTextScaleFactor] are no
+  /// longer used by the app (nothing calls them; only an old unit test pins
+  /// them). The real text-scale policy (honour 1.0..2.0) lives in
+  /// `SystemDisplayLock` and is applied by [wrapApp].
   static const double minAppTextScale = 1.0;
   static const double maxAppTextScaleCompact = 1.0;
   static const double maxAppTextScale = 1.0;
@@ -351,8 +361,8 @@ abstract final class AppResponsive {
     return 1.0;
   }
 
-  /// Pin the app to designed sizes: ignore system font scale and Android
-  /// Display size (density).
+  /// Pin the app to the designed density (Android Display size is ignored)
+  /// and bound the system font scale to 1.0..2.0 via `SystemDisplayLock`.
   static Widget wrapApp(BuildContext context, Widget child) {
     return _LockedSystemDisplay(
       child: KeyboardDismissOnTap(child: child),

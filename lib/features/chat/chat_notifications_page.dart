@@ -295,7 +295,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                         ),
                                         size: 18,
                                         color: unread
-                                            ? AppColors.brandOrange
+                                            ? AppColors.brandOrangeIcon
                                             : ink.withValues(alpha: 0.55),
                                       ),
                                     ),
@@ -360,7 +360,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                         height: 8,
                                         margin: const EdgeInsets.only(top: 6),
                                         decoration: const BoxDecoration(
-                                          color: AppColors.brandOrange,
+                                          color: AppColors.brandOrangeIcon,
                                           shape: BoxShape.circle,
                                         ),
                                       ),

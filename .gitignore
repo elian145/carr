@@ -8,6 +8,19 @@ outputs/*.tmp
 kk/static/uploads/
 kk/instance/*.db
 static/uploads/
+# F-27: runtime user uploads must never be committed (photos carry EXIF/GPS and are
+# served publicly by /static/<path>). Files already tracked stay tracked; only the
+# explicitly allow-listed brand logos may be (force-)added. See kk/tests/test_f27_*.
+kk/static/uploads/car_photos/
+kk/static/uploads/car_videos/
+kk/static/uploads/profile_pictures/
+kk/static/uploads/dealer_covers/
+kk/static/uploads/chat_uploads/
+static/uploads/car_photos/
+static/uploads/car_videos/
+static/uploads/profile_pictures/
+static/uploads/dealer_covers/
+static/uploads/chat_uploads/
 instance/
 kk/instance/
 **/*.db

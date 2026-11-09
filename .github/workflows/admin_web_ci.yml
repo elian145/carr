@@ -29,6 +29,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Parity with `pip-audit` in backend_ci.yml: fail on known high/critical
+      # advisories in the shipped (production) dependency tree.
+      - name: Audit dependencies
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Lint
         run: npm run lint
 
@@ -44,9 +49,67 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Playwright smoke
+      # Authenticated specs need a real backend with seeded TEST-ONLY data. The
+      # backend runs APP_ENV=testing on a throw-away SQLite file in the runner's
+      # temp dir (no network services, no production URL, no real secrets); the
+      # admin password below is a test fixture that only exists in this job.
+      - name: Set up Python (seeded E2E backend)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.9"
+
+      - name: Install backend dependencies (E2E backend)
+        working-directory: .
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r kk/requirements.txt
+          # seed_auto_moderation.py reuses fixtures from the backend test suite.
+          pip install -r kk/requirements-dev.txt
+
+      - name: Seed test data and start the E2E backend
+        working-directory: .
+        env:
+          APP_ENV: testing
+          SMS_PROVIDER: console
+          DB_PATH: ${{ runner.temp }}/e2e.db
+          JWT_SECRET_KEY: ci-admin-jwt-secret
+          E2E_ADMIN_USERNAME: e2e_admin
+          E2E_ADMIN_PASSWORD: "E2e-Passw0rd-123!"
+        run: |
+          python admin-web/e2e/seed_test_admin.py
+          E2E_SEED_OUT="$RUNNER_TEMP/listing-edit-seed.json" python admin-web/e2e/seed_listing_edit.py
+          E2E_SEED_OUT="$RUNNER_TEMP/auto-moderation-seed.json" AUTO_MODERATION_AI_PROVIDER=stub python admin-web/e2e/seed_auto_moderation.py
+          nohup python -m kk.app_new > "$RUNNER_TEMP/e2e-backend.log" 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fsS http://127.0.0.1:5000/health > /dev/null && exit 0
+            sleep 1
+          done
+          echo "E2E backend did not become healthy" >&2
+          tail -n 80 "$RUNNER_TEMP/e2e-backend.log" >&2
+          exit 1
+
+      # All 26 specs must RUN: the three groups use different seed files, so they
+      # are separate invocations; assert_all_executed.mjs then fails the job if
+      # anything was skipped, failed, flaky or missing (skipped is not passed).
+      - name: Playwright (all specs, authenticated)
         env:
           CI: "true"
           JWT_SECRET_KEY: ci-admin-jwt-secret
           NEXT_PUBLIC_API_BASE: http://127.0.0.1:5000
-        run: npm run test:e2e
+          E2E_ADMIN_USERNAME: e2e_admin
+          E2E_ADMIN_PASSWORD: "E2e-Passw0rd-123!"
+        run: |
+          rc=0
+          PLAYWRIGHT_JSON_OUTPUT_NAME="$RUNNER_TEMP/pw-1.json" \
+            npx playwright test e2e/csp.spec.ts e2e/f19-security.spec.ts e2e/smoke.spec.ts \
+            --reporter=github,json || rc=1
+          PLAYWRIGHT_JSON_OUTPUT_NAME="$RUNNER_TEMP/pw-2.json" E2E_SEED_OUT="$RUNNER_TEMP/listing-edit-seed.json" \
+            npx playwright test e2e/listing-edits.spec.ts --reporter=github,json || rc=1
+          PLAYWRIGHT_JSON_OUTPUT_NAME="$RUNNER_TEMP/pw-3.json" E2E_SEED_OUT="$RUNNER_TEMP/auto-moderation-seed.json" \
+            npx playwright test e2e/auto-moderation.spec.ts --reporter=github,json || rc=1
+          node e2e/assert_all_executed.mjs 26 "$RUNNER_TEMP/pw-1.json" "$RUNNER_TEMP/pw-2.json" "$RUNNER_TEMP/pw-3.json" || rc=1
+          exit $rc
+
+      - name: E2E backend log (on failure)
+        if: failure()
+        run: tail -n 120 "$RUNNER_TEMP/e2e-backend.log" || true

@@ -38,10 +38,11 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _togglePush(bool v) async {
-    await PushNotificationService.setPushEnabled(v);
+    final applied = await PushNotificationService.setPushEnabled(v);
     if (!mounted) return;
     setState(() {
-      _pushEnabled = v;
+      // F-38: keep the switch truthful when enabling/disabling failed.
+      _pushEnabled = applied ? v : !v;
     });
   }
 
@@ -98,7 +99,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   color: AppColors.brandOrange.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: AppColors.brandOrange, size: 22),
+                child: Icon(icon, color: AppColors.brandOrangeIcon, size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -233,7 +234,7 @@ class _SettingsPageState extends State<SettingsPage> {
             title: loc.settingsEnablePush,
             trailing: Switch.adaptive(
               value: _pushEnabled,
-              activeThumbColor: AppColors.brandOrange,
+              activeThumbColor: AppColors.brandOrangeIcon,
               onChanged: _togglePush,
             ),
             onTap: () => _togglePush(!_pushEnabled),
@@ -246,7 +247,7 @@ class _SettingsPageState extends State<SettingsPage> {
       backgroundColor: isLightShell ? Colors.white : null,
       appBar: AppBar(
         title: Text(loc.settingsTitle),
-        backgroundColor: AppColors.brandOrange,
+        backgroundColor: AppColors.brandOrangeStrong,
         foregroundColor: Colors.white,
         elevation: 0,
       ),

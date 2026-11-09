@@ -415,8 +415,8 @@ class _LoginPageState extends State<LoginPage> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       labelStyle: TextStyle(color: muted, fontWeight: FontWeight.w500),
       hintStyle: TextStyle(color: muted),
-      prefixStyle: const TextStyle(
-        color: AppColors.brandOrange,
+      prefixStyle: TextStyle(
+        color: AppColors.accentText(context),
         fontWeight: FontWeight.w700,
         fontSize: 16,
       ),
@@ -432,7 +432,7 @@ class _LoginPageState extends State<LoginPage> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.brandOrange, width: 2),
+        borderSide: const BorderSide(color: AppColors.brandOrangeIcon, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -457,13 +457,13 @@ class _LoginPageState extends State<LoginPage> {
   }) {
     final isLight = Theme.of(context).brightness == Brightness.light;
     final border = selected
-        ? AppColors.brandOrange
+        ? AppColors.brandOrangeIcon
         : (isLight ? const Color(0xFFE0E0E0) : Colors.white24);
     final fill = selected
         ? AppColors.brandOrange.withValues(alpha: isLight ? 0.10 : 0.18)
         : (isLight ? Colors.white : Colors.white.withValues(alpha: 0.06));
     final ink = selected
-        ? AppColors.brandOrange
+        ? (isLight ? AppColors.brandOrangeDeep : AppColors.brandOrange)
         : (isLight ? const Color(0xFF424242) : Colors.white70);
 
     return Material(
@@ -521,7 +521,7 @@ class _LoginPageState extends State<LoginPage> {
       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
     );
     final linkStyle = baseStyle.copyWith(
-      color: AppColors.brandOrange,
+      color: AppColors.accentText(context),
       fontWeight: FontWeight.w600,
     );
 
@@ -539,9 +539,15 @@ class _LoginPageState extends State<LoginPage> {
       );
     }
 
-    Widget link(String label, LegalDocument doc) => GestureDetector(
+    Widget link(String label, LegalDocument doc) => Semantics(
+          link: true,
+          label: label,
+          excludeSemantics: true,
           onTap: () => openLegal(doc),
-          child: Text(label, style: linkStyle),
+          child: GestureDetector(
+            onTap: () => openLegal(doc),
+            child: Text(label, style: linkStyle),
+          ),
         );
 
     return Wrap(
@@ -587,7 +593,7 @@ class _LoginPageState extends State<LoginPage> {
       appBar: AppBar(
         title: Text(loc.loginTitle),
         elevation: 0,
-        backgroundColor: AppColors.brandOrange,
+        backgroundColor: AppColors.brandOrangeStrong,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -637,7 +643,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           child: const Icon(
                             Icons.phone_iphone_rounded,
-                            color: AppColors.brandOrange,
+                            color: AppColors.brandOrangeIcon,
                             size: 30,
                           ),
                         ),
@@ -728,7 +734,7 @@ class _LoginPageState extends State<LoginPage> {
                           prefixText: '+964 ',
                           prefixIcon: const Icon(
                             Icons.phone_outlined,
-                            color: AppColors.brandOrange,
+                            color: AppColors.brandOrangeIcon,
                           ),
                         ),
                         inputFormatters: [
@@ -781,7 +787,7 @@ class _LoginPageState extends State<LoginPage> {
                               hintText: '000000',
                               prefixIcon: const Icon(
                                 Icons.lock_outline_rounded,
-                                color: AppColors.brandOrange,
+                                color: AppColors.brandOrangeIcon,
                               ),
                             ),
                             inputFormatters: [
@@ -800,7 +806,7 @@ class _LoginPageState extends State<LoginPage> {
                               onPressed:
                                   (_loading || _sendingOtp) ? null : _sendOtp,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.brandOrange,
+                                backgroundColor: AppColors.brandOrangeStrong,
                                 foregroundColor: Colors.white,
                                 disabledBackgroundColor: AppColors.brandOrange
                                     .withValues(alpha: 0.45),
@@ -859,7 +865,7 @@ class _LoginPageState extends State<LoginPage> {
                           child: ElevatedButton(
                             onPressed: _loading ? null : _loginWithPhone,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.brandOrange,
+                              backgroundColor: AppColors.brandOrangeStrong,
                               foregroundColor: Colors.white,
                               disabledBackgroundColor: AppColors.brandOrange
                                   .withValues(alpha: 0.45),

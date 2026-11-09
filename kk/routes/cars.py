@@ -26,7 +26,7 @@ from ..fuel_types import (
     storage_fuel_value,
     stored_spellings,
 )
-from ..idempotency import remember_response, replay_response
+from ..idempotency import begin_request, in_progress_response, remember_response
 from ..view_history import remove_listing_from_all_view_history
 from ..listing_moderation import initial_listing_status
 from ..auto_moderation.triggers import request_moderation_for_car
@@ -72,10 +72,21 @@ from ..response_cache import (
     invalidate_filter_facets_cache,
     public_cached_json,
 )
-from ..retention_dispatch import dispatch_price_drop_alerts, dispatch_saved_search_alerts
-from ..time_utils import utcnow
+from ..retention_dispatch import (
+    dispatch_price_drop_alerts,
+    dispatch_saved_search_alerts,
+    dispatch_saved_search_alerts_for_activated,
+    is_new_publication_transition,
+)
+from ..saved_search_alert_jobs import MODE_OFF, durability_mode, record_alert_job
+from ..time_utils import iso_utc, utcnow
 from .media import _normalize_car_image_kind, _pick_primary_listing_url, _r2_public_base
-from .user import assert_listing_phones_verified, parse_listing_contact_phones
+from .user import (
+    INVALID_CONTACT_PHONE_MESSAGE,
+    assert_listing_phones_verified,
+    invalid_listing_contact_phones,
+    parse_listing_contact_phones,
+)
 
 bp = Blueprint("cars", __name__)
 
@@ -662,10 +673,10 @@ def _working_copy_payload(car: Car, shadow: Car) -> dict:
     d["status"] = getattr(car, "status", None)
     d["is_active"] = car.is_active
     d["is_featured"] = car.is_effectively_featured
-    d["featured_until"] = car.featured_until.isoformat() if car.featured_until else None
+    d["featured_until"] = iso_utc(car.featured_until)
     d["views_count"] = car.views_count
-    d["created_at"] = car.created_at.isoformat() if car.created_at else None
-    d["updated_at"] = car.updated_at.isoformat() if car.updated_at else None
+    d["created_at"] = iso_utc(car.created_at)
+    d["updated_at"] = iso_utc(car.updated_at)
     d["media_status"] = shadow.media_status
     if not d.get("city") and d.get("location"):
         d["city"] = d["location"]
@@ -691,10 +702,10 @@ def serialize_pending_revision(
         "rejection_reason": rev.rejection_reason
         if rev.status == _revisions.REVISION_REJECTED
         else None,
-        "submitted_at": rev.submitted_at.isoformat() if rev.submitted_at else None,
-        "reviewed_at": rev.reviewed_at.isoformat() if rev.reviewed_at else None,
-        "created_at": rev.created_at.isoformat() if rev.created_at else None,
-        "updated_at": rev.updated_at.isoformat() if rev.updated_at else None,
+        "submitted_at": iso_utc(rev.submitted_at),
+        "reviewed_at": iso_utc(rev.reviewed_at),
+        "created_at": iso_utc(rev.created_at),
+        "updated_at": iso_utc(rev.updated_at),
         "revision_token": _revisions.revision_content_token(rev, shadow),
         "changed_fields": _revisions.revision_changed_fields(car, shadow)
         if car is not None
@@ -1244,15 +1255,18 @@ def create_car():
             or request.headers.get("X-Idempotency-Key")
             or ""
         ).strip()
-        if idem_key:
-            replayed = replay_response(
-                scope="create_car",
-                actor_id=str(current_user.public_id),
-                idem_key=idem_key,
-            )
-            if replayed is not None:
-                status, body = replayed
-                return jsonify(body), status
+        # F-37: replay a COMPLETED create for this key, and refuse (retryable
+        # 503) a duplicate that arrives while the original is still running.
+        idem_state, idem_replay = begin_request(
+            scope="create_car",
+            actor_id=str(current_user.public_id),
+            idem_key=idem_key,
+        )
+        if idem_state == "replay":
+            status, body = idem_replay
+            return jsonify(body), status
+        if idem_state == "busy":
+            return in_progress_response()
 
         raw = request.get_json(silent=True) or {}
 
@@ -1398,6 +1412,8 @@ def create_car():
         plate_type_val = plate_type_raw if plate_type_raw in _ALLOWED_PLATE_TYPES else None
         plate_city_val = _s(raw.get("plate_city") or raw.get("plateCity"), None) or None
 
+        if invalid_listing_contact_phones(raw):
+            return jsonify({"message": INVALID_CONTACT_PHONE_MESSAGE}), 400
         contact_phones = parse_listing_contact_phones(raw)
         if contact_phones:
             phone_err = assert_listing_phones_verified(current_user, contact_phones)
@@ -1467,6 +1483,11 @@ def create_car():
         for item in build_expected_media_items(expected_media):
             item.car_id = car.id
             db.session.add(item)
+        if car.is_active and (car.status or "active") == "active":
+            # F-04 durability: a listing created already public is a first
+            # publication; the marker commits with the listing. No-op while
+            # the SAVED_SEARCH_ALERT_DURABILITY flag is off.
+            record_alert_job(car.id)
         db.session.commit()
         _bump_filter_facets_cache()
         log_user_action(current_user, "create_listing", "car", car.public_id)
@@ -1685,6 +1706,28 @@ def update_car(car_id: str):
 
         raw = request.get_json(silent=True) or {}
 
+        # A submitted contact phone that is not an Iraqi mobile is an error, not
+        # "no phone" (checked before any revision/working copy is created).
+        if ("contact_phones" in raw or "contact_phone" in raw) and invalid_listing_contact_phones(raw):
+            return jsonify({"message": INVALID_CONTACT_PHONE_MESSAGE}), 400
+
+        # F-04 / publication-bypass fix: an admin-privileged PUT may flip a
+        # not-yet-public listing (pending/hidden/draft) to a public status.
+        # That is a publication and must obey the same rules as the admin
+        # moderation endpoints: take the same row lock BEFORE any field is
+        # applied (so a concurrent media-readiness update cannot race the
+        # decision), then the media-readiness gate and the first-publication
+        # alert marker below. Non-admin / non-status requests skip all of it.
+        admin_status_put = "status" in raw and request_has_admin_privileges(current_user)
+        if admin_status_put:
+            locked = (
+                Car.query.filter_by(id=listing.id).with_for_update().populate_existing().first()
+            )
+            if locked is not None:
+                listing = locked
+        old_status_for_alerts = None
+        alert_car_id = None
+
         # Editing a listing that is publicly visible must NOT change what
         # the public sees until an admin approves it: the owner's edit is
         # applied to a hidden working copy of the listing (see
@@ -1877,8 +1920,36 @@ def update_car(car_id: str):
                     return blocked
             # Availability (active <-> sold) is not reviewable content: it
             # always applies to the real listing, never to the working copy.
+            old_status_for_alerts = listing.status
             listing.status = st
             listing.updated_at = utcnow()
+            if (
+                admin_status_put
+                and (old_status_for_alerts or "active").strip().lower()
+                not in _ALLOWED_LISTING_STATUSES
+            ):
+                # Publication bypass fix: pending/hidden/draft -> public by an
+                # admin-privileged PUT now passes the SAME media-readiness
+                # gate as PATCH /api/admin/cars/<id>/status (409 + nothing
+                # applied while media is processing/failed).
+                from .admin import _media_not_ready_block_response
+
+                not_ready = _media_not_ready_block_response(listing)
+                if not_ready is not None:
+                    db.session.rollback()
+                    return not_ready
+                # The alert job + fast-path dispatch for this path only exist
+                # while SAVED_SEARCH_ALERT_DURABILITY is record/on: with the
+                # flag off the endpoint's alert behaviour is exactly what it
+                # was before F-04 durability (no alert), only the validation
+                # above is new.
+                if (
+                    durability_mode() != MODE_OFF
+                    and is_new_publication_transition(
+                        old_status_for_alerts, listing.is_active, st
+                    )
+                ):
+                    alert_car_id = listing.id
 
         if (car.title_status or "").lower() == "clean":
             car.damaged_parts = None
@@ -1946,9 +2017,16 @@ def update_car(car_id: str):
             ), 200
 
         car.updated_at = utcnow()
+        if alert_car_id is not None:
+            # F-04 durability: marker in the same transaction as the
+            # activation (no-op while the flag is off).
+            record_alert_job(alert_car_id)
         db.session.commit()
         _bump_filter_facets_cache()
         log_user_action(current_user, "update_listing", "car", car.public_id)
+        if alert_car_id is not None:
+            # Same post-commit fast path as the admin PATCH (never raises).
+            dispatch_saved_search_alerts_for_activated([alert_car_id])
         # A listing still awaiting approval was edited: its content token
         # changed, so any in-flight automated verdict is now stale and the new
         # content must be judged. No-op for anything not pending.

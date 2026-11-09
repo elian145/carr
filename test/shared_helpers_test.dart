@@ -57,9 +57,12 @@ void main() {
 
   group('navigationErrorScaffold', () {
     testWidgets('shows navigation error message', (tester) async {
+      // F-22: the title now comes from AppLocalizations (like every screen in
+      // the real app, which always installs the delegates).
       await tester.pumpWidget(
-        MaterialApp(home: navigationErrorScaffold('Missing listing id')),
+        _localizedApp(navigationErrorScaffold('Missing listing id')),
       );
+      await tester.pumpAndSettle();
       expect(find.text('Missing listing id'), findsOneWidget);
       expect(find.text('Navigation error'), findsOneWidget);
     });

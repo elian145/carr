@@ -88,20 +88,12 @@ def _app_config_payload() -> dict:
 
     locale = get_request_locale(request.headers.get("Accept-Language"))
 
-    def _s(key: str, default: str = "") -> str:
-        val = s.get(key)
-        if val is None:
-            return default
-        return str(val).strip()
+    from ..app_settings import public_version_gate_settings
 
-    def _i(key: str) -> int | None:
-        raw = _s(key)
-        if not raw:
-            return None
-        try:
-            return int(raw)
-        except (TypeError, ValueError):
-            return None
+    # Force-update hardening: every version/build/store-URL field is sanitised
+    # on READ, so a malformed value already stored in the DB (or env) is served
+    # as "unset" and can never lock users out. Field names/types are unchanged.
+    gate = public_version_gate_settings(s)
 
     # Keep in sync with kk.listing_moderation.listing_require_approval
     require_approval = listing_require_approval()
@@ -122,27 +114,46 @@ def _app_config_payload() -> dict:
     from ..app_settings import get_localized_platform_message
 
     return {
-        "min_app_version": _s("min_app_version"),
-        "min_android_build": _i("min_android_build"),
-        "min_ios_build": _i("min_ios_build"),
+        "min_app_version": gate["min_app_version"],
+        "min_android_build": gate["min_android_build"],
+        "min_ios_build": gate["min_ios_build"],
         # MI-03: field names unchanged; value now localized by Accept-Language.
         "force_update_message": get_localized_platform_message(
             "force_update_message", locale, s
         ),
-        "recommended_app_version": _s("recommended_app_version"),
-        "recommended_android_build": _i("recommended_android_build"),
-        "recommended_ios_build": _i("recommended_ios_build"),
+        "recommended_app_version": gate["recommended_app_version"],
+        "recommended_android_build": gate["recommended_android_build"],
+        "recommended_ios_build": gate["recommended_ios_build"],
+        # Additive (old clients ignore unknown keys): latest published version.
+        "latest_app_version": gate["latest_app_version"],
         "soft_update_message": get_localized_platform_message(
             "soft_update_message", locale, s
         ),
-        "android_store_url": _s(
-            "android_store_url",
-            "https://play.google.com/store/apps/details?id=com.carnetiq.app",
-        ),
-        "ios_store_url": _s("ios_store_url"),
+        "android_store_url": gate["android_store_url"],
+        "ios_store_url": gate["ios_store_url"],
         "listing_require_approval": require_approval,
         "feature_flags": flags,
     }
+
+
+_DIAG_HEADER_RE = re.compile(r"[^A-Za-z0-9._+\- ]")
+
+
+def _log_client_version_headers() -> None:
+    """Diagnostics only: log optional ``X-App-Version`` / ``X-App-Platform``.
+
+    Deliberately NOT used for any decision (no server-side enforcement); the
+    values are charset-filtered and truncated so they cannot inject log lines.
+    """
+    version = request.headers.get("X-App-Version")
+    platform = request.headers.get("X-App-Platform")
+    if not version and not platform:
+        return
+    logger.info(
+        "config/app client version=%s platform=%s",
+        _DIAG_HEADER_RE.sub("", (version or "")[:40]),
+        _DIAG_HEADER_RE.sub("", (platform or "")[:20]),
+    )
 
 
 @bp.route("/api/config/trust", methods=["GET"])
@@ -154,6 +165,7 @@ def trust_config():
 @bp.route("/api/config/app", methods=["GET"])
 def app_config():
     """Minimum + recommended client version gates and store URLs."""
+    _log_client_version_headers()
     return jsonify(_app_config_payload()), 200
 
 
@@ -192,37 +204,44 @@ def account_deletion_request():
     email = str(data.get("email") or "").strip()
     details = str(data.get("details") or data.get("message") or "").strip()[:1000]
 
-    digits = "".join(ch for ch in phone if ch.isdigit())
+    from ..account_deletion_requests import (
+        RequestStorageError,
+        phone_digits,
+        submit_request,
+    )
+
+    digits = phone_digits(phone)
     if len(digits) < 8:
         return jsonify({"message": "A valid account phone number is required"}), 400
 
     trust = _trust_config_payload()
-    # No hardcoded fallback mailbox here: SUPPORT_EMAIL is required in
-    # production (validate_required_secrets() in kk/config.py). If it is
-    # somehow empty (dev/testing only), send_email() below simply no-ops
-    # instead of silently emailing a fake/unreachable address.
+    # No hardcoded fallback mailbox: SUPPORT_EMAIL is required in production
+    # (validate_required_secrets() in kk/config.py). The email is only a
+    # best-effort NOTIFICATION; the request itself is stored durably first.
     support_email = trust.get("support_email") or ""
-    body = (
-        f"Web account deletion request\n"
-        f"Phone: {phone}\n"
-        f"Email: {email or '(none)'}\n"
-        f"Details: {details or '(none)'}\n"
-        f"IP: {request.remote_addr}\n"
-    )
     logger.info("account_deletion_request phone_suffix=%s email=%s", digits[-4:], bool(email))
 
     try:
-        from ..email_service import send_email
-
-        send_email(
-            to_email=support_email,
-            subject="CarNet account deletion request",
-            text_body=body,
-            html_body=None,
+        submit_request(
+            phone=phone,
+            email=email,
+            details=details,
+            ip=request.remote_addr,
+            support_email=support_email,
         )
-    except Exception:
-        logger.exception("account_deletion_request email failed")
+    except RequestStorageError:
+        # Never claim success for a request that was not durably stored.
+        return jsonify(
+            {
+                "message": (
+                    "We could not record your request right now. Please try again "
+                    "in a few minutes or contact support."
+                )
+            }
+        ), 503
 
+    # Identical body for new and duplicate submissions, and independent of
+    # whether any account exists for this phone (no account enumeration).
     return jsonify(
         {
             "message": (
@@ -626,7 +645,7 @@ def verify_email_landing():
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Verify your Carzo email</title>
+  <title>Verify your CarNet email</title>
   <style>
     * {{ box-sizing: border-box; }}
     body {{
@@ -666,9 +685,9 @@ def verify_email_landing():
   </style>
 </head>
 <body>
-  <p>Tap below to verify your email in the Carzo app.</p>
-  <a class="btn" id="carzo-open" href="{esc_deep}">Open in Carzo app</a>
-  <p class="token">App not opening? Paste this code in Carzo &rarr; Verify email:<br/>{esc_token}</p>
+  <p>Tap below to verify your email in the CarNet app.</p>
+  <a class="btn" id="carzo-open" href="{esc_deep}">Open in CarNet app</a>
+  <p class="token">App not opening? Paste this code in CarNet &rarr; Verify email:<br/>{esc_token}</p>
   <script>
     setTimeout(function () {{ window.location.href = {json.dumps(deep)}; }}, 120);
   </script>
@@ -956,6 +975,45 @@ def listing_share_landing(listing_id: str):
     return Response(html, 200, {"Content-Type": "text/html; charset=utf-8"})
 
 
+# F-27: extensions that browsers treat as active content. Nothing legitimate is ever
+# stored under ``uploads/`` with these (photos are re-encoded to JPEG, videos to MP4), so
+# refuse to serve them from the user-upload tree even if one is dropped on the disk.
+_UPLOAD_ACTIVE_CONTENT_EXTS = frozenset(
+    {
+        ".html", ".htm", ".xhtml", ".shtml", ".svg", ".svgz", ".xml", ".xsl", ".xslt",
+        ".js", ".mjs", ".css", ".json", ".swf", ".php", ".py", ".pl", ".cgi",
+    }
+)
+
+
+def _static_path_is_refused(filename: str) -> bool:
+    """True for paths that must never be served by ``/static/<path>`` (404).
+
+    * hidden segments (``.env``, ``.git/...``) anywhere in the path;
+    * active-content file types under the user-upload tree (``uploads/``).
+
+    Path traversal (``..``) is handled separately by ``safe_join`` /
+    ``send_from_directory``.
+    """
+    parts = [p for p in filename.replace("\\", "/").split("/") if p]
+    if any(p.startswith(".") for p in parts):
+        return True
+    if parts and parts[0] == "uploads":
+        ext = os.path.splitext(parts[-1])[1].lower()
+        if ext in _UPLOAD_ACTIVE_CONTENT_EXTS:
+            return True
+    return False
+
+
+def _harden_static_response(filename: str, resp):
+    """Defence-in-depth headers for files served from the user-upload tree."""
+    if filename.startswith("uploads/"):
+        resp.headers["X-Content-Type-Options"] = "nosniff"
+        # Only relevant if the file is opened as a document; <img>/<video> loads ignore it.
+        resp.headers.setdefault("Content-Security-Policy", "default-src 'none'; sandbox")
+    return resp
+
+
 @bp.route("/static/<path:filename>")
 def static_files(filename: str):
     """Serve static files from kk/static, then repo root static/ as fallback.
@@ -963,9 +1021,15 @@ def static_files(filename: str):
     User-generated uploads (photos/videos) are stored under UPLOAD_FOLDER (see app_factory).
     When UPLOAD_FOLDER points to a persistent volume, serve those files here so URLs like
     /static/uploads/car_videos/... keep working after redeploys.
+
+    Listing media is public by design (the R2 bucket is public-read too). There is no
+    directory listing (``os.path.isfile`` gate) and traversal is rejected by ``safe_join``.
     """
     if filename.startswith("uploads/uploads/"):
         filename = filename[len("uploads/") :]
+
+    if _static_path_is_refused(filename):
+        abort(404)
 
     # 1) Configured upload root (may be outside kk/static for persistent storage)
     upload_root = (current_app.config.get("UPLOAD_FOLDER") or "").strip()
@@ -974,7 +1038,9 @@ def static_files(filename: str):
         try:
             safe_path = safe_join(upload_root, rel_under_uploads)
             if safe_path and os.path.isfile(safe_path):
-                return send_from_directory(upload_root, rel_under_uploads)
+                return _harden_static_response(
+                    filename, send_from_directory(upload_root, rel_under_uploads)
+                )
         except Exception as e:
             logger.warning(
                 "static_files UPLOAD_FOLDER failed for %s: %s",
@@ -987,7 +1053,7 @@ def static_files(filename: str):
     try:
         safe_path = safe_join(static_dir, filename)
         if safe_path and os.path.isfile(safe_path):
-            return send_from_directory(static_dir, filename)
+            return _harden_static_response(filename, send_from_directory(static_dir, filename))
     except Exception as e:
         logger.warning("static_files kk/static failed for %s: %s", filename, e, exc_info=True)
 
@@ -995,7 +1061,7 @@ def static_files(filename: str):
     try:
         safe_path = safe_join(repo_static, filename)
         if safe_path and os.path.isfile(safe_path):
-            return send_from_directory(repo_static, filename)
+            return _harden_static_response(filename, send_from_directory(repo_static, filename))
     except Exception as e:
         logger.warning("static_files repo static failed for %s: %s", filename, e, exc_info=True)
 

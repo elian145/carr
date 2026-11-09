@@ -160,7 +160,7 @@ mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersColor {
               }),
               icon: Icon(
                 isEngineSizeDropdown ? Icons.edit : Icons.list,
-                color: AppColors.brandOrange,
+                color: AppColors.brandOrangeIcon,
               ),
               style: IconButton.styleFrom(
                 backgroundColor: style.fieldFill,

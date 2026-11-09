@@ -33,7 +33,7 @@ mixin _HomePageSliversFeatured on _HomePageSliversSearchBar {
                 AppLocalizations.of(context)!.featuredListings,
                 style: AppFonts.orbitronForLocale(
                   Localizations.localeOf(context),
-                  color: AppColors.brandOrange,
+                  color: AppColors.accentText(context),
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                 ),

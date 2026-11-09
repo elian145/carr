@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
@@ -16,6 +17,7 @@ import 'sell_media_identity.dart';
 import 'sell_photo_prestage.dart';
 import 'sell_server_transcode_runner.dart';
 import 'sell_server_transcode_video.dart';
+import 'sell_submission_messages.dart';
 import 'sell_video_helpers.dart';
 
 /// Phases reported while [SellListingMediaUpload.uploadForCar] runs.
@@ -365,6 +367,40 @@ class SellListingMediaUpload {
     return dropped;
   }
 
+  /// F-41: car ids whose in-flight media upload the user cancelled. Checked
+  /// between chunks and before every retry so a cancel never triggers another
+  /// network call (see [cancelUploadsFor]).
+  static final Set<String> _cancelledCarIds = <String>{};
+
+  /// F-41: ask in-flight uploads for [carId] to stop at their next checkpoint.
+  static void cancelUploadsFor(String carId) {
+    if (carId.trim().isNotEmpty) _cancelledCarIds.add(carId.trim());
+  }
+
+  /// F-41: forget a cancel request once the run for [carId] has ended.
+  static void clearCancelFor(String carId) =>
+      _cancelledCarIds.remove(carId.trim());
+
+  static bool isCancelled(String carId) =>
+      _cancelledCarIds.contains(carId.trim());
+
+  static void _throwIfCancelled(String carId) {
+    if (isCancelled(carId)) throw const SellSubmissionCancelledException();
+  }
+
+  /// F-41: max photos per multipart enqueue request.
+  @visibleForTesting
+  static int uploadChunkSize = 3;
+
+  /// F-41: attempts per chunk before its files are left unresolved.
+  @visibleForTesting
+  static int uploadChunkAttempts = 2;
+
+  /// F-41: delay between chunk retries (overridable so tests don't wait).
+  @visibleForTesting
+  static Duration Function(int attempt) uploadChunkRetryDelay =
+      (attempt) => Duration(seconds: (attempt + 1) * 2);
+
   static bool _isTransientUploadError(Object error) {
     if (error is TimeoutException) return true;
     if (error is ApiException) {
@@ -466,46 +502,95 @@ class SellListingMediaUpload {
               for (final i in freshIndexes)
                 i < clientMediaIds.length ? clientMediaIds[i] : null,
             ];
-      final enqueueResponse = await ApiService.uploadCarImages(
-        carId,
-        freshFiles,
-        imageKind: imageKind,
-        async: true,
-        clientMediaIds: freshClientMediaIds,
-        blurPlates: !skipBlur,
-      );
-      final rawJobIds = enqueueResponse['job_ids'];
-      final jobIds = rawJobIds is List
-          ? rawJobIds
-              .map((e) => e.toString())
-              .where((s) => s.isNotEmpty)
-              .toList()
-          : const <String>[];
-      if (jobIds.isEmpty) {
-        // Every file was rejected before it could even be enqueued (bad
-        // extension/size/cap) -- surface the server's message exactly like
-        // the synchronous path's 400 would have.
-        throw ApiException(
-          statusCode: 400,
-          message: (enqueueResponse['message'] as String?) ??
-              'No valid images were uploaded.',
+      // F-41: upload in small chunks (one multipart request each) rather
+      // than one giant request, so a slow/flaky connection only costs one
+      // chunk, and progress already made (resolved photos) is kept.
+      Object? chunkError;
+      StackTrace? chunkStack;
+      for (var start = 0;
+          start < freshFiles.length;
+          start += uploadChunkSize) {
+        _throwIfCancelled(carId);
+        final end = (start + uploadChunkSize < freshFiles.length)
+            ? start + uploadChunkSize
+            : freshFiles.length;
+        final chunkFiles = freshFiles.sublist(start, end);
+        final chunkIds = freshClientMediaIds?.sublist(
+          start,
+          end > freshClientMediaIds.length ? freshClientMediaIds.length : end,
         );
-      }
-      // jobIds correspond 1:1, in order, to freshFiles -- the server
-      // validates every file before enqueueing any of them for this
-      // route, so a rejected file fails the whole request rather than
-      // silently shifting positions (see AiService.enqueueCarImagesAsync).
-      if (tracker != null) {
-        for (var k = 0; k < jobIds.length && k < freshFiles.length; k++) {
-          await tracker.record(freshFiles[k].path, jobIds[k]);
+        Map<String, dynamic>? enqueueResponse;
+        for (var attempt = 0; attempt < uploadChunkAttempts; attempt++) {
+          try {
+            enqueueResponse = await ApiService.uploadCarImages(
+              carId,
+              chunkFiles,
+              imageKind: imageKind,
+              async: true,
+              clientMediaIds: chunkIds,
+              blurPlates: !skipBlur,
+            );
+            break;
+          } catch (e, st) {
+            // Non-transient (400 bad file/cap, 401, ...) fails fast as
+            // before. Transient: retry this chunk only; if it still fails
+            // leave its files unresolved so the rest of the batch survives.
+            if (!_isTransientUploadError(e)) rethrow;
+            chunkError = e;
+            chunkStack = st;
+            appLog(
+              'SellListingMediaUpload: chunk ${start ~/ uploadChunkSize} '
+              'enqueue failed (${attempt + 1}/$uploadChunkAttempts): $e',
+            );
+            if (attempt + 1 < uploadChunkAttempts) {
+              _throwIfCancelled(carId);
+              await Future<void>.delayed(uploadChunkRetryDelay(attempt));
+              _throwIfCancelled(carId);
+            }
+          }
+        }
+        if (enqueueResponse == null) continue; // leave chunk unresolved
+        final rawJobIds = enqueueResponse['job_ids'];
+        final jobIds = rawJobIds is List
+            ? rawJobIds
+                .map((e) => e.toString())
+                .where((s) => s.isNotEmpty)
+                .toList()
+            : const <String>[];
+        if (jobIds.isEmpty) {
+          // Every file was rejected before it could even be enqueued (bad
+          // extension/size/cap) -- surface the server's message exactly
+          // like the synchronous path's 400 would have.
+          throw ApiException(
+            statusCode: 400,
+            message: (enqueueResponse['message'] as String?) ??
+                'No valid images were uploaded.',
+          );
+        }
+        // jobIds correspond 1:1, in order, to chunkFiles -- the server
+        // validates every file before enqueueing any of them for this
+        // route, so a rejected file fails the whole request rather than
+        // silently shifting positions (see AiService.enqueueCarImagesAsync).
+        if (tracker != null) {
+          for (var k = 0; k < jobIds.length && k < chunkFiles.length; k++) {
+            await tracker.record(chunkFiles[k].path, jobIds[k]);
+          }
+        }
+        for (var k = 0; k < jobIds.length && k < chunkFiles.length; k++) {
+          final relPath = await _awaitImageJobRelPath(jobIds[k]);
+          await tracker?.clear(chunkFiles[k].path);
+          if (relPath != null && relPath.isNotEmpty) {
+            resolved[freshIndexes[start + k]] = relPath;
+          }
         }
       }
-      for (var k = 0; k < jobIds.length && k < freshIndexes.length; k++) {
-        final relPath = await _awaitImageJobRelPath(jobIds[k]);
-        await tracker?.clear(freshFiles[k].path);
-        if (relPath != null && relPath.isNotEmpty) {
-          resolved[freshIndexes[k]] = relPath;
-        }
+      if (resolved.every((r) => r == null) && chunkError != null) {
+        // Nothing survived and the cause was a transport failure: surface
+        // it so the outer retry loop classifies/retries it.
+        Error.throwWithStackTrace(
+          chunkError,
+          chunkStack ?? StackTrace.current,
+        );
       }
     }
 
@@ -515,7 +600,7 @@ class SellListingMediaUpload {
       // server-side failure so the outer retry loop gets another attempt.
       throw ApiException(
         statusCode: 502,
-        message: 'Photo processing failed. Please try again.',
+        message: kSellMsgPhotoProcessingFailed,
       );
     }
 
@@ -593,8 +678,10 @@ class SellListingMediaUpload {
           );
           return <String, dynamic>{'images': <dynamic>[]};
         }
+        _throwIfCancelled(carId);
         ApiService.recycleProductionHttpClient();
         await Future<void>.delayed(Duration(seconds: attempt * 2));
+        _throwIfCancelled(carId);
       }
       try {
         return await _uploadImagesViaAsyncJobs(
@@ -607,6 +694,7 @@ class SellListingMediaUpload {
           skipBlur: skipBlur,
         );
       } catch (e, st) {
+        if (e is SellSubmissionCancelledException) rethrow;
         lastError = e;
         lastStack = st;
         final landed = await _remoteImageCount(carId, kind);
@@ -975,9 +1063,11 @@ class SellListingMediaUpload {
     Object? lastError;
     StackTrace? lastStack;
     for (var attempt = 0; attempt < 3; attempt++) {
+      _throwIfCancelled(carId);
       if (attempt > 0) {
         ApiService.recycleProductionHttpClient();
         await Future<void>.delayed(Duration(seconds: attempt * 2));
+        _throwIfCancelled(carId);
       }
       try {
         final enqueueResponse = await ApiService.uploadCarImages(
@@ -2008,4 +2098,14 @@ class SellListingMediaUpload {
     }
     return listingMediaConfirmed;
   }
+}
+
+/// F-41: thrown (and only ever thrown) when the user cancels an in-flight
+/// listing submission. Never retryable; the submission service turns it into a
+/// terminal state instead of scheduling another attempt.
+class SellSubmissionCancelledException implements Exception {
+  const SellSubmissionCancelledException();
+
+  @override
+  String toString() => 'Listing upload cancelled by the user.';
 }

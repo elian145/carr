@@ -1,29 +1,37 @@
 from __future__ import annotations
 
 from datetime import datetime
-import json
 import os
 import secrets
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, text
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import joinedload, selectinload
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from ..auth import get_current_user, phone_verification_required_response
 from ..chat_realtime import (
+    conversation_clause,
+    conversation_peer_keys,
     deliver_message,
     emit_message_to_participants,
     mark_messages_read_for_viewer,
     resolve_allowed_chat_receiver,
 )
-from ..idempotency import remember_response, replay_response
+from .. import chat_payload
+from ..idempotency import (
+    begin_request,
+    in_progress_response,
+    remember_response,
+    replay_response,
+)
 from ..listing_visibility import not_a_working_copy
 from ..models import BlockedUser, Car, Message, User, UserReport, db
 from ..push import fcm_is_configured, fcm_send_error_hint, last_fcm_send_error, send_push
 from ..security import rate_limit, sniff_bytes, validate_input_sanitization
-from ..time_utils import utcnow
+from ..time_utils import iso_utc, parse_api_datetime, utcnow
 from .media import _pick_primary_listing_url
 
 bp = Blueprint("chat", __name__)
@@ -338,7 +346,19 @@ def _max_upload_mb() -> int:
     return max(1, raw // (1024 * 1024))
 
 
-def _resolve_reply_target(me: User, car: Car, reply_public_id: str | None) -> Message | None:
+def _resolve_reply_target(
+    me: User,
+    car: Car,
+    reply_public_id: str | None,
+    receiver: User | None = None,
+) -> Message | None:
+    """Resolve the message being replied to.
+
+    F-05: when ``receiver`` is given the target must belong to THIS
+    conversation (me <-> receiver on this listing). Otherwise a seller could
+    attach buyer A's message to a reply addressed to buyer B, and the reply
+    preview would disclose A's text to B.
+    """
     raw = (reply_public_id or "").strip()
     if not raw:
         return None
@@ -346,6 +366,8 @@ def _resolve_reply_target(me: User, car: Car, reply_public_id: str | None) -> Me
     if not msg:
         return None
     if me.id not in (msg.sender_id, msg.receiver_id):
+        return None
+    if receiver is not None and {msg.sender_id, msg.receiver_id} != {me.id, receiver.id}:
         return None
     return msg
 
@@ -482,8 +504,17 @@ def list_chats():
                     car_title = f"{car.brand} {car.model} {car.year}".strip()
                 car_image_url = _first_car_image_rel_path(car)
 
+            peer_key = None
             if other is None and other_id is None:
                 other_user = {"id": None, "name": "Deleted User"}
+                # F-05: lets the client open THIS deleted counterpart's thread
+                # (history requests accept it as `peer_id`). Kept OUTSIDE
+                # `other_user` so that object's shape is unchanged.
+                peer_key = (
+                    f"deleted-user:{m.deleted_counterpart_marker}"
+                    if m.deleted_counterpart_marker is not None
+                    else "deleted-legacy"
+                )
             else:
                 other_user = {
                     "id": other.public_id if other else None,
@@ -507,10 +538,11 @@ def list_chats():
                         "id": m.public_id,
                         "content": m.content,
                         "message_type": m.message_type,
-                        "created_at": m.created_at.isoformat() if m.created_at else None,
+                        "created_at": iso_utc(m.created_at),
                         "sender_id": m.sender.public_id if m.sender else None,
                     },
                     "unread_count": int(unread or 0),
+                    **({"peer_key": peer_key} if peer_key else {}),
                 }
             )
 
@@ -563,10 +595,52 @@ def get_messages(conversation_id: str):
             for b in BlockedUser.query.filter_by(blocker_id=me.id).all()
         ]
 
+        # F-05: a conversation is (listing, me, ONE counterpart). Without a
+        # counterpart a listing seller with several buyers would get every
+        # buyer's thread merged into one history.
+        peer_ref = (
+            request.args.get("peer_id") or request.args.get("receiver_id") or ""
+        ).strip()
+        conversation = None
+        if peer_ref:
+            conversation = conversation_clause(car, me, peer_ref)
+            if conversation is None:
+                # Unknown counterpart: an empty conversation, never "everything".
+                return jsonify({
+                    "messages": [],
+                    "per_page": per_page,
+                    "total": 0,
+                    "has_more": False,
+                }), 200
+        elif car.seller_id == me.id:
+            keys = conversation_peer_keys(car, me)
+            if len(keys) > 1:
+                return jsonify({
+                    "message": "peer_id required: this listing has several conversations",
+                    "code": "peer_required",
+                }), 400
+            if not keys:
+                return jsonify({
+                    "messages": [],
+                    "per_page": per_page,
+                    "total": 0,
+                    "has_more": False,
+                }), 200
+            (only,) = tuple(keys)
+            if isinstance(only, int):
+                only_user = db.session.get(User, only)
+                only_ref = only_user.public_id if only_user else None
+            else:
+                only_ref = only
+            conversation = conversation_clause(car, me, only_ref)
+            peer_ref = only_ref or ""
+
         base_q = Message.query.filter(
             Message.car_id == car.id,
             or_(Message.sender_id == me.id, Message.receiver_id == me.id),
         )
+        if conversation is not None:
+            base_q = base_q.filter(conversation)
         if blocked_ids:
             base_q = base_q.filter(~Message.sender_id.in_(blocked_ids))
 
@@ -576,7 +650,9 @@ def get_messages(conversation_id: str):
         before_raw = (request.args.get("before") or "").strip()
         if before_raw:
             try:
-                before_dt = datetime.fromisoformat(before_raw.replace("Z", "+00:00"))
+                # Accepts "...Z", explicit offsets and the legacy offset-less
+                # form; always normalised to naive UTC like the column (F-07).
+                before_dt = parse_api_datetime(before_raw)
             except Exception:
                 before_dt = None
 
@@ -609,8 +685,22 @@ def get_messages(conversation_id: str):
             )
 
         # Mark messages to me as read and notify senders (read receipts).
+        # Only THIS conversation's counterpart is touched (F-05).
         try:
-            mark_messages_read_for_viewer(car, me)
+            read_peer = (
+                User.query.filter_by(public_id=peer_ref).first() if peer_ref else None
+            )
+            if peer_ref and read_peer is None:
+                # Deleted-counterpart thread: nobody to notify, but its
+                # messages must still stop counting as unread.
+                Message.query.filter(
+                    conversation,
+                    Message.receiver_id == me.id,
+                    Message.is_read.is_(False),
+                ).update({"is_read": True}, synchronize_session=False)
+                db.session.commit()
+            else:
+                mark_messages_read_for_viewer(car, me, peer=read_peer)
         except Exception:
             db.session.rollback()
 
@@ -639,24 +729,37 @@ def send_message(conversation_id: str):
         # BE-18: replay a completed send for this key instead of re-inserting
         # a duplicate Message (client retries — timeout, 401-refresh retry, etc.).
         idem_key = _get_idempotency_key()
-        if idem_key:
-            replayed = replay_response(
-                scope="chat_send",
-                actor_id=str(me.public_id),
-                idem_key=idem_key,
-            )
-            if replayed is not None:
-                status, body = replayed
-                return jsonify(body), status
+        # F-37: this is the JSON send the client re-sends after a timeout. Also
+        # refuse (retryable 503) a duplicate that arrives while the original
+        # request is still running, instead of inserting a second Message.
+        idem_state, idem_replay = begin_request(
+            scope="chat_send",
+            actor_id=str(me.public_id),
+            idem_key=idem_key,
+        )
+        if idem_state == "replay":
+            status, body = idem_replay
+            return jsonify(body), status
+        if idem_state == "busy":
+            return in_progress_response()
+
+        # N-1: one shared cap for the whole JSON body, checked before parsing.
+        try:
+            chat_payload.check_json_body_size(request.content_length)
+            chat_payload.check_json_body_size(None, len(request.get_data(cache=True)))
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
 
         data = validate_input_sanitization(request.get_json(silent=True) or {})
         content = str(data.get("content") or "").strip()
-        listing_preview = data.get("listing_preview")
+        raw_listing_preview = data.get("listing_preview")
         reply_to_public = str(data.get("reply_to_message_id") or "").strip()
         if not content:
             return jsonify({"message": "content required"}), 400
-        if len(content) > 4000:
-            return jsonify({"message": "content too long"}), 400
+        try:
+            chat_payload.check_content(content)
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
 
         car = _get_car_by_any_id(str(conversation_id))
         if not car:
@@ -668,9 +771,17 @@ def send_message(conversation_id: str):
         if receiver is None:
             return jsonify({"message": "receiver_id required or not allowed"}), 400
 
-        reply_to = _resolve_reply_target(me, car, reply_to_public)
+        reply_to = _resolve_reply_target(me, car, reply_to_public, receiver)
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
+
+        # N-1: the preview is derived from the Car row; client fields ignored.
+        try:
+            listing_preview = chat_payload.resolve_listing_preview(
+                raw_listing_preview, me=me, receiver=receiver, conversation_car=car
+            )
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
 
         msg = Message(
             sender_id=me.id,
@@ -680,7 +791,7 @@ def send_message(conversation_id: str):
             reply_to=reply_to,
             content=content,
             message_type="text",
-            listing_preview=listing_preview if isinstance(listing_preview, dict) else None,
+            listing_preview=listing_preview,
             is_read=False,
         )
         db.session.add(msg)
@@ -766,9 +877,15 @@ def send_image_message(conversation_id: str):
         if receiver is None:
             return jsonify({"message": "receiver_id required or not allowed"}), 400
 
-        reply_to = _resolve_reply_target(me, car, reply_to_public)
+        reply_to = _resolve_reply_target(me, car, reply_to_public, receiver)
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
+
+        # N-1: same text limits as JSON/socket, before any upload work.
+        try:
+            chat_payload.check_multipart_text(request.form)
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
 
         try:
             attachment_url = _upload_chat_attachment(
@@ -889,9 +1006,15 @@ def send_video_message(conversation_id: str):
         if receiver is None:
             return jsonify({"message": "receiver_id required or not allowed"}), 400
 
-        reply_to = _resolve_reply_target(me, car, reply_to_public)
+        reply_to = _resolve_reply_target(me, car, reply_to_public, receiver)
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
+
+        # N-1: same text limits as JSON/socket, before any upload work.
+        try:
+            chat_payload.check_multipart_text(request.form)
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
 
         try:
             attachment_url = _upload_chat_attachment(
@@ -1012,9 +1135,15 @@ def send_audio_message(conversation_id: str):
         if receiver is None:
             return jsonify({"message": "receiver_id required or not allowed"}), 400
 
-        reply_to = _resolve_reply_target(me, car, reply_to_public)
+        reply_to = _resolve_reply_target(me, car, reply_to_public, receiver)
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
+
+        # N-1: same text limits as JSON/socket, before any upload work.
+        try:
+            chat_payload.check_multipart_text(request.form)
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
 
         try:
             attachment_url = _upload_chat_attachment(
@@ -1147,19 +1276,26 @@ def send_media_group_message(conversation_id: str):
         if receiver is None:
             return jsonify({"message": "receiver_id required or not allowed"}), 400
 
-        reply_to = _resolve_reply_target(me, car, reply_to_public)
+        reply_to = _resolve_reply_target(me, car, reply_to_public, receiver)
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
 
-        listing_preview = None
-        listing_preview_raw = (request.form.get("listing_preview") or "").strip()
-        if listing_preview_raw:
-            try:
-                parsed = json.loads(listing_preview_raw)
-                if isinstance(parsed, dict):
-                    listing_preview = parsed
-            except Exception:
-                listing_preview = None
+        # N-1: same text limits as JSON/socket, before any upload work.
+        try:
+            chat_payload.check_multipart_text(request.form)
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
+
+        # N-1: the preview is derived from the Car row; client fields ignored.
+        try:
+            listing_preview = chat_payload.resolve_listing_preview(
+                chat_payload.parse_preview_form_field(request.form.get("listing_preview")),
+                me=me,
+                receiver=receiver,
+                conversation_car=car,
+            )
+        except chat_payload.ChatPayloadError as exc:
+            return jsonify(exc.body()), exc.status
 
         attachments = []
         for file in files:
@@ -1509,6 +1645,79 @@ def report_user(user_id: str):
         return jsonify({"message": "Failed to submit report"}), 500
 
 
+def _serialize_push_token_registration(token: str) -> None:
+    """Make concurrent registrations of the SAME token queue up (F-06).
+
+    There is no unique constraint on ``user.firebase_token`` (single-token-per-
+    user model, no migrations), so two accounts registering one device token at
+    the same moment could each clear the other's not-yet-visible row and both
+    end up owning it. On PostgreSQL a transaction-scoped advisory lock keyed by
+    the token makes the second registration wait for the first to commit and
+    then clear it. Other dialects (SQLite in tests/dev) serialize writers
+    already.
+    """
+    bind = db.session.get_bind()
+    if bind is not None and bind.dialect.name == "postgresql":
+        db.session.execute(
+            text("SELECT pg_advisory_xact_lock(hashtext(:tok))"),
+            {"tok": token},
+        )
+
+
+# F-06 deadlock hardening. Two accounts swapping tokens at the same instant
+# (A holds Y and registers X while B holds X and registers Y) lock each other's
+# rows in opposite order; PostgreSQL aborts one with SQLSTATE 40P01. The rows
+# are now locked in id order (no deadlock between registrations), and the
+# registration is also retried on exactly that condition as a safety net
+# (e.g. other writers touching ``user`` rows). Bounded: at most
+# ``_PUSH_TOKEN_MAX_ATTEMPTS`` attempts in total, pausing a jittered 5-25 ms
+# (times the attempt number) between them -- never more than ~50 ms in all.
+_PUSH_TOKEN_MAX_ATTEMPTS = 3
+_PUSH_TOKEN_RETRY_PAUSE_S = (0.005, 0.025)
+_PG_DEADLOCK_SQLSTATE = "40P01"
+
+
+def _is_pg_deadlock(exc: BaseException) -> bool:
+    """True only for a PostgreSQL ``deadlock_detected`` (SQLSTATE 40P01).
+
+    Works for psycopg 3 (``orig.sqlstate``) and psycopg2 (``orig.pgcode``) as
+    surfaced through SQLAlchemy's ``DBAPIError.orig``; anything else (unique
+    violations, serialization failures 40001, other dialects, plain errors) is
+    not retryable here.
+    """
+    if not isinstance(exc, DBAPIError):
+        return False
+    orig = getattr(exc, "orig", None)
+    code = getattr(orig, "sqlstate", None) or getattr(orig, "pgcode", None)
+    if code != _PG_DEADLOCK_SQLSTATE:
+        return False
+    bind = db.session.get_bind()
+    return bind is not None and bind.dialect.name == "postgresql"
+
+
+def _push_token_retry_pause(attempt: int) -> None:
+    import random
+    import time
+
+    time.sleep(random.uniform(*_PUSH_TOKEN_RETRY_PAUSE_S) * attempt)
+
+
+def _assign_push_token(me: User, token: str) -> None:
+    """One transaction: move ``token`` to ``me`` and clear it elsewhere."""
+    _serialize_push_token_registration(token)
+    # Lock the caller's row and every row holding the token in ascending id
+    # order *before* writing, so concurrent registrations always take row
+    # locks in the same order (SQLite ignores FOR UPDATE).
+    db.session.query(User.id).filter(
+        or_(User.id == me.id, User.firebase_token == token)
+    ).order_by(User.id).with_for_update().all()
+    db.session.query(User).filter(
+        User.firebase_token == token, User.id != me.id
+    ).update({User.firebase_token: None}, synchronize_session=False)
+    me.firebase_token = token
+    db.session.commit()
+
+
 @bp.route("/api/users/push_token", methods=["POST"])
 @jwt_required()
 def register_push_token():
@@ -1529,8 +1738,31 @@ def register_push_token():
         if not token:
             return jsonify({"message": "token is required"}), 400
 
-        me.firebase_token = token
-        db.session.commit()
+        # F-06: an FCM token identifies one physical device. If another
+        # account previously registered it (session ended without a server
+        # logout, reinstall, ...), that account must stop receiving this
+        # device's notifications -- clear it from every other user in the same
+        # transaction that assigns it to the caller.
+        for attempt in range(1, _PUSH_TOKEN_MAX_ATTEMPTS + 1):
+            try:
+                _assign_push_token(me, token)
+                break
+            except DBAPIError as exc:
+                db.session.rollback()
+                if not _is_pg_deadlock(exc):
+                    raise
+                if attempt >= _PUSH_TOKEN_MAX_ATTEMPTS:
+                    current_app.logger.warning(
+                        "Push token registration hit a PostgreSQL deadlock on all %s attempts",
+                        attempt,
+                    )
+                    raise
+                _push_token_retry_pause(attempt)
+                # Fresh transaction: reload the caller instead of reusing the
+                # state the rolled-back transaction expired.
+                me = get_current_user()
+                if not me:
+                    return jsonify({"message": "Unauthorized"}), 401
         current_app.logger.info(
             "Push token registered for user %s (prefix %s…)",
             me.public_id,

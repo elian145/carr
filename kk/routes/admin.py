@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import logging
 import os
+from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request, send_from_directory
 from sqlalchemy import asc, desc, func, not_, or_
 from sqlalchemy.orm import joinedload, selectinload
 
-from ..auth import admin_required, get_current_user, log_user_action
+from ..auth import admin_required, get_current_user, log_admin_action
 from ..extensions import socketio
 from ..push import send_push
 from ..admin_roles import (
@@ -35,9 +36,14 @@ from ..models import (
     db,
 )
 from ..response_cache import invalidate_filter_facets_cache
+from ..retention_dispatch import (
+    dispatch_saved_search_alerts_for_activated,
+    is_new_publication_transition,
+)
+from ..saved_search_alert_jobs import record_alert_job
 from ..listing_search import apply_listing_text_search
 from ..localization import get_background_locale, translate
-from ..time_utils import utcnow
+from ..time_utils import iso_utc, utcnow
 
 bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 logger = logging.getLogger(__name__)
@@ -300,7 +306,7 @@ def _find_user(public_id: str) -> User | None:
 
 def _image_admin_dict(img: CarImage) -> dict:
     data = img.to_dict()
-    data["created_at"] = img.created_at.isoformat() if img.created_at else None
+    data["created_at"] = iso_utc(img.created_at)
     car = img.car
     if car:
         data["car"] = {
@@ -767,7 +773,7 @@ def delete_image(image_id: int):
         db.session.commit()
 
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_delete_image",
                 target_type="car_image",
@@ -1107,20 +1113,123 @@ def dealer_verification_photo(user_public_id: str):
     filename = application.verification_photo_filename if application else None
     if not filename:
         return jsonify({"message": "Verification photo not found"}), 404
-    folder = os.path.join(
-        current_app.config["PRIVATE_UPLOAD_FOLDER"],
-        "dealer_verification",
+    from ..private_media import (
+        PrivateMediaError,
+        PrivateMediaNotFound,
+        read_dealer_verification,
     )
-    response = send_from_directory(
-        folder,
-        os.path.basename(filename),
-        as_attachment=False,
-        max_age=0,
-    )
+
+    try:
+        body, content_type = read_dealer_verification(filename)
+    except PrivateMediaNotFound:
+        return jsonify(
+            {"message": "Verification photo not found", "code": "photo_missing"}
+        ), 404
+    except PrivateMediaError:
+        return jsonify(
+            {
+                "message": "Verification photo storage is temporarily unavailable",
+                "code": "photo_storage_unavailable",
+            }
+        ), 503
+    # Bytes are proxied server-side after the permission check above; no
+    # public or presigned URL is ever issued for this photo.
+    response = current_app.response_class(body, mimetype=content_type)
+    response.headers["Content-Disposition"] = "inline"
     response.headers["Cache-Control"] = "no-store, private"
     response.headers["Pragma"] = "no-cache"
     response.headers["X-Content-Type-Options"] = "nosniff"
     return response
+
+
+@bp.route("/account-deletion-requests", methods=["GET"])
+@admin_required
+def account_deletion_requests_list():
+    """Queue of public web account-deletion requests (phone numbers = PII, so
+    the same permission as reading users)."""
+    denied = _deny("users.read")
+    if denied:
+        return denied
+    from ..account_deletion_requests import list_requests
+
+    status = (request.args.get("status") or "pending").strip().lower()
+    if status not in ("pending", "completed", "all"):
+        return jsonify({"message": "status must be pending, completed or all"}), 400
+    try:
+        limit = int(request.args.get("limit", 50))
+        offset = int(request.args.get("offset", 0))
+    except ValueError:
+        return jsonify({"message": "limit/offset must be integers"}), 400
+    from ..account_deletion_requests import account_exists_for, queue_counts
+
+    rows, total = list_requests(
+        status=None if status == "all" else status, limit=limit, offset=offset
+    )
+    items = []
+    for r in rows:
+        d = r.to_admin_dict()
+        # Pending rows only: does an account with this phone still exist?
+        # (Operator-only signal; the public response never reveals it.)
+        d["account_exists"] = account_exists_for(r) if r.status == "pending" else None
+        items.append(d)
+    return jsonify({"requests": items, "total": total, "counts": queue_counts()}), 200
+
+
+@bp.route("/account-deletion-requests/<request_public_id>/complete", methods=["POST"])
+@admin_required
+def account_deletion_request_complete(request_public_id: str):
+    """Mark a web deletion request as processed (idempotent). Body:
+    ``{"resolution": "account_deleted" | "no_account_found" | "declined",
+    "note": "..."}``. ``completed`` alone never implies the account was deleted:
+    ``account_deleted`` / ``no_account_found`` are refused with 409 while an
+    account with that phone still exists. Contact details are scrubbed."""
+    denied = _deny("users.write")
+    if denied:
+        return denied
+    from ..account_deletion_requests import CompletionError, mark_completed
+    from ..models import AccountDeletionRequest
+
+    row = AccountDeletionRequest.query.filter_by(
+        public_id=(request_public_id or "").strip()
+    ).first()
+    if row is None:
+        return jsonify({"message": "Request not found"}), 404
+    admin_user = get_current_user()
+    data = request.get_json(silent=True) or {}
+    try:
+        changed = mark_completed(
+            row,
+            operator_user_id=admin_user.id if admin_user else None,
+            note=str(data.get("note") or ""),
+            resolution=str(data.get("resolution") or "").strip().lower(),
+        )
+    except CompletionError as e:
+        status_code = 409 if e.code == "account_still_exists" else 400
+        return jsonify({"message": e.message, "code": e.code}), status_code
+    if changed and admin_user:
+        log_admin_action(
+            admin_user,
+            "account_deletion_request_complete",
+            target_type="account_deletion_request",
+            target_id=row.public_id,
+            metadata={"resolution": row.resolution},
+        )
+    return jsonify({"request": row.to_admin_dict(), "changed": changed}), 200
+
+
+@bp.route("/account-deletion-requests/retry-notifications", methods=["POST"])
+@admin_required
+def account_deletion_requests_retry_notifications():
+    """Re-attempt the support email for pending requests whose notification
+    never succeeded (the requests themselves are already stored)."""
+    denied = _deny("users.write")
+    if denied:
+        return denied
+    from ..account_deletion_requests import retry_unnotified
+    from .misc import _trust_config_payload
+
+    result = retry_unnotified(_trust_config_payload().get("support_email") or "")
+    return jsonify(result), 200
 
 
 @bp.route("/dealers/<user_public_id>/approve", methods=["POST"])
@@ -1179,7 +1288,7 @@ def dealers_approve(user_public_id: str):
                 target.public_id,
             )
 
-        log_user_action(
+        log_admin_action(
             admin_user,
             "dealer_approve",
             target_type="user",
@@ -1226,7 +1335,7 @@ def dealers_reject(user_public_id: str):
         )
         db.session.commit()
 
-        log_user_action(
+        log_admin_action(
             admin_user,
             "dealer_reject",
             target_type="user",
@@ -1269,7 +1378,7 @@ def dealers_review(user_public_id: str):
             reason,
         )
         db.session.commit()
-        log_user_action(
+        log_admin_action(
             admin_user,
             f"dealer_{action}",
             target_type="dealer_application",
@@ -1317,7 +1426,7 @@ def dealers_set_featured(user_public_id: str):
         target.updated_at = utcnow()
         db.session.commit()
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_dealer_featured",
                 target_type="user",
@@ -1332,6 +1441,8 @@ def dealers_set_featured(user_public_id: str):
 
 
 _VALID_REPORT_STATUSES = frozenset({"pending", "reviewed", "resolved", "dismissed"})
+# Upper bound on page*per_page for GET /reports (F-18); keeps the merge window small.
+_REPORTS_MAX_WINDOW = 10000
 
 
 def _apply_report_status(report, status: str, admin_notes: str | None):
@@ -1362,38 +1473,72 @@ def list_reports():
             user_q = user_q.filter_by(status=status)
             listing_q = listing_q.filter_by(status=status)
 
-        user_reports = []
-        listing_reports = []
-        if report_type in ("all", "user"):
-            user_reports = (
-                user_q.options(
+        # F-18: server-side pagination over the union of both report types.
+        # Nothing is capped at a fixed 200 any more: each type is counted in
+        # SQL, only the (created_at, id) keys of the first `end` rows of each
+        # stream are read to merge-sort the page, and only the rows on the
+        # requested page are loaded in full. Cost is bounded by
+        # _REPORTS_MAX_WINDOW regardless of table size.
+        start = (page - 1) * per_page
+        end = start + per_page
+        if end > _REPORTS_MAX_WINDOW:
+            return (
+                jsonify({"message": "Page too deep; narrow with status/type filters"}),
+                400,
+            )
+
+        _epoch = datetime(1970, 1, 1)
+
+        def _keys(model, query, rank):
+            if report_type not in ("all", rank_name[rank]):
+                return 0, []
+            total_n = query.order_by(None).count()
+            rows = (
+                query.order_by(model.created_at.desc(), model.id.desc())
+                .with_entities(model.created_at, model.id)
+                .limit(end)
+                .all()
+            )
+            return total_n, [(c or _epoch, rank, i) for c, i in rows]
+
+        rank_name = {0: "user", 1: "listing"}
+        user_total, user_keys = _keys(UserReport, user_q, 0)
+        listing_total, listing_keys = _keys(ListingReport, listing_q, 1)
+
+        merged = sorted(user_keys + listing_keys, key=lambda k: (k[0], k[2], -k[1]), reverse=True)
+        page_keys = merged[start:end]
+        user_ids = [i for _c, rank, i in page_keys if rank == 0]
+        listing_ids = [i for _c, rank, i in page_keys if rank == 1]
+
+        user_rows = {}
+        if user_ids:
+            user_rows = {
+                r.id: r
+                for r in UserReport.query.options(
                     joinedload(UserReport.reporter),
                     joinedload(UserReport.reported),
                 )
-                .order_by(UserReport.created_at.desc())
-                .limit(200)
+                .filter(UserReport.id.in_(user_ids))
                 .all()
-            )
-        if report_type in ("all", "listing"):
-            listing_reports = (
-                listing_q.options(
+            }
+        listing_rows = {}
+        if listing_ids:
+            listing_rows = {
+                r.id: r
+                for r in ListingReport.query.options(
                     joinedload(ListingReport.reporter),
                     joinedload(ListingReport.car).joinedload(Car.seller),
                 )
-                .order_by(ListingReport.created_at.desc())
-                .limit(200)
+                .filter(ListingReport.id.in_(listing_ids))
                 .all()
-            )
+            }
+        items = []
+        for _c, rank, rid in page_keys:
+            row = (user_rows if rank == 0 else listing_rows).get(rid)
+            if row is not None:
+                items.append(row.to_admin_dict())
 
-        combined = [r.to_admin_dict() for r in user_reports] + [
-            r.to_admin_dict() for r in listing_reports
-        ]
-        combined.sort(key=lambda x: x.get("created_at") or "", reverse=True)
-
-        total = len(combined)
-        start = (page - 1) * per_page
-        end = start + per_page
-        items = combined[start:end]
+        total = user_total + listing_total
         pages = max(1, (total + per_page - 1) // per_page)
 
         return (
@@ -1438,7 +1583,7 @@ def update_user_report(report_id: int):
         _apply_report_status(report, status, admin_notes)
         db.session.commit()
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_user_report",
                 target_type="user_report",
@@ -1484,7 +1629,7 @@ def update_listing_report(report_id: int):
         _apply_report_status(report, status, admin_notes)
         db.session.commit()
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_listing_report",
                 target_type="listing_report",
@@ -1633,6 +1778,7 @@ def update_car_status(car_id: str):
         # e.g. an is_featured-only update must never notify the seller).
         old_moderation_state = _car_moderation_state(car.is_active, car.status)
         was_pending = (car.status or "").strip().lower() == "pending"
+        old_status_for_alerts = car.status
         if "is_active" in data:
             car.is_active = bool(data["is_active"])
         if "status" in data and str(data["status"]).strip():
@@ -1695,6 +1841,16 @@ def update_car_status(car_id: str):
                 car, new_moderation_state, reason=moderation_reason
             )
         moderation_seller = car.seller
+        # F-04: decided pre-commit (under the row lock), dispatched post-commit.
+        alert_car_id = (
+            car.id
+            if is_new_publication_transition(old_status_for_alerts, car.is_active, car.status)
+            else None
+        )
+        if alert_car_id is not None:
+            # F-04 durability: the "alerts owed" marker commits (or rolls
+            # back) together with this activation. No-op while the flag is off.
+            record_alert_job(alert_car_id)
 
         db.session.commit()
         invalidate_filter_facets_cache()
@@ -1706,13 +1862,20 @@ def update_car_status(car_id: str):
         )
         if moderation_notification is not None and moderation_seller is not None:
             _deliver_listing_moderation_notification(moderation_notification, moderation_seller)
+        if alert_car_id is not None:
+            dispatch_saved_search_alerts_for_activated([alert_car_id])
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_listing",
                 target_type="car",
                 target_id=car.public_id or str(car.id),
-                metadata=data,
+                # Allowlist, not the raw request body: the audit row is permanent.
+                metadata={
+                    k: data[k]
+                    for k in ("is_active", "status", "is_featured", "featured_until", "reason")
+                    if k in data
+                },
             )
         return jsonify({"car": car.to_dict()}), 200
     except ValueError as e:
@@ -1775,6 +1938,7 @@ def bulk_update_car_status():
         missing = []
         blocked = []
         bulk_outcomes: list[tuple[int, str | None]] = []
+        bulk_alert_car_ids: list[int] = []  # F-04: rows that became newly active
         for raw_id in ids:
             car = _find_car_locked(str(raw_id))
             if not car:
@@ -1796,6 +1960,7 @@ def bulk_update_car_status():
 
             old_moderation_state = _car_moderation_state(car.is_active, car.status)
             bulk_was_pending = (car.status or "").strip().lower() == "pending"
+            bulk_old_status = car.status
             if "is_active" in patch:
                 car.is_active = patch["is_active"]
             if "status" in patch:
@@ -1817,6 +1982,12 @@ def bulk_update_car_status():
                         car.featured_until = parsed_featured_until
 
             car.updated_at = utcnow()
+
+            if is_new_publication_transition(bulk_old_status, car.is_active, car.status):
+                bulk_alert_car_ids.append(car.id)
+                # F-04 durability: same transaction as the activation
+                # (single commit below; the row is under this loop's car lock).
+                record_alert_job(car.id)
 
             new_moderation_state = _car_moderation_state(car.is_active, car.status)
             bulk_outcomes.append(
@@ -1857,8 +2028,9 @@ def bulk_update_car_status():
             _record_auto_moderation_outcome("listing", outcome_car_id, outcome, admin_user)
         for notif, seller in pending_moderation_notifications:
             _deliver_listing_moderation_notification(notif, seller)
+        dispatch_saved_search_alerts_for_activated(bulk_alert_car_ids)
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_bulk_update_listings",
                 target_type="car",
@@ -1943,7 +2115,7 @@ def broadcast_notification():
                 created_by_user_id=admin_user.id if admin_user else None,
             )
             if admin_user:
-                log_user_action(
+                log_admin_action(
                     admin_user,
                     "admin_schedule_notification",
                     target_type="scheduled_notification",
@@ -2002,7 +2174,7 @@ def broadcast_notification():
             )
 
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_broadcast_notification",
                 target_type="scheduled_notification",
@@ -2090,7 +2262,7 @@ def cancel_scheduled_notification(item_id: int):
         row.updated_at = utcnow()
         db.session.commit()
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_cancel_scheduled_notification",
                 target_type="scheduled_notification",
@@ -2209,12 +2381,13 @@ def update_user_status(user_id: str):
         user.updated_at = utcnow()
         db.session.commit()
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_user",
                 target_type="user",
                 target_id=user.public_id,
-                metadata=data,
+                # Only the field this route actually changes, never the raw body.
+                metadata={"is_active": bool(data["is_active"])} if "is_active" in data else None,
             )
         return jsonify({"user": user.to_dict(include_private=True)}), 200
     except Exception as e:
@@ -2266,7 +2439,7 @@ def update_user_admin_role(user_id: str):
 
         user.updated_at = utcnow()
         db.session.commit()
-        log_user_action(
+        log_admin_action(
             admin_user,
             "admin_update_user_role",
             target_type="user",
@@ -2543,7 +2716,7 @@ def delete_car(car_id: str):
             _deliver_listing_moderation_notification(moderation_notification, moderation_seller)
 
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_delete_listing",
                 target_type="car",
@@ -2584,7 +2757,7 @@ def delete_user(user_id: str):
         )
         db.session.commit()
 
-        log_user_action(
+        log_admin_action(
             admin_user,
             "admin_delete_user",
             target_type="user",
@@ -2642,7 +2815,7 @@ def purge_car(car_id: str):
         invalidate_filter_facets_cache()
 
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_purge_listing",
                 target_type="car",
@@ -2860,7 +3033,7 @@ def approve_listing_revision(revision_id: str):
             except Exception:
                 logger.exception("price-drop dispatch after revision approval failed")
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_approve_listing_revision",
                 target_type="car",
@@ -2927,7 +3100,7 @@ def reject_listing_revision(revision_id: str):
         if notification is not None and seller is not None:
             _deliver_listing_moderation_notification(notification, seller)
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_reject_listing_revision",
                 target_type="car",
@@ -2991,7 +3164,7 @@ def purge_user(user_id: str):
             )
         )
         db.session.commit()
-        log_user_action(
+        log_admin_action(
             admin_user,
             "admin_purge_user",
             target_type="user",
@@ -3127,15 +3300,21 @@ def update_settings():
         denied = _deny("settings")
         if denied:
             return denied
-        from ..app_settings import update_platform_settings
+        from ..app_settings import SettingsValidationError, update_platform_settings
 
         admin_user = get_current_user()
         data = request.get_json(silent=True) or {}
         if not isinstance(data, dict):
             return jsonify({"message": "JSON object required"}), 400
-        payload = update_platform_settings(data)
+        try:
+            payload = update_platform_settings(data)
+        except SettingsValidationError as exc:
+            # Force-update hardening: a malformed version floor / build /
+            # store URL is rejected before anything is stored.
+            db.session.rollback()
+            return jsonify({"message": exc.message, "field": exc.field}), 400
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_settings",
                 target_type="settings",

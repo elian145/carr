@@ -84,7 +84,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     return '';
   }
 
-  static const Color _brandOrange = AppColors.brandOrange;
+  static const Color _brandOrange = AppColors.brandOrangeIcon;
   static const Color _iconCircleFillLight = Color(0xFFFFF0E6);
   static const Color _iconCircleFillDark = Color(0xFFFFE8D6);
 
@@ -211,8 +211,8 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
               ),
             ),
           ),
-          Positioned(
-            left: 20,
+          PositionedDirectional(
+            start: 20,
             bottom: 4,
             child: Material(
               elevation: 8,
@@ -440,7 +440,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                           width: double.infinity,
                           child: FilledButton.icon(
                             style: FilledButton.styleFrom(
-                              backgroundColor: _brandOrange,
+                              backgroundColor: AppColors.brandOrangeStrong,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -462,6 +462,8 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                             icon: const Icon(Icons.phone_outlined, size: 18),
                             label: Text(
                               phones[i],
+                              // Phone numbers stay LTR (+964 7XX...) in RTL UIs.
+                              textDirection: TextDirection.ltr,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -485,7 +487,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                           width: double.infinity,
                           child: OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: _brandOrange,
+                              foregroundColor: AppColors.accentText(context),
                               side: BorderSide(
                                 color: _brandOrange.withValues(alpha: 0.4),
                               ),
@@ -637,7 +639,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: isLight
-                                ? const Color(0xFF8E8E93)
+                                ? AppColors.mutedText
                                 : Colors.white60,
                           ),
                         ),
@@ -648,7 +650,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                 Icon(
                   Icons.open_in_new_rounded,
                   size: 16,
-                  color: isLight ? const Color(0xFF8E8E93) : Colors.white54,
+                  color: isLight ? AppColors.mutedText : Colors.white54,
                 ),
               ],
             ),
@@ -717,7 +719,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: isLight ? const Color(0xFF8E8E93) : Colors.white60,
+                    color: isLight ? AppColors.mutedText : Colors.white60,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -741,25 +743,9 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     );
   }
 
-  String _normalizeTel(String raw) {
-    final s = raw.trim();
-    if (s.isEmpty) return '';
-    final buf = StringBuffer();
-    for (var i = 0; i < s.length; i++) {
-      final c = s[i];
-      if (c == '+' && buf.isEmpty) {
-        buf.write(c);
-      } else if (RegExp(r'[0-9]').hasMatch(c)) {
-        buf.write(c);
-      }
-    }
-    return buf.toString();
-  }
-
   Future<void> _callDealer(String rawPhone) async {
-    final phone = _normalizeTel(rawPhone);
-    if (phone.isEmpty) return;
-    final uri = Uri.parse('tel:$phone');
+    final uri = telUriFor(rawPhone);
+    if (uri == null) return;
 
     bool launched = await launchUrl(
       uri,

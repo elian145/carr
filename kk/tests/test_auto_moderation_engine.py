@@ -2227,7 +2227,14 @@ def test_migration_is_additive_single_head_and_reversible():
     cfg = Config()
     cfg.set_main_option("script_location", str(_REPO_ROOT / "migrations"))
     script = ScriptDirectory.from_config(cfg)
-    assert script.get_heads() == ["v0w1x2y3z4a5"]
+    # Single head. The moderation tables (v0w1x2y3z4a5) are no longer the tip:
+    # the F-04 saved_search_alert_job migration (f04a1b2c3d4e) is stacked on them,
+    # the B8 account_deletion_request migration (a7d3e1c9b5f2) on that, and the
+    # F-17 admin_audit_log migration (b8e4f2a6c1d3) on that.
+    assert script.get_heads() == ["b8e4f2a6c1d3"]
+    assert script.get_revision("b8e4f2a6c1d3").down_revision == "a7d3e1c9b5f2"
+    assert script.get_revision("a7d3e1c9b5f2").down_revision == "f04a1b2c3d4e"
+    assert script.get_revision("f04a1b2c3d4e").down_revision == "v0w1x2y3z4a5"
     path = _REPO_ROOT / "migrations" / "versions" / "v0w1x2y3z4a5_add_listing_moderation_tables.py"
     src = path.read_text(encoding="utf-8")
     up = src.split("def upgrade()")[1].split("def downgrade()")[0]

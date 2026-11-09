@@ -16,6 +16,7 @@ mixin _AnalyticsPageListingSelection on _AnalyticsPageListingCard {
         childAspectRatio: ListingLayoutPrefs.gridChildAspectRatioForWidth(
           listingColumns,
           screenWidth,
+          textScale: appTextScaleOf(context),
         ),
         crossAxisSpacing: 8, // Same spacing as home page
         mainAxisSpacing: 8, // Same spacing as home page

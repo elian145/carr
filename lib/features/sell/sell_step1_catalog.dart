@@ -210,7 +210,7 @@ mixin _SellStep1Catalog on _SellStep1Fields {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'No spec row for this year — try another year or variant.',
+            AppLocalizations.of(context)!.noSpecRowForThisYear,
           ),
           backgroundColor: Colors.red,
         ),

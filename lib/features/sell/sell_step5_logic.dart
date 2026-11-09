@@ -95,7 +95,7 @@ mixin _SellStep5Logic on _SellStep5Fields {
     // Require authentication before allowing submission.
     final existingToken = ApiService.accessToken;
     if (existingToken == null || existingToken.isEmpty) {
-      throw ApiException(statusCode: 401, message: 'Authentication required');
+      throw ApiException(statusCode: 401, message: kSellMsgAuthRequired);
     }
 
     final draftId = parentState?._currentDraftId.isNotEmpty == true
@@ -142,6 +142,14 @@ mixin _SellStep5Logic on _SellStep5Fields {
     // affects this widget *instance* (harmless / a no-op once it is
     // disposed); the durable record created by the service below is what
     // actually survives navigation, backgrounding, or a process kill.
+    // F-41: Cancel pressed before the service was called -- stop here; the
+    // draft was never handed over, so nothing exists to clean up. (No await
+    // between this check and the `submitFast` call below, so a later cancel
+    // is handled by the service itself.)
+    if (!isEdit && submitCancelRequested) {
+      submitCancelRequested = false;
+      throw const SellSubmissionCancelledException();
+    }
     if (!isEdit) {
       parentState?._beginSubmitDraftHandoff();
     }
@@ -165,7 +173,7 @@ mixin _SellStep5Logic on _SellStep5Fields {
         // the top of this method would have.
         throw ApiException(
           statusCode: 401,
-          message: 'Authentication required',
+          message: kSellMsgAuthRequired,
         );
       }
 
@@ -224,6 +232,48 @@ mixin _SellStep5Logic on _SellStep5Fields {
     }
   }
 
+  /// F-41: user taps "Cancel upload" on the submitting overlay. Confirms,
+  /// then cancels safely through the service (draft kept when no listing was
+  /// created yet; listing parked in My Listings otherwise). The in-flight
+  /// [_onSellStep5SubmitPressed] unwinds via [SellSubmissionCancelledException].
+  Future<void> _onCancelUploadPressed(_SellCarPageState? parentState) async {
+    final loc = AppLocalizations.of(context)!;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dctx) => AlertDialog(
+        content: Text(loc.a11yCancelUploadConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dctx).pop(false),
+            child: Text(loc.a11yKeepUploading),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dctx).pop(true),
+            child: Text(loc.a11yCancelUpload),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final pageState =
+        parentState ?? context.findAncestorStateOfType<_SellCarPageState>();
+    final draftId = (pageState?._currentDraftId.isNotEmpty ?? false)
+        ? pageState!._currentDraftId
+        : 'default';
+    final outcome =
+        await PendingSellSubmissionService.instance.cancelSubmission(draftId);
+    // Nothing in the service yet (still verifying phones / validating): make
+    // the submit flow stop before it ever hands the draft over.
+    if (outcome == null && isSubmitting) submitCancelRequested = true;
+    // Refused because the service already owns this draft and is past the
+    // point of no return (everything uploaded, publishing): tell the user.
+    // (A null with no service run yet is the pre-handoff case handled above.)
+    if (outcome == null &&
+        mounted &&
+        PendingSellSubmissionService.instance.isSubmitting(draftId)) {
+      showSellCancelTooLateFeedback(ScaffoldMessenger.maybeOf(context), loc);
+    }
+  }
   Future<void> _precacheSubmittedListingImages(Map<String, dynamic> car) async {
     final List<String> urls = <String>[];
     final String primary = (car['image_url'] ?? '').toString();

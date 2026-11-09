@@ -85,7 +85,7 @@ class BrandLogoImage extends StatelessWidget {
     this.fit = BoxFit.contain,
     this.placeholderSize = 20,
     this.errorIconSize = 22,
-    this.errorIconColor = AppColors.brandOrange,
+    this.errorIconColor = AppColors.brandOrangeIcon,
   });
 
   final String brand;
@@ -178,7 +178,7 @@ class BrandLogoCircle extends StatelessWidget {
     this.logoBoxWidth,
     this.placeholderSize = 20,
     this.errorIconSize = 22,
-    this.errorIconColor = AppColors.brandOrange,
+    this.errorIconColor = AppColors.brandOrangeIcon,
   });
 
   final String brand;

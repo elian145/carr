@@ -107,6 +107,10 @@ def _chat_cred_payload() -> dict[str, str]:
 # to bound the exposure window of a leaked URL (proxy log, screenshot, etc.).
 CHAT_PRESIGN_GET_DEFAULT_EXPIRES_SECONDS = 600
 
+# Prefixes in the private chat bucket that must NEVER be presigned/served as
+# chat media (admin-proxy-only content).
+PRIVATE_ONLY_KEY_PREFIXES = ("dealer_verification/",)
+
 # Lazily created, reused boto3 S3-compatible client for the PRIVATE chat
 # bucket (C-10 perf, Fix B). Keyed by the exact credential tuple used to
 # build it so a credential/config change (e.g. across tests, or a future
@@ -339,6 +343,59 @@ def r2_chat_put_bytes(
             pass
 
 
+def r2_chat_head_object(*, key: str, timeout: float = 30) -> dict[str, Any] | None:
+    """Metadata-only existence check in the PRIVATE chat bucket.
+
+    Returns ``{"exists": bool, "size": int | None, "content_type": str | None}``
+    (a missing key is a normal outcome, not an error) or ``None`` for an empty
+    key. Raises on a real storage/credential/network failure.
+    """
+    if not key:
+        return None
+    payload: dict[str, Any] = {**_chat_cred_payload(), "op": "head_object", "key": key}
+    result = _run_r2_op(payload, timeout=timeout)
+    return {
+        "exists": bool(result.get("exists")),
+        "size": result.get("size"),
+        "content_type": result.get("content_type"),
+    }
+
+
+def r2_chat_get_bytes(*, key: str, timeout: float = 120) -> bytes:
+    """Download one object from the PRIVATE chat bucket and return its bytes.
+
+    Intended for small, server-proxied private files (e.g. dealer verification
+    photos, capped at 8 MB at upload). Never builds a URL.
+    """
+    if not key:
+        raise RuntimeError("Missing key")
+    fd, path = tempfile.mkstemp(prefix="r2_chat_get_", suffix=".bin")
+    os.close(fd)
+    try:
+        payload: dict[str, Any] = {
+            **_chat_cred_payload(),
+            "op": "get_object",
+            "key": key,
+            "dest_path": path,
+        }
+        _run_r2_op(payload, timeout=timeout)
+        with open(path, "rb") as fp:
+            return fp.read()
+    finally:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+
+def r2_chat_delete_object(*, key: str, timeout: float = 30) -> None:
+    """Delete one object from the PRIVATE chat bucket (idempotent)."""
+    if not key:
+        return
+    payload: dict[str, Any] = {**_chat_cred_payload(), "op": "delete_object", "key": key}
+    _run_r2_op(payload, timeout=timeout)
+
+
 def _get_chat_boto3_client(creds: dict[str, str]):
     """Lazily create and reuse one boto3 S3-compatible client scoped to the
     PRIVATE chat-media bucket credentials (C-10 perf, Fix B).
@@ -432,6 +489,13 @@ def r2_presign_get(
     is unchanged and remains the sole implementation for every other R2
     operation (uploads, presigned PUT).
     """
+    # Defence in depth: the private bucket also holds dealer-verification photos
+    # (kk/private_media.py). Those are served ONLY by the permission-checked
+    # admin proxy, never through a presigned chat-media URL, even if a message
+    # row were ever (mis)written with such a key.
+    if (key or "").startswith(PRIVATE_ONLY_KEY_PREFIXES) or (key or "").startswith("r2:"):
+        raise RuntimeError("key is not eligible for chat-media presigning")
+
     inprocess_url = _r2_presign_get_inprocess(key=key, expires_in=expires_in)
     if inprocess_url:
         return inprocess_url

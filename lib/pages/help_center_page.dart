@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../l10n/app_localizations.dart';
 import '../navigation/app_page_route.dart';
 import '../services/trust_config.dart';
+import '../shared/phone/tel_uri.dart';
 import 'legal_document_page.dart';
 
 class HelpCenterPage extends StatefulWidget {
@@ -151,7 +152,9 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
                     leading: const Icon(Icons.phone_outlined),
                     title: Text(cfg.supportPhone),
                     subtitle: Text(loc.phoneLabel),
-                    onTap: () => _openUrl('tel:${cfg.supportPhone}'),
+                    onTap: () => _openUrl(
+                      telUriFor(cfg.supportPhone)?.toString() ?? 'tel:${cfg.supportPhone}',
+                    ),
                   ),
                 if (cfg.supportWhatsapp.isNotEmpty)
                   ListTile(

@@ -148,6 +148,36 @@ abstract class AppLocalizations {
   /// **'Profile'**
   String get navProfile;
 
+  /// No description provided for @homeLayoutList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get homeLayoutList;
+
+  /// No description provided for @homeLayoutGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid'**
+  String get homeLayoutGrid;
+
+  /// No description provided for @mainNavigationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Main navigation'**
+  String get mainNavigationLabel;
+
+  /// No description provided for @sellPhotoProcessingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo processing failed. Please try again.'**
+  String get sellPhotoProcessingFailed;
+
+  /// No description provided for @sellSubmissionCancelledByUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled by you'**
+  String get sellSubmissionCancelledByUser;
+
   /// No description provided for @addListingTitle.
   ///
   /// In en, this message translates to:
@@ -1071,6 +1101,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You can\'t message yourself on your own listing.'**
   String get chatCarzoOwnListing;
+
+  /// Typing indicator shown above the chat composer
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is typing...'**
+  String chatUserTyping(String name);
 
   /// No description provided for @unableToOpenWhatsApp.
   ///
@@ -2571,6 +2607,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No notifications yet'**
   String get noNotificationsYet;
+
+  /// No description provided for @notificationChannelChatName.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat messages'**
+  String get notificationChannelChatName;
+
+  /// No description provided for @notificationChannelChatDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat message alerts'**
+  String get notificationChannelChatDescription;
+
+  /// No description provided for @notificationChannelUpdatesName.
+  ///
+  /// In en, this message translates to:
+  /// **'Account updates'**
+  String get notificationChannelUpdatesName;
+
+  /// No description provided for @notificationChannelUpdatesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Important account and dealership updates'**
+  String get notificationChannelUpdatesDescription;
 
   /// No description provided for @failedToLoadNotifications.
   ///
@@ -4483,6 +4543,18 @@ abstract class AppLocalizations {
   /// **'No makes or models match your search.'**
   String get noMakesOrModelsMatchYourSearch;
 
+  /// No description provided for @typeModelNameToSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a model name to search. You can also type a brand to see all its models.'**
+  String get typeModelNameToSearch;
+
+  /// No description provided for @noModelsMatchYourSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'No models match your search.'**
+  String get noModelsMatchYourSearch;
+
   /// No description provided for @make.
   ///
   /// In en, this message translates to:
@@ -4627,6 +4699,12 @@ abstract class AppLocalizations {
   /// **'Untitled draft'**
   String get untitledDraftTitle;
 
+  /// No description provided for @yourListingFallbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your listing'**
+  String get yourListingFallbackTitle;
+
   /// No description provided for @continueEditing.
   ///
   /// In en, this message translates to:
@@ -4732,7 +4810,7 @@ abstract class AppLocalizations {
   /// No description provided for @specDatabaseUnavailableRestartTheAppAfterFlutterPubGet.
   ///
   /// In en, this message translates to:
-  /// **'Spec database unavailable. Restart the app after flutter pub get.'**
+  /// **'Vehicle specifications are unavailable right now. Please restart the app.'**
   String get specDatabaseUnavailableRestartTheAppAfterFlutterPubGet;
 
   /// No description provided for @catalogAutoFill.
@@ -4764,6 +4842,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Specs available for this year.'**
   String get specsAvailableForThisYear;
+
+  /// No description provided for @noSpecRowForThisYear.
+  ///
+  /// In en, this message translates to:
+  /// **'No spec row for this year — try another year or variant.'**
+  String get noSpecRowForThisYear;
 
   /// No description provided for @applySpecs.
   ///
@@ -5360,6 +5444,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A newer version of CarNet is available.'**
   String get softUpdateFallbackMessage;
+
+  /// No description provided for @currentPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password'**
+  String get currentPasswordLabel;
+
+  /// No description provided for @pleaseEnterCurrentPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your current password'**
+  String get pleaseEnterCurrentPassword;
+
+  /// No description provided for @passwordChangedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed successfully'**
+  String get passwordChangedSuccessfully;
+
+  /// No description provided for @unableToChangePasswordCheckCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to change password. Please check your current password and try again.'**
+  String get unableToChangePasswordCheckCurrent;
+
+  /// No description provided for @unableToChangePasswordTryLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to change password. Please try again later.'**
+  String get unableToChangePasswordTryLater;
+
+  /// No description provided for @sendingEllipsis.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending...'**
+  String get sendingEllipsis;
+
+  /// No description provided for @videoBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'VIDEO'**
+  String get videoBadge;
+
+  /// No description provided for @viewDetailsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'View Details'**
+  String get viewDetailsButton;
+
+  /// No description provided for @a11yPhotoXOfY.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo {index} of {total}'**
+  String a11yPhotoXOfY(int index, int total);
+
+  /// No description provided for @a11yCancelUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel upload'**
+  String get a11yCancelUpload;
+
+  /// No description provided for @a11yCancelUploadConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop uploading? If your listing isn\'t created yet, your draft is kept.'**
+  String get a11yCancelUploadConfirm;
+
+  /// No description provided for @a11yKeepUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep uploading'**
+  String get a11yKeepUploading;
+
+  /// No description provided for @a11yUploadCancelledDraftKept.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload cancelled. Your draft was kept.'**
+  String get a11yUploadCancelledDraftKept;
+
+  /// No description provided for @a11yUploadCancelTooLate.
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s too late to cancel: your listing is already being published.'**
+  String get a11yUploadCancelTooLate;
 }
 
 class _AppLocalizationsDelegate

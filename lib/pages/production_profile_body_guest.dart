@@ -11,7 +11,7 @@ mixin _ProfilePageBodyGuest on _ProfilePageWidgets {
       ),
       child: const Icon(
         Icons.person_outline,
-        color: AppColors.brandOrange,
+        color: AppColors.brandOrangeIcon,
         size: 26,
       ),
     );
@@ -39,7 +39,7 @@ mixin _ProfilePageBodyGuest on _ProfilePageWidgets {
     final loginButton = ElevatedButton(
       onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.brandOrange,
+        backgroundColor: AppColors.brandOrangeStrong,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         shape: RoundedRectangleBorder(

@@ -75,8 +75,8 @@ extension _CarComparisonPageHelpers on CarComparisonPage {
           const SizedBox(height: 4),
           Text(
             formatCurrency(context, car['price']?.toString() ?? '0'),
-            style: const TextStyle(
-              color: AppColors.brandOrange,
+            style: TextStyle(
+              color: AppColors.accentText(context),
               fontWeight: FontWeight.w800,
               fontSize: 16,
             ),
@@ -89,9 +89,9 @@ extension _CarComparisonPageHelpers on CarComparisonPage {
       clipBehavior: Clip.none,
       children: [
         card,
-        Positioned(
+        PositionedDirectional(
           top: 4,
-          right: 4,
+          end: 4,
           child: Material(
             color: Colors.black54,
             shape: const CircleBorder(),

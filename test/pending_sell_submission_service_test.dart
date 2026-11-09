@@ -36,7 +36,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:car_listing_app/features/sell/pending_sell_submission_service.dart';
+import 'package:car_listing_app/features/sell/sell_listing_media_upload.dart'
+    show SellSubmissionCancelledException;
+import 'package:car_listing_app/features/sell/sell_listing_submit_result.dart';
 import 'package:car_listing_app/features/sell/sell_media_identity.dart';
+import 'package:car_listing_app/features/sell/sell_submission_visibility.dart';
 import 'package:car_listing_app/features/sell/sell_video_compression.dart';
 import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/auth_service.dart';
@@ -46,6 +50,8 @@ import 'package:car_listing_app/shared/listings/owner_optimistic_media_cleanup.d
 import 'package:car_listing_app/shared/prefs/owner_optimistic_media_prefs.dart';
 import 'package:car_listing_app/shared/prefs/sell_draft_media_persistence.dart';
 import 'package:car_listing_app/shared/prefs/sell_submission_state_prefs.dart';
+
+import 'support/test_jwt.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart' show XFile;
@@ -148,6 +154,9 @@ void main() {
   late FakeMediaManifest fakeManifest;
 
   setUp(() async {
+    // Resume-mechanics tests seed ownerless records to model a killed app;
+    // the quarantine itself is covered by its own group below.
+    PendingSellSubmissionService.instance.debugAllowOwnerlessResume = true;
     fakeManifest = FakeMediaManifest()
       ..carLookup = (id) => carsById[id];
     tempDir = Directory.systemTemp.createTempSync('pending_sell_sub_');
@@ -465,6 +474,7 @@ void main() {
   });
 
   tearDown(() async {
+    PendingSellSubmissionService.instance.debugAllowOwnerlessResume = false;
     SellDraftMediaPersistence.debugBeforeCopyOverride = null;
     SellDraftMediaPersistence.debugResetMediaLifecycleForTest();
     await ApiService.clearTokens();
@@ -478,6 +488,148 @@ void main() {
     } catch (_) {}
   });
 
+  group('legacy_sell_pending_media_v1 ownership (F-34)', () {
+    const legacyKey = 'legacy_sell_pending_media_v1';
+    const legacyJson =
+        '{"carId":"legacy_car_1","draftId":"legacy_draft_1","pendingReview":false,'
+        '"carData":{"images":["/definitely/missing/legacy.jpg"],"damage_images":[],"videos":[]}}';
+
+    test('an unowned legacy record is NOT turned into a submission while the '
+        'signed-in account is unknown', () async {
+      SharedPreferences.setMockInitialValues({legacyKey: legacyJson});
+      await PendingSellSubmissionService.instance.resumeAll();
+      expect(await SellSubmissionStatePrefs.loadAll(), isEmpty);
+      final sp = await SharedPreferences.getInstance();
+      expect(sp.containsKey(legacyKey), isTrue,
+          reason: 'left untouched until an owner is known (never claimed '
+              'by whichever account signs in next)');
+    });
+
+    test('once the account is known the migrated record is stamped with it',
+        () async {
+      SharedPreferences.setMockInitialValues({legacyKey: legacyJson});
+      await AuthService().adoptTestSession(user: {'id': 'user_legacy_owner'});
+      await PendingSellSubmissionService.instance.resumeAll();
+      final rec = await SellSubmissionStatePrefs.load('legacy_draft_1');
+      expect(rec, isNotNull);
+      expect(rec!.ownerUserId, 'user_legacy_owner');
+      final sp = await SharedPreferences.getInstance();
+      expect(sp.containsKey(legacyKey), isFalse);
+    });
+  });
+  group('ownerless sell submissions are quarantined (F-34)', () {
+    SellSubmissionRecord ownerless(String id, {String? carId}) {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      return SellSubmissionRecord(
+        draftId: id,
+        status: SellSubmissionStatus.retryable,
+        carId: carId,
+        carData: <String, dynamic>{'images': <dynamic>[]},
+        idempotencyKey: 'sell-create-$id',
+        currentPhase: 'creating',
+        createdAt: now,
+        updatedAt: now,
+      );
+    }
+
+    setUp(() {
+      PendingSellSubmissionService.instance.debugAllowOwnerlessResume = false;
+      PendingSellSubmissionService.instance.debugResetOwnerlessTracking();
+    });
+    tearDown(() {
+      AuthService().resetTestSession();
+    });
+
+    test('a persisted ownerless record is never resumed, stamped or run by '
+        'the first account to sign in', () async {
+      await SellSubmissionStatePrefs.upsert(ownerless('old_unowned'));
+      await AuthService().adoptTestSession(user: {'id': 'user_first'});
+
+      final resumed = await PendingSellSubmissionService.instance.resumeAll();
+
+      expect(resumed, isFalse);
+      expect(createCarCalls, isEmpty,
+          reason: "an unowned submission must not be created as user_first");
+      final rec = await SellSubmissionStatePrefs.load('old_unowned');
+      expect(rec, isNotNull, reason: 'quarantined, not deleted');
+      expect(rec!.ownerUserId, isNull, reason: 'never stamped');
+      expect(rec.status, SellSubmissionStatus.retryable);
+    });
+
+    test('a quarantined record is not shown as a pending entry to anyone',
+        () {
+      final r = ownerless('old_unowned');
+      expect(sellSubmissionShowsPendingEntry(r, currentOwnerId: 'user_first'),
+          isFalse);
+      expect(sellSubmissionShowsPendingEntry(r), isFalse);
+      expect(sellSubmissionHidesDraft(r, currentOwnerId: 'user_first'),
+          isFalse);
+      expect(
+        sellSubmissionPendingEntries([r], currentOwnerId: 'user_first'),
+        isEmpty,
+      );
+      // An OWNED record is unaffected.
+      final owned = r.copyWith(ownerUserId: 'user_first');
+      expect(sellSubmissionShowsPendingEntry(owned,
+          currentOwnerId: 'user_first'), isTrue);
+    });
+
+    test('submitting over a quarantined record does not inherit its listing '
+        'id or progress', () async {
+      await SellSubmissionStatePrefs.upsert(
+        ownerless('shared_draft_id', carId: 'foreign_car_9'),
+      );
+      await AuthService().adoptTestSession(user: {'id': 'user_second'});
+
+      await PendingSellSubmissionService.instance.submit(
+        draftId: 'shared_draft_id',
+        carData: _baseCarData(),
+      );
+
+      expect(createCarCalls, hasLength(1),
+          reason: "the foreign listing id must not make submit skip create "
+              'or finish another person\'s listing');
+    });
+
+    test('a record created in THIS session while the owner was unknown is '
+        'stamped by that same session once the account is known', () async {
+      // No profile yet, but the session's own token names the account.
+      await ApiService.setTokens(
+        accessToken: testJwt('user_token_named'),
+        refreshToken: testJwt('user_token_named', type: 'refresh'),
+      );
+      createCarOverride = (_) => http.Response(
+            json.encode({'message': 'Service Unavailable'}),
+            503,
+            headers: {'content-type': 'application/json'},
+          );
+      try {
+        await PendingSellSubmissionService.instance.submit(
+          draftId: 'fresh_unknown_owner',
+          carData: _baseCarData(),
+        );
+      } catch (_) {}
+      final rec = await SellSubmissionStatePrefs.load('fresh_unknown_owner');
+      expect(rec, isNotNull);
+      expect(rec!.ownerUserId, 'user_token_named',
+          reason: 'owner taken from the session token, not left empty');
+    });
+
+    test('an ownerless record from a previous session is quarantined even '
+        'after the same epoch no longer matches', () async {
+      await AuthService().adoptTestSession(user: {'id': 'user_a'});
+      // Simulate "created in this process" for a draft, then a session change.
+      createCarOverride = (_) => http.Response('{}', 503);
+      await SellSubmissionStatePrefs.upsert(ownerless('stale_after_switch'));
+      await ApiService.setTokens(
+        accessToken: testJwt('user_b_account'),
+        refreshToken: testJwt('user_b_account', type: 'refresh'),
+      );
+      await AuthService().adoptTestSession(user: {'id': 'user_b_account'});
+      expect(await PendingSellSubmissionService.instance.resumeAll(), isFalse);
+      expect(createCarCalls, isEmpty);
+    });
+  });
   group('SellSubmissionRecord persistence (no HTTP)', () {
     test(
       'J-12: an old-schema record (persisted by a version of the app that '
@@ -635,6 +787,377 @@ void main() {
     },
   );
 
+  // ---- F-41: cancel mid-submission is safe (no retry, draft record gone) ---
+  test(
+    'F-41: cancelling while createCar is failing transiently stops the '
+    'retry, removes the record and leaves no listing',
+    () async {
+      const draftId = 'draft_cancel';
+      createCarOverride = (body) {
+        // User taps "Cancel upload" while the first create attempt fails.
+        unawaited(
+          PendingSellSubmissionService.instance.cancelSubmission(draftId),
+        );
+        return http.Response(
+          json.encode({'message': 'unavailable'}),
+          503,
+          headers: {'content-type': 'application/json'},
+        );
+      };
+
+      await expectLater(
+        PendingSellSubmissionService.instance.submit(
+          draftId: draftId,
+          carData: _baseCarData(),
+        ),
+        throwsA(isA<SellSubmissionCancelledException>()),
+      );
+
+      expect(createCarCalls.length, 1, reason: 'no retry after cancel');
+      expect(carsById, isEmpty, reason: 'no half-created listing');
+      expect(await SellSubmissionStatePrefs.load(draftId), isNull);
+      expect(PendingSellSubmissionService.instance.isSubmitting(draftId),
+          isFalse);
+      // A later resume trigger must not resurrect the cancelled submission.
+      await PendingSellSubmissionService.instance.resumeAll();
+      expect(createCarCalls.length, 1);
+    },
+  );
+
+  // ---- F-41: cancel at the very start of a submission is never a no-op ----
+  test(
+    'F-41: cancelling while the submission is still being prepared stops it '
+    'before any network call, keeps no record and creates no listing',
+    () async {
+      const draftId = 'draft_cancel_early';
+      final svc = PendingSellSubmissionService.instance;
+      final run = svc.submit(draftId: draftId, carData: _baseCarData());
+      // `submit` has registered the draft as preparing synchronously, but
+      // nothing has been persisted yet (record == null): used to be a no-op.
+      expect(svc.isPreparing(draftId), isTrue);
+      expect(await svc.cancelSubmission(draftId), SellCancelOutcome.draftKept);
+      // A second tap is idempotent.
+      expect(await svc.cancelSubmission(draftId), SellCancelOutcome.draftKept);
+
+      await expectLater(run, throwsA(isA<SellSubmissionCancelledException>()));
+
+      expect(createCarCalls, isEmpty, reason: 'no create request was sent');
+      expect(carsById, isEmpty);
+      expect(await SellSubmissionStatePrefs.load(draftId), isNull,
+          reason: 'cancel must not leave (or resurrect) a record');
+      expect(svc.isCancelRequested(draftId), isFalse);
+      expect(svc.isPreparing(draftId), isFalse);
+
+      // Deterministic: nothing resurrects it later.
+      await svc.resumeAll();
+      expect(createCarCalls, isEmpty);
+    },
+  );
+
+  test(
+    'F-41: a cancelled attempt leaves no stale flag -- the next submission '
+    'of the same draft creates exactly one listing',
+    () async {
+      const draftId = 'draft_cancel_then_retry';
+      final svc = PendingSellSubmissionService.instance;
+      final first = svc.submit(draftId: draftId, carData: _baseCarData());
+      await svc.cancelSubmission(draftId);
+      await expectLater(first, throwsA(isA<SellSubmissionCancelledException>()));
+      expect(createCarCalls, isEmpty);
+
+      // Cancel with nothing in flight is a harmless no-op and sets no flag.
+      expect(await svc.cancelSubmission(draftId), isNull);
+      expect(svc.isCancelRequested(draftId), isFalse);
+
+      final result = await svc.submit(draftId: draftId, carData: _baseCarData());
+      expect(result, isNotNull);
+      expect(createCarCalls.length, 1, reason: 'exactly one create, no duplicate');
+      expect(carsById.length, 1);
+    },
+  );
+
+  test(
+    'F-41: cancelling after the create request was sent never deletes the '
+    'server-side listing and never retries create',
+    () async {
+      const draftId = 'draft_cancel_after_create';
+      final svc = PendingSellSubmissionService.instance;
+      createCarOverride = (body) {
+        // The user cancels while the create request is in flight; the server
+        // still creates the listing.
+        unawaited(svc.cancelSubmission(draftId));
+        carIdCounter++;
+        final id = 'car_$carIdCounter';
+        carsById[id] = {
+          'id': id,
+          'images': <dynamic>[],
+          'videos': <dynamic>[],
+        };
+        fakeManifest.registerCreate(id, body);
+        return http.Response(
+          json.encode({'car': carsById[id]}),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      };
+
+      await expectLater(
+        svc.submit(draftId: draftId, carData: _baseCarData()),
+        throwsA(isA<SellSubmissionCancelledException>()),
+      );
+
+      expect(createCarCalls.length, 1, reason: 'create is never retried');
+      expect(carsById.keys, ['car_1'],
+          reason: 'cancel must not delete the server-side listing');
+      final r = await SellSubmissionStatePrefs.load(draftId);
+      expect(r, isNotNull, reason: 'created listing stays tracked');
+      expect(r!.status, SellSubmissionStatus.needsAttention);
+      expect(r.carId, 'car_1');
+      expect(r.lastErrorRetryable, isFalse);
+
+      // No automatic resume re-creates or re-uploads it.
+      await svc.resumeAll();
+      expect(createCarCalls.length, 1);
+      expect(carsById.length, 1);
+    },
+  );
+
+  test('F-41: an edit of an existing listing is not cancellable while preparing',
+      () async {
+    const draftId = 'draft_edit_not_cancellable';
+    final svc = PendingSellSubmissionService.instance;
+    final run = svc.submit(
+      draftId: draftId,
+      carData: _baseCarData(),
+      editListingId: 'car_existing',
+    );
+    expect(await svc.cancelSubmission(draftId), isNull);
+    expect(svc.isCancelRequested(draftId), isFalse);
+    try {
+      await run;
+    } catch (_) {}
+  });
+  // ---- F-41: cancel AFTER the final media confirmation ---------------------
+  //
+  // Contract: `cancelSubmission` either ACCEPTS the cancel (the run then ends
+  // cancelled: needsAttention record, never a success event / result) or
+  // REFUSES it by returning null because every media item is already
+  // confirmed (the run then completes normally). It must never accept a
+  // cancel and still report success, and it must never leak the cancel flag.
+  group('F-41: cancel after the final media confirmation', () {
+    File photo(String name) => File('${tempDir.path}/$name')
+      ..writeAsBytesSync([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3]);
+
+    /// Wraps the fake server so [onResponse] can run (and be awaited) in the
+    /// middle of a specific request, exactly when the worker is waiting on it.
+    void interceptServer(
+      Future<void> Function(http.BaseRequest request, http.Response response)
+      onResponse,
+    ) {
+      final inner = ApiService.boundTestHttpClient!;
+      ApiService.testHttpClient = MockClient((request) async {
+        final copy = http.Request(request.method, request.url)
+          ..headers.addAll(request.headers)
+          ..bodyBytes = request.bodyBytes;
+        final streamed = await inner.send(copy);
+        final response = await http.Response.fromStream(streamed);
+        await onResponse(request, response);
+        return response;
+      });
+    }
+
+    bool isListRefresh(http.BaseRequest r) =>
+        r.method == 'GET' && r.url.path == '/api/cars';
+
+    /// The worker's `GET /api/cars` list refreshes, in order: #1 happens as
+    /// the media phase wraps up (before the worker's last cancel checkpoint),
+    /// #2 after the server confirmed every expected media id (past it).
+    bool Function(http.BaseRequest) nthListRefresh(int n) {
+      var seen = 0;
+      return (r) => isListRefresh(r) && ++seen == n;
+    }
+
+    /// Shared body: the user cancels at the request matched by [trigger]; the
+    /// accepted cancel must win -- never a success result or event.
+    Future<void> expectAcceptedCancelWins(
+      String draftId,
+      bool Function(http.BaseRequest) trigger,
+    ) async {
+      final svc = PendingSellSubmissionService.instance;
+      final events = <SellSubmissionEvent>[];
+      final sub = svc.events.listen(events.add);
+      addTearDown(sub.cancel);
+
+      SellCancelOutcome? outcome;
+      var fired = false;
+      interceptServer((request, response) async {
+        if (!fired && trigger(request)) {
+          fired = true;
+          outcome = await svc.cancelSubmission(draftId);
+        }
+      });
+
+      Object? error;
+      SellListingSubmitResult? result;
+      try {
+        result = await svc.submit(
+          draftId: draftId,
+          carData: _baseCarData(images: [photo('$draftId.jpg').path]),
+        );
+      } catch (e) {
+        error = e;
+      }
+      await Future<void>.delayed(Duration.zero); // let the event stream flush
+
+      expect(fired, isTrue, reason: 'test must exercise the cancel window');
+      expect(outcome, SellCancelOutcome.listingNeedsAttention);
+      expect(
+        result,
+        isNull,
+        reason: 'an accepted cancel must not produce a success result',
+      );
+      expect(error, isA<SellSubmissionCancelledException>());
+      expect(events.where((e) => e.success), isEmpty,
+          reason: 'no success event after the user cancelled');
+      expect(events.where((e) => e.needsAttention), hasLength(1));
+      final record = await SellSubmissionStatePrefs.load(draftId);
+      expect(record, isNotNull, reason: 'created listing stays tracked');
+      expect(record!.status, SellSubmissionStatus.needsAttention);
+      expect(record.lastErrorRetryable, isFalse);
+      expect(record.carId, 'car_1');
+      expect(createCarCalls.length, 1);
+      expect(carsById.keys, ['car_1'], reason: 'listing is never deleted');
+      expect(deleteCallsLog, isEmpty);
+      expect(svc.isCancelRequested(draftId), isFalse,
+          reason: 'state resets cleanly');
+      expect(svc.isSubmitting(draftId), isFalse);
+      expect(svc.statusNotifier.value, isNull);
+
+      // No automatic resume re-uploads or completes a cancelled submission.
+      await svc.resumeAll();
+      expect(createCarCalls.length, 1);
+      expect(
+        (await SellSubmissionStatePrefs.load(draftId))!.status,
+        SellSubmissionStatus.needsAttention,
+      );
+    }
+
+    test(
+      'a cancel accepted while the last media item is being confirmed ends '
+      'cancelled -- never a success result/event -- and keeps the created '
+      'listing for the owner (no orphan record, no delete, no retry)',
+      () async {
+        var enqueued = false;
+        await expectAcceptedCancelWins('draft_cancel_last_media', (r) {
+          if (r.method == 'POST' &&
+              RegExp(r'^/api/cars/[^/]+/images$').hasMatch(r.url.path)) {
+            enqueued = true;
+          }
+          // First readiness poll after the photos were handed to the server.
+          return enqueued && r.url.path.endsWith('/media-summary');
+        });
+      },
+    );
+
+    test(
+      'a cancel accepted in the tail of the media phase (after the upload '
+      'loop\'s own last check, before verification) still wins -- the run '
+      'must not report success for a submission the user was told is '
+      'cancelled',
+      () => expectAcceptedCancelWins('draft_cancel_tail', nthListRefresh(1)),
+    );
+
+    test(
+      'a cancel that lands after the server confirmed every media item '
+      '(final verification / list refresh) is refused, and the run completes '
+      'exactly once without leaking state',
+      () async {
+        const draftId = 'draft_cancel_late';
+        final svc = PendingSellSubmissionService.instance;
+        final events = <SellSubmissionEvent>[];
+        final sub = svc.events.listen(events.add);
+        addTearDown(sub.cancel);
+
+        SellCancelOutcome? lateOutcome;
+        var fired = false;
+        final trigger = nthListRefresh(2);
+        interceptServer((request, response) async {
+          if (!fired && trigger(request)) {
+            fired = true;
+            lateOutcome = await svc.cancelSubmission(draftId);
+          }
+        });
+
+        final result = await svc.submit(
+          draftId: draftId,
+          carData: _baseCarData(images: [photo('late.jpg').path]),
+        );
+        await Future<void>.delayed(Duration.zero); // let the event stream flush
+
+        expect(fired, isTrue, reason: 'test must exercise the late window');
+        expect(
+          lateOutcome,
+          isNull,
+          reason: 'everything is already confirmed: nothing left to cancel, '
+              'so the user must not be told the upload was cancelled',
+        );
+        expect(result, isNotNull);
+        expect(events.where((e) => e.success), hasLength(1));
+        expect(
+          events.where((e) => !e.success),
+          isEmpty,
+          reason: 'no cancelled / needs-attention event next to the success',
+        );
+        expect(createCarCalls.length, 1, reason: 'never double-created');
+        expect(carsById.length, 1);
+        expect(await SellSubmissionStatePrefs.load(draftId), isNull,
+            reason: 'completed submission leaves no record');
+        expect(svc.isCancelRequested(draftId), isFalse);
+        expect(svc.isSubmitting(draftId), isFalse);
+        expect(svc.statusNotifier.value, isNull);
+
+        // Nothing resurrects or re-creates it afterwards.
+        await svc.resumeAll();
+        expect(createCarCalls.length, 1);
+        expect(deleteCallsLog, isEmpty, reason: 'no media was deleted');
+      },
+    );
+
+    test(
+      'a refused late cancel does not poison the next submission of the '
+      'same draft id (no stale cancel flag)',
+      () async {
+        const draftId = 'draft_cancel_late_then_again';
+        final svc = PendingSellSubmissionService.instance;
+        var fired = false;
+        SellCancelOutcome? lateOutcome;
+        final trigger = nthListRefresh(2);
+        interceptServer((request, response) async {
+          if (!fired && trigger(request)) {
+            fired = true;
+            lateOutcome = await svc.cancelSubmission(draftId);
+          }
+        });
+        await svc.submit(
+          draftId: draftId,
+          carData: _baseCarData(images: [photo('again1.jpg').path]),
+        );
+        expect(fired, isTrue);
+        expect(lateOutcome, isNull);
+        expect(svc.isCancelRequested(draftId), isFalse);
+
+        // A second, unrelated submission under the same id runs to the end.
+        final second = await svc.submit(
+          draftId: draftId,
+          carData: _baseCarData(images: [photo('again2.jpg').path]),
+        );
+        expect(second, isNotNull);
+        expect(createCarCalls.length, 2,
+            reason: 'two independent listings: one create each');
+        expect(await SellSubmissionStatePrefs.load(draftId), isNull);
+      },
+    );
+  });
   // ---- B + G: pause/resume continues the same run; concurrent triggers ----
   // only spawn one worker for the same draft.
   test(

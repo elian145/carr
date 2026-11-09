@@ -11,7 +11,7 @@ import logging
 from flask import Blueprint, jsonify, request
 
 from ..admin_roles import assert_permission
-from ..auth import admin_required, get_current_user, log_user_action
+from ..auth import admin_required, get_current_user, log_admin_action
 from ..auto_moderation import admin_actions, config, stats
 from ..auto_moderation import reasons as reason_mod
 from ..auto_moderation.triggers import request_moderation
@@ -22,6 +22,7 @@ from ..models import (
     User,
     db,
 )
+from ..time_utils import iso_utc
 
 bp = Blueprint("admin_auto_moderation", __name__, url_prefix="/api/admin/auto-moderation")
 logger = logging.getLogger(__name__)
@@ -42,7 +43,7 @@ def _event_dict(ev: ListingModerationEvent) -> dict:
         "type": ev.event_type,
         "actor": ev.actor,
         "data": ev.data,
-        "created_at": ev.created_at.isoformat() if ev.created_at else None,
+        "created_at": iso_utc(ev.created_at),
     }
 
 
@@ -58,7 +59,7 @@ def _run_dict(run: ListingModerationRun, *, detail: bool = False) -> dict:
         "decision": run.decision,
         "outcome": run.outcome,
         "applied": run.applied_at is not None,
-        "applied_at": run.applied_at.isoformat() if run.applied_at else None,
+        "applied_at": iso_utc(run.applied_at),
         "attempts": run.attempts,
         "reason_codes": [r.get("code") for r in reasons if r.get("level") in ("review", "hold")],
         "reason_labels": [
@@ -67,13 +68,13 @@ def _run_dict(run: ListingModerationRun, *, detail: bool = False) -> dict:
         "suspicious": any(r.get("suspicious") for r in reasons),
         "admin_outcome": run.admin_outcome,
         "admin_outcome_by": run.admin_outcome_by,
-        "admin_outcome_at": run.admin_outcome_at.isoformat() if run.admin_outcome_at else None,
+        "admin_outcome_at": iso_utc(run.admin_outcome_at),
         "override_action": run.override_action,
         "override_by": run.override_by,
-        "override_at": run.override_at.isoformat() if run.override_at else None,
+        "override_at": iso_utc(run.override_at),
         "override_note": run.override_note,
-        "created_at": run.created_at.isoformat() if run.created_at else None,
-        "decided_at": run.decided_at.isoformat() if run.decided_at else None,
+        "created_at": iso_utc(run.created_at),
+        "decided_at": iso_utc(run.decided_at),
         "listing": {
             "id": run.car_public_id,
             "title": car.title if car else None,
@@ -191,7 +192,7 @@ def update_settings():
                 )
         new = config.save_settings(patch)
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_update_auto_moderation_settings",
                 target_type="settings",
@@ -223,7 +224,7 @@ def kill_switch():
         reason = str(body.get("reason") or "")
         new = config.set_kill_switch(enabled, actor=_admin_name(admin_user), reason=reason)
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 "admin_auto_moderation_kill_switch",
                 target_type="settings",
@@ -373,7 +374,7 @@ def override_run(run_id: str):
         else:
             return jsonify({"message": "Unknown action", "code": "invalid_action"}), 400
         if admin_user:
-            log_user_action(
+            log_admin_action(
                 admin_user,
                 f"admin_auto_moderation_{action}",
                 target_type="car",

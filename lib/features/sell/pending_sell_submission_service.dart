@@ -26,6 +26,7 @@ import 'sell_listing_payload.dart';
 import 'sell_listing_submit_result.dart';
 import 'sell_media_identity.dart';
 import 'sell_server_transcode_video.dart';
+import 'sell_submission_messages.dart';
 import 'sell_video_helpers.dart';
 
 /// Coarse phase reported while a submission runs, for UI display only.
@@ -57,12 +58,17 @@ class SellSubmissionUiStatus {
     required this.phase,
     required this.completedMediaCount,
     required this.totalMediaCount,
+    this.isEdit = false,
   });
 
   final String draftId;
   final SellSubmissionPhase phase;
   final int completedMediaCount;
   final int totalMediaCount;
+
+  /// Edits of an existing listing cannot be cancelled (see
+  /// [PendingSellSubmissionService.canCancel]).
+  final bool isEdit;
 }
 
 /// One-shot terminal outcome of a submission run, for a global
@@ -208,6 +214,15 @@ Duration Function(int attempts)? debugSellSubmissionRetryBackoffOverride;
 /// different one on a shared device (see [SellSubmissionRecord.ownerUserId]).
 String _currentAccountId() =>
     (AuthService().currentUser?['id'] ?? '').toString().trim();
+
+/// Owner to stamp on a NEW submission: the loaded profile's id, else the id
+/// the session's own token names ([ApiService.currentAccountId], already
+/// cross-checked against `/auth/me`). Empty when neither is known yet.
+String _ownerForNewSubmission() {
+  final profile = _currentAccountId();
+  if (profile.isNotEmpty) return profile;
+  return (ApiService.currentAccountId ?? '').trim();
+}
 
 /// F-11-style classification (mirrors `isRetryableChatSendError` /
 /// `SellListingMediaUpload._isTransientUploadError`): transient
@@ -403,6 +418,15 @@ class _ServerTranscodeStillInProgressException implements Exception {
       'automatically.';
 }
 
+/// F-41: result of [PendingSellSubmissionService.cancelSubmission].
+enum SellCancelOutcome {
+  /// No listing existed yet; the local draft is untouched.
+  draftKept,
+
+  /// The listing was already created; it stays (needs attention, no retries).
+  listingNeedsAttention,
+}
+
 /// Application-level coordinator that owns creating the listing and
 /// uploading its media once the user presses Submit — deliberately NOT
 /// owned by `SellStep5`'s `State` (see `sell_step5_logic.dart`), so:
@@ -455,6 +479,123 @@ class PendingSellSubmissionService {
   bool _connectivityHooked = false;
 
   bool isSubmitting(String draftId) => _activeRuns.containsKey(draftId);
+
+  /// F-41: draft ids the user asked to cancel. Checked at every checkpoint
+  /// of [_runSubmission] (and, for the media phase, via
+  /// [SellListingMediaUpload.cancelUploadsFor]) so a cancel never triggers
+  /// another network call or retry.
+  final Set<String> _cancelRequested = <String>{};
+
+  bool isCancelRequested(String draftId) => _cancelRequested.contains(draftId);
+
+  /// F-41: draft ids whose worker has already confirmed ALL media with the
+  /// server and is only finalising (verify, list refresh, record removal).
+  /// There is nothing left to cancel at that point: [cancelSubmission]
+  /// refuses (returns null) instead of accepting a cancel the worker would
+  /// then ignore -- accepting it and still reporting success is a lie to the
+  /// user. Set synchronously right after the last cancel checkpoint, cleared
+  /// when the run ends.
+  final Set<String> _pastCancelPoint = <String>{};
+
+  void _throwIfCancelled(String draftId) {
+    if (_cancelRequested.contains(draftId)) {
+      throw const SellSubmissionCancelledException();
+    }
+  }
+
+  /// F-41: whether the user can still cancel [draftId]'s submission.
+  /// Edits of an existing listing are never cancellable here (the PUT may
+  /// already have been applied; use the edit screen to revert).
+  Future<bool> canCancel(String draftId) async {
+    final r = await SellSubmissionStatePrefs.load(draftId);
+    if (r == null || r.isEdit) return false;
+    return r.status != SellSubmissionStatus.needsAttention &&
+        r.status != SellSubmissionStatus.completed;
+  }
+
+  /// F-41: safely cancel the submission for [draftId].
+  ///
+  /// - Listing not created yet: the submission record is removed (no further
+  ///   retries) and the local draft is left untouched, so the user loses
+  ///   nothing and no half-created listing can appear.
+  /// - Listing already created (create step is idempotent and cannot be
+  ///   undone from here): upload stops at the next chunk boundary and the
+  ///   record becomes `needsAttention` -- never auto-retried; the user is
+  ///   pointed at My Listings to finish or delete it (existing UX).
+  ///
+  /// Returns null when there is nothing cancellable.
+  Future<SellCancelOutcome?> cancelSubmission(String draftId) async {
+    final id = draftId.trim().isEmpty ? 'default' : draftId.trim();
+    final record = await SellSubmissionStatePrefs.load(id);
+    // Every media item is already confirmed and the worker is finalising:
+    // too late to cancel (checked AFTER the await above -- the worker may
+    // have crossed the point of no return while the record was loading).
+    if (_pastCancelPoint.contains(id)) return null;
+    // Submit was pressed but the intent record is not written yet (the
+    // first awaits of [_prepareSubmissionRecord]): this used to be a silent
+    // no-op. Record the intent; the prepare step applies it deterministically
+    // once its own write has landed. Edit submissions are never cancellable.
+    if (record == null) {
+      if (_preparingDrafts.containsKey(id) && !_preparingEdits.contains(id)) {
+        _cancelRequested.add(id);
+        return SellCancelOutcome.draftKept;
+      }
+      return null;
+    }
+    if (record.isEdit) return null;
+    if (record.status == SellSubmissionStatus.needsAttention ||
+        record.status == SellSubmissionStatus.completed) {
+      return null;
+    }
+    final carId = (record.carId ?? '').trim();
+    final outcome = carId.isEmpty
+        ? SellCancelOutcome.draftKept
+        : SellCancelOutcome.listingNeedsAttention;
+    _cancelRequested.add(id);
+    if (carId.isNotEmpty) SellListingMediaUpload.cancelUploadsFor(carId);
+    if (_activeRuns.containsKey(id) || _preparingDrafts.containsKey(id)) {
+      // The running worker applies the terminal state at its next
+      // checkpoint (see the catch block in [_runSubmission]); a draft that
+      // is still being prepared applies it right after its final write
+      // (see [_prepareSubmissionRecord]) so the record cannot be resurrected.
+      return outcome;
+    }
+    await _applyCancelTerminal(id, record, carId);
+    _cancelRequested.remove(id);
+    if (carId.isNotEmpty) SellListingMediaUpload.clearCancelFor(carId);
+    return outcome;
+  }
+
+  Future<void> _applyCancelTerminal(
+    String draftId,
+    SellSubmissionRecord record,
+    String carId,
+  ) async {
+    statusNotifier.value = null;
+    if (carId.isEmpty) {
+      await SellSubmissionStatePrefs.remove(draftId);
+      appLog('[SELL CANCEL] draft kept, record removed record=$draftId');
+      return;
+    }
+    final fresh = await SellSubmissionStatePrefs.load(draftId);
+    await SellSubmissionStatePrefs.upsert(
+      (fresh ?? record).copyWith(
+        status: SellSubmissionStatus.needsAttention,
+        carId: carId,
+        lastErrorMessage: kSellMsgCancelledByUser,
+        lastErrorRetryable: false,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+    _emit(SellSubmissionEvent(
+      draftId: draftId,
+      success: false,
+      needsAttention: true,
+      message: kSellMsgCancelledByUser,
+      carId: carId,
+    ));
+    appLog('[SELL CANCEL] listing kept as needsAttention record=$draftId');
+  }
 
   void _emit(SellSubmissionEvent e) {
     if (!_controller.isClosed) _controller.add(e);
@@ -554,13 +695,35 @@ class PendingSellSubmissionService {
     // whatever that worker had already advanced (carId/status). While a
     // draft is preparing, no worker may start for it.
     _preparingDrafts[id] = (_preparingDrafts[id] ?? 0) + 1;
+    final isEditPrepare = (editListingId ?? '').trim().isNotEmpty;
+    if (isEditPrepare) _preparingEdits.add(id);
+    // F-41: a stale cancel flag (the user cancelled an earlier attempt that
+    // has already ended) must never kill this brand-new submission. A
+    // cancel for a worker that is still running is left untouched.
+    if (!_activeRuns.containsKey(id)) _cancelRequested.remove(id);
     try {
-      return await _prepareSubmissionRecordInner(
+      final prepared = await _prepareSubmissionRecordInner(
         id,
         carData: carData,
         editListingId: editListingId,
       );
+      // F-41: the user pressed Cancel while the intent record / durable
+      // media copy was being prepared. The prepare step's own final write
+      // has now landed, so apply the terminal state HERE (after it) -- doing
+      // it earlier would let that write resurrect the removed record. No
+      // network call was made, so the draft is kept and nothing is created.
+      if (!isEditPrepare &&
+          !_activeRuns.containsKey(id) &&
+          _cancelRequested.contains(id)) {
+        _cancelRequested.remove(id);
+        final carId = (prepared.carId ?? '').trim();
+        if (carId.isNotEmpty) SellListingMediaUpload.clearCancelFor(carId);
+        await _applyCancelTerminal(id, prepared, carId);
+        throw const SellSubmissionCancelledException();
+      }
+      return prepared;
     } finally {
+      if (isEditPrepare) _preparingEdits.remove(id);
       final left = (_preparingDrafts[id] ?? 1) - 1;
       if (left <= 0) {
         _preparingDrafts.remove(id);
@@ -575,7 +738,20 @@ class PendingSellSubmissionService {
     required Map<String, dynamic> carData,
     String? editListingId,
   }) async {
-    final existing = await SellSubmissionStatePrefs.load(id);
+    var existing = await SellSubmissionStatePrefs.load(id);
+    // F-34: a persisted record with NO owner that this process did not create
+    // in the current session is quarantined -- its original owner cannot be
+    // established, so none of its state (listing id, frozen media mapping,
+    // progress) may be inherited by the account pressing Submit now. (The
+    // create idempotency key is derived from the draft id, so a genuine
+    // resubmission by the same account is still replayed, not duplicated.)
+    if (existing != null &&
+        (existing.ownerUserId ?? '').trim().isEmpty &&
+        !_mayStampOwnerless(id)) {
+      appLog('[SELL RESUME] quarantined ownerless record ignored on submit '
+          'record=$id');
+      existing = null;
+    }
     // A worker for this draft is already running: its record is the live
     // source of truth. Re-preparing would overwrite its progress with a
     // stale `pending` snapshot -- just join it.
@@ -594,7 +770,16 @@ class PendingSellSubmissionService {
     // in (see the guard in [_runSubmission]) could re-stamp ownership
     // instead of correctly refusing to run.
     final ownerUserId = existing?.ownerUserId ??
-        (_currentAccountId().isEmpty ? null : _currentAccountId());
+        (_ownerForNewSubmission().isEmpty ? null : _ownerForNewSubmission());
+    if (ownerUserId == null) {
+      // Owner genuinely unknown right now (profile not loaded, opaque token).
+      // Only THIS process, in THIS authentication session, may stamp it once
+      // the account becomes known; after a restart such a record is
+      // quarantined (see [_mayStampOwnerless]).
+      _ownerlessCreatedInEpoch[id] = ApiService.sessionEpoch;
+    } else {
+      _ownerlessCreatedInEpoch.remove(id);
+    }
 
     // iOS kill-during-prepare fix: persist submission INTENT before the
     // (potentially multi-second) durable media copy. Force-quit mid-copy
@@ -694,7 +879,36 @@ class PendingSellSubmissionService {
   /// worker may start for a draft while it is still being prepared.
   final Map<String, int> _preparingDrafts = <String, int>{};
 
+  /// Draft ids whose in-flight prepare is an EDIT of an existing listing
+  /// (never cancellable -- the PUT may already have been applied).
+  final Set<String> _preparingEdits = <String>{};
+
   bool isPreparing(String draftId) => _preparingDrafts.containsKey(draftId);
+
+  /// draftId -> authentication-session epoch in which THIS process created a
+  /// submission whose owner was not yet known. Such a record may be stamped
+  /// with the account once it becomes known, but only inside that same
+  /// session (the user who pressed Submit is still the one signed in).
+  final Map<String, int> _ownerlessCreatedInEpoch = <String, int>{};
+
+  /// Whether an ownerless record for [draftId] may still be claimed by the
+  /// signed-in account. Every other ownerless record (written by an earlier
+  /// build or an earlier run of the app) is QUARANTINED: nobody can show who
+  /// it belongs to, so it is never resumed, shown or inherited -- otherwise
+  /// the first account to sign in on a shared device would silently take over
+  /// (and publish) another person's pending listing.
+  bool _mayStampOwnerless(String draftId) =>
+      debugAllowOwnerlessResume ||
+      _ownerlessCreatedInEpoch[draftId] == ApiService.sessionEpoch;
+
+  /// Test-only: resume-mechanics tests seed ownerless records directly to
+  /// model "the app was killed"; they are about media/progress recovery, not
+  /// ownership, so they opt out of the quarantine. Production never sets it.
+  @visibleForTesting
+  bool debugAllowOwnerlessResume = false;
+
+  @visibleForTesting
+  void debugResetOwnerlessTracking() => _ownerlessCreatedInEpoch.clear();
 
   /// User-initiated retry of a `needsAttention`/`retryable` submission
   /// (My Listings "Retry"). Keeps the record, its idempotency key, its
@@ -933,7 +1147,7 @@ class PendingSellSubmissionService {
         signal.complete(result);
       } else {
         signal.completeError(
-          ApiException(statusCode: 401, message: 'Authentication required'),
+          ApiException(statusCode: 401, message: kSellMsgAuthRequired),
         );
       }
     }, onError: (Object e, StackTrace st) {
@@ -1068,6 +1282,11 @@ class PendingSellSubmissionService {
           appLog('[SELL RESUME] skipped reason=owner-mismatch record=${r.draftId}');
           continue;
         }
+        if (owner.isEmpty && !_mayStampOwnerless(r.draftId)) {
+          appLog('[SELL RESUME] skipped reason=ownerless-quarantined '
+              'record=${r.draftId}');
+          continue;
+        }
         appLog('[SELL RESUME] starting record=${r.draftId}');
         // `_ensureRunning` dedupes per-draftId via `_activeRuns` and is
         // synchronous up to that registration -- a record whose runner is
@@ -1111,6 +1330,15 @@ class PendingSellSubmissionService {
     try {
       final legacy = await SellPendingMediaPrefs.load();
       if (legacy == null) return;
+      // The legacy record carries no owner. Only turn it into a resumable
+      // submission once the signed-in account is known, and stamp that
+      // account on it: an unowned record must never be claimed later by
+      // whichever account happens to sign in next on a shared device. (The
+      // key is also account-scoped by `AccountLocalData`, so a value left by
+      // another owner or by a pre-isolation build is quarantined before it
+      // can get here.)
+      final legacyOwner = _currentAccountId();
+      if (legacyOwner.isEmpty) return;
       final carId = (legacy['carId'] ?? '').toString().trim();
       if (carId.isEmpty) {
         await SellPendingMediaPrefs.clear();
@@ -1129,6 +1357,7 @@ class PendingSellSubmissionService {
           draftId: id,
           status: SellSubmissionStatus.inProgress,
           carId: carId,
+          ownerUserId: legacyOwner,
           pendingReview: legacy['pendingReview'] == true,
           carData: carData,
           idempotencyKey: SellPendingMediaPrefs.createIdempotencyKey(id),
@@ -1178,6 +1407,8 @@ class PendingSellSubmissionService {
         })
         .whenComplete(() {
       _activeRuns.remove(draftId);
+      _cancelRequested.remove(draftId);
+      _pastCancelPoint.remove(draftId);
     });
     _activeRuns[draftId] = future;
     return future;
@@ -1249,11 +1480,16 @@ class PendingSellSubmissionService {
         return null;
       }
     } else {
-      // The profile had not loaded when Submit was pressed, so the record
-      // has no owner. Stamp it now that the account is known -- otherwise a
-      // different account signing in on this device could later resume
-      // (and publish) this submission.
-      final currentOwner = _currentAccountId();
+      // No owner recorded. Only a record this process created in the CURRENT
+      // session (profile had not loaded when Submit was pressed) may be
+      // stamped now; any other ownerless record is quarantined and never run
+      // under whichever account happens to be signed in.
+      if (!_mayStampOwnerless(draftId)) {
+        appLog('[SELL RESUME] skipped reason=ownerless-quarantined '
+            'record=$draftId');
+        return null;
+      }
+      final currentOwner = _ownerForNewSubmission();
       if (currentOwner.isNotEmpty) {
         record = record.copyWith(ownerUserId: currentOwner);
         await SellSubmissionStatePrefs.upsert(record);
@@ -1494,6 +1730,7 @@ class PendingSellSubmissionService {
         phase: phase,
         completedMediaCount: completed,
         totalMediaCount: totalMedia,
+        isEdit: record.isEdit,
       );
       appLog(
         '[SELL RUN] UI progress=$completed/$totalMedia phase=${phase.name} '
@@ -1564,6 +1801,7 @@ class PendingSellSubmissionService {
         phase: currentUiPhase,
         completedMediaCount: completed,
         totalMediaCount: totalMedia,
+        isEdit: record.isEdit,
       );
     }
 
@@ -1705,6 +1943,7 @@ class PendingSellSubmissionService {
             carData: carData,
             updatedAt: nowMs(),
           );
+          _throwIfCancelled(draftId);
           await SellSubmissionStatePrefs.upsert(record);
           final payload = buildSellCarCreatePayload(carData);
           payload['expected_media'] =
@@ -1720,6 +1959,7 @@ class PendingSellSubmissionService {
             created = await _createCarWithBoundedRetry(
               payload,
               record.idempotencyKey,
+              draftId: draftId,
             );
           } on ApiException catch (e) {
             appLog(
@@ -1896,6 +2136,7 @@ class PendingSellSubmissionService {
         // (see below) -- "Phase A did not complete" is itself already a
         // legitimate, accurate rejection reason, regardless of whether
         // Phase B later happens to still succeed on retry.
+        _throwIfCancelled(draftId);
         try {
           await SellListingMediaUpload.runPhaseAOnly(
             carId: carId,
@@ -1993,6 +2234,7 @@ class PendingSellSubmissionService {
         );
       }
 
+      _throwIfCancelled(draftId);
       final listingMediaConfirmed = await SellListingMediaUpload.uploadForCar(
         carId: carId,
         carData: carData,
@@ -2054,6 +2296,14 @@ class PendingSellSubmissionService {
           await persistProgress(completedSoFar + delta);
         },
       );
+
+      // Last cancel checkpoint. A cancel that was ACCEPTED while the final
+      // media item was being confirmed must still win (never report success
+      // after the user was told the upload was cancelled); from here on every
+      // media item is confirmed, so later cancels are refused instead (see
+      // [_pastCancelPoint]). No await between the check and the add.
+      _throwIfCancelled(draftId);
+      _pastCancelPoint.add(draftId);
 
       if (imagesCount > 0 && !listingMediaConfirmed) {
         var hasMedia = await SellListingMediaUpload.listingAlreadyHasMedia(carId);
@@ -2164,6 +2414,10 @@ class PendingSellSubmissionService {
       }
       unawaited(AppHaptics.success());
       statusNotifier.value = null;
+      // Defensive: cancel is refused past the last checkpoint (see
+      // [_pastCancelPoint]), so nothing can be pending here; drop any upload
+      // cancel flag so it cannot leak into a later run.
+      SellListingMediaUpload.clearCancelFor(carId);
       if (record.isEdit && !editSubmittedForReview) {
         // A resumed edit no longer holds the PUT response: ask the server.
         try {
@@ -2204,6 +2458,14 @@ class PendingSellSubmissionService {
       // exists" guarantee its doc comment promises: a media-only failure
       // here finds no signal left to reject.
       _rejectCarReadySignals(draftId, e, st);
+      if (e is SellSubmissionCancelledException ||
+          _cancelRequested.contains(draftId)) {
+        // F-41: user cancel -- terminal state, never retried.
+        _cancelRequested.remove(draftId);
+        if (carId.isNotEmpty) SellListingMediaUpload.clearCancelFor(carId);
+        await _applyCancelTerminal(draftId, record, carId);
+        throw const SellSubmissionCancelledException();
+      }
       final retryable = isRetryableSellSubmissionError(e);
       final statusCode = e is ApiException ? e.statusCode : null;
       // Multi-photo partial-failure fix (same rationale as
@@ -2473,10 +2735,12 @@ class PendingSellSubmissionService {
   /// validation/auth/permission failures surface immediately.
   Future<Map<String, dynamic>> _createCarWithBoundedRetry(
     Map<String, dynamic> payload,
-    String idempotencyKey,
-  ) async {
+    String idempotencyKey, {
+    String? draftId,
+  }) async {
     const maxAttempts = 2;
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      if (draftId != null) _throwIfCancelled(draftId);
       try {
         return await ApiService.createCar(
           payload,
@@ -2491,6 +2755,7 @@ class PendingSellSubmissionService {
           'transient error: $e',
         );
         await Future<void>.delayed(const Duration(seconds: 2));
+        if (draftId != null) _throwIfCancelled(draftId);
       }
     }
     throw StateError('createCar retry loop exited unexpectedly');

@@ -44,7 +44,7 @@ Widget buildCurrencyIcon(String currency) {
       width: 24,
       height: 24,
       decoration: BoxDecoration(
-        color: AppColors.brandOrange,
+        color: AppColors.brandOrangeStrong,
         borderRadius: BorderRadius.circular(6),
       ),
       child: const Center(
@@ -59,7 +59,7 @@ Widget buildCurrencyIcon(String currency) {
       ),
     );
   }
-  return const Icon(Icons.attach_money, size: 24, color: AppColors.brandOrange);
+  return const Icon(Icons.attach_money, size: 24, color: AppColors.brandOrangeIcon);
 }
 
 Widget buildFancySelector(
@@ -72,7 +72,7 @@ Widget buildFancySelector(
   String? currency,
 }) {
   final bool isDark = Theme.of(context).brightness == Brightness.dark;
-  const Color accent = AppColors.brandOrange;
+  const Color accent = AppColors.brandOrangeIcon;
   final List<Color> bg = isDark
       ? [Colors.white.withValues(alpha: 0.06), Colors.white.withValues(alpha: 0.03)]
       : [kSellLightShellFieldFill, kSellLightShellFieldFill];
@@ -96,7 +96,7 @@ Widget buildFancySelector(
       : (isError
             ? Colors.redAccent
             : (valueShowsAny
-                  ? accent
+                  ? (isDark ? AppColors.brandOrange : AppColors.brandOrangeDeep)
                   : (isDark ? Colors.white : Colors.grey[900]!)));
   return Container(
     padding: const EdgeInsets.all(14),

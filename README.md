@@ -128,7 +128,7 @@ If you deploy the backend to the public internet, do **not** run it in debug mod
 ## 📋 Requirements
 
 ### Backend Requirements
-- Python 3.8+
+- Python 3.11.9 (pinned in `.python-version`; Render, the Dockerfile and backend CI use this exact version)
 - Flask 3.0+
 - SQLAlchemy
 - Redis (optional, for caching)
@@ -411,6 +411,9 @@ See `test/README.md` and `docs/ARCHITECTURE.md`.
    The image runs `gunicorn "kk.wsgi:app" -c "gunicorn.conf.py"` and listens on
    `PORT` (default `5000`). Pass the same production secrets as a non-Docker
    deploy (`APP_ENV`, `SECRET_KEY`, `JWT_SECRET_KEY`, `DATABASE_URL`, …).
+   The image contains only the web/API process (no Celery worker or beat) and ships
+   `tools/r2_s3_op.py`, which `kk/r2_ops.py` needs for R2 uploads (F-31). Docker is
+   an alternative path: production runs on Render (`render.yaml`).
 
 ### Frontend Deployment
 

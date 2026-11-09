@@ -21,6 +21,16 @@ Set these for `APP_ENV=production`:
 - `SECRET_KEY=<long random>`
 - `JWT_SECRET_KEY=<long random>`
 - `DATABASE_URL=<postgresql://...>` (recommended) **or** `DB_PATH=<path-to-sqlite>`
+- `SUPPORT_EMAIL=<monitored inbox>` — the app refuses to boot in production without it
+- `REDIS_URL=redis://...` — required at boot in production (the app PINGs it)
+- Cloudflare R2 for listing photos: `R2_ACCOUNT_ID`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_PUBLIC_URL` (or an absolute `UPLOAD_FOLDER` on a persistent disk)
+- Private chat-media bucket, all required together: `R2_CHAT_BUCKET_NAME`, `R2_CHAT_ACCESS_KEY_ID`, `R2_CHAT_SECRET_ACCESS_KEY` (plus `R2_ACCOUNT_ID`)
+
+Every process that builds the Flask app needs all of the above: the web service **and** the
+Celery worker (`get_celery_flask_app` -> `create_app`). Celery beat does not build the app
+and needs only `APP_ENV` and `REDIS_URL`. `render.yaml` declares them (all `sync: false`)
+and `kk/tests/test_deploy_docs_render_guard.py` enforces it. Deploy order and post-deploy
+checks: [`docs/RELEASE_DEPLOY_ORDER.md`](docs/RELEASE_DEPLOY_ORDER.md).
 
 Recommended for scale:
 
@@ -36,10 +46,10 @@ Recommended for scale:
 | Variable | Recommended value | Notes |
 |----------|-------------------|--------|
 | `WEB_CONCURRENCY` | `1` | Default in `gunicorn.conf.py`. Do **not** raise without sticky sessions. |
-| `GUNICORN_THREADS` | `4` (or higher if CPU allows) | Scale concurrent HTTP/API work here. |
+| `GUNICORN_THREADS` | unset (default `32`) | Scale concurrent HTTP/API work here. Default raised from 4 (C-1): see "Socket resource limits". |
 | `REDIS_URL` | set (Celery / rate limit / JWT blocklist) | Also used as Socket.IO message queue in production. |
 | `SOCKETIO_ASYNC_MODE` | unset / `threading` | Must match `gthread`. |
-| `SOCKETIO_ALLOW_EVENTLET` | unset | Eventlet break-glass only; causes Render 502s. |
+| `SOCKETIO_ALLOW_EVENTLET` | unset | Legacy; the eventlet worker was removed in Gunicorn 26 and this no longer enables anything (gevent break-glass only, with Redis MQ). |
 
 Why not 2 workers by default when Redis exists?
 
@@ -57,15 +67,93 @@ If you later run `WEB_CONCURRENCY>1` you need **all** of:
 2. Sticky sessions for `/socket.io/*` at the load balancer
 3. Explicit ops opt-in via `WEB_CONCURRENCY`
 
+### Socket resource limits (C-1)
+
+With `gthread` + threading Socket.IO, **every open socket (and every Engine.IO
+long-poll request) pins one Gunicorn thread**. With the former default of 4
+threads, four sockets froze the whole REST API. `kk/realtime_limits.py` now
+bounds this (per process; the deployment is one worker). All values are
+optional environment variables:
+
+| Variable | Default | Effect |
+|----------|---------|--------|
+| `GUNICORN_THREADS` | `32` | Threads in the single gthread worker. |
+| `SOCKETIO_MAX_CONNECTIONS` | `threads - max(8, threads/2)` (= 16 at 32 threads) | Sockets in total; new ones are refused (`server_busy`) so HTTP always keeps >= half the threads. The app falls back to HTTP polling for chat. |
+| `SOCKETIO_ALLOW_ANONYMOUS` | off | Token-less sockets are **refused** (`401 authentication_required` at the WSGI edge, before any Engine.IO session). The app always connects with a bearer token. `1` re-enables guests (then the two guest caps below apply). |
+| `SOCKETIO_MAX_CONNECTIONS_PER_USER` | `5` | Per account; the OLDEST socket is evicted (`connection_replaced`) so a reconnect never locks a user out. |
+| `SOCKETIO_EDGE_MAX_PER_ACCOUNT` | `max(2, min(per-user cap + 1, edge limit / 3))` (= 6 at 32 threads; `0` disables) | N-2: edge slots (in-flight handshakes, websockets, long-polls) ONE account may hold, reserved before the request reaches Socket.IO. Over the limit the account's oldest websocket is recycled (legit reconnects never lock out); only stalled long-polls get `503 too_many_connections`. Expired / revoked / dead-account tokens are charged to a separate restricted bucket (`SOCKETIO_EDGE_RESTRICTED_PER_ACCOUNT`, default `2`; `max(2, edge/4)` across all accounts) so they can never crowd out live sockets. No per-IP limit (carrier NAT). |
+| `SOCKETIO_EDGE_REFUSED_GRACE_SECONDS` | `3` | A connection refused at `connect` (`CONNECT_ERROR`) keeps its transport this long, not the full auth deadline. |
+| `SOCKETIO_EDGE_STALL_SECONDS` | `60` | Non-websocket `/socket.io` requests still in flight after this long (stalled handshake / body) are shut down; `0` disables. |
+| `SOCKETIO_MAX_GUEST_CONNECTIONS` | `max(1, total/4)` | Credential-less sockets in total. |
+| `SOCKETIO_MAX_GUESTS_PER_IP` | `2` | Credential-less sockets per address (authenticated users are not limited per IP: carrier NAT). |
+| `SOCKETIO_MAX_HTTP_BUFFER_SIZE` | `65536` | Largest Socket.IO message (engine.io default was 1 MB). |
+| `JSON_MAX_CONTENT_LENGTH` | `1048576` | Largest `application/json` request body (413 `payload_too_large`). Multipart uploads keep `MAX_CONTENT_LENGTH`. |
+
+**Edge guard (`kk/socket_edge_guard.py`).** The registry above only sees sockets
+that reached the Socket.IO `connect` handler, but under `gthread` an Engine.IO
+transport pins a thread *before* that, and a refused CONNECT leaves the
+transport open. Reproduced on real Gunicorn: 32 raw websockets that never sent
+CONNECT (or 16 transports kept open after `server_busy`) froze `/api/cars`.
+A WSGI middleware in front of Socket.IO therefore (1) returns a cheap `401` for
+new sessions/upgrades without a *signed* access JWT (expired-but-signed tokens
+pass so the `token_expired` -> refresh flow still works), (2) holds one slot per
+in-flight `/socket.io` request and answers `503 server_busy` + `Retry-After`
+above `min(total + max(2, total/4), threads - 2)` (20 at 32 threads), so REST
+always keeps at least two threads whatever `GUNICORN_THREADS` is, and (3) closes
+Engine.IO sessions with no Socket.IO connection after
+`SOCKETIO_AUTH_DEADLINE_SECONDS` (default `10`, `0` disables).
+**If Render still has `GUNICORN_THREADS=4`** the service stays up: 2 realtime
+requests at most (1 engaged socket), REST keeps 2 threads, everything else gets
+503 and the app polls over REST; a boot warning is logged. Set it to `32`.
+
+Socket events are rate limited too: `send_message` 20 per 10 s per socket and
+120 per 10 min per user (same budget as `POST /api/chat/<id>/send`),
+`join_chat` 30/min, `typing_*` 20 per 10 s, `leave_chat` 60/min; over-limit
+`send_message`/`join_chat` get an `error` event with `code: rate_limited` and
+`retry_after`.
+
+**Capacity is spent on conversations, not on logged-in users.** The app opens
+one socket per signed-in session, but a socket only matters while its user is
+inside a chat conversation: text is always sent over REST, offline users get FCM
+push, and the chat screen falls back to a 12 s REST poll whenever the socket is
+down. So a socket that has joined no conversation is *idle*:
+
+| Variable | Default | Effect |
+|----------|---------|--------|
+| `SOCKETIO_IDLE_RELEASE_SECONDS` | `120` | An authenticated socket with no joined conversation is released after this long (`0` disables the sweep). Opening a thread or typing restarts the clock; sending/joining a conversation engages the socket. |
+| `SOCKETIO_GUEST_IDLE_SECONDS` | `30` | Same for credential-less sockets (they can never join a conversation). |
+| `SOCKETIO_PREEMPT_MIN_IDLE_SECONDS` | `15` | At the total ceiling a new authenticated connection preempts the oldest idle socket (guests first) that has been idle at least this long; engaged sockets are never preempted. |
+
+A released socket receives `connection_released` (`idle` / `capacity`); the app
+does not auto-reconnect, it reconnects when the user opens a conversation. A
+connection above the ceiling is refused with `server_busy`; the app stops the
+transport's retry loop and retries once, only while a conversation is open.
+Net effect: the ceiling (16 at 32 threads) bounds *simultaneously engaged chat
+users*, not everyone who has the app open, and every session still gets
+realtime for ~2 minutes after launch.
+
+Measured with real Gunicorn gthread (see the C-1 report): the old default (4
+threads, no caps) froze the whole API at exactly 4 open sockets; with these
+settings 40 distinct users connecting, 12 guests, 25 overlapping reconnects and
+a 500k-message flood never made an HTTP request slower than ~250 ms.
+
+**Capacity note:** 16 *engaged* conversations is a launch-sized number, not a
+growth-sized one. Beyond it chat degrades to REST polling (still correct), and
+real scale needs an async worker (gevent, not shipped or load-tested here;
+eventlet was removed with Gunicorn 26) or a separate realtime service. Load test before raising
+`SOCKETIO_MAX_CONNECTIONS`; watch the `Socket.IO released ... idle` and
+`connect refused: server_busy` log lines.
+
 ### Recommended production async mode
 
 **Default (required on Render):** leave `SOCKETIO_ASYNC_MODE` unset (or set
 `threading`). Gunicorn uses `gthread` and Socket.IO uses `threading`.
 
-Do **not** set `SOCKETIO_ASYNC_MODE=eventlet` on Render. Eventlet is deprecated
-and currently breaks boot (`monkey_patch` after Flask import → LocalProxy/RLock
-errors and 502s). `SOCKETIO_ASYNC_MODE=eventlet` is ignored unless you also set
-the break-glass flag `SOCKETIO_ALLOW_EVENTLET=1` and a Redis message queue.
+Do **not** set `SOCKETIO_ASYNC_MODE=eventlet`. Gunicorn 26 removed the eventlet
+worker and the `eventlet` package is no longer installed, so the value is always
+ignored: `gunicorn.conf.py` logs a warning and boots `gthread`, and Socket.IO
+uses `threading`. After any Gunicorn upgrade re-run
+`python scripts/c1_edge_load_check.py` (Linux) against real Gunicorn.
 
 ## Recommended Gunicorn commands
 
@@ -144,7 +232,7 @@ If you enable async image jobs (e.g. `?async=1`), run a worker:
 
 Workers reuse one Flask app per process (`FlaskContextTask` / `get_celery_flask_app`) so tasks do not call `create_app()` on every job.
 
-BE-13: on a 512 MB Render instance, Celery's default concurrency (`multiprocessing.cpu_count()`) can reflect the *host* machine's core count rather than this instance's actual allocation, spawning far more prefork children than 512 MB can hold (each child rebuilds the full Flask app and, for image tasks, loads OpenCV/NumPy/Pillow/boto3). Keep `--concurrency` low (2) and `--max-tasks-per-child`/`--max-memory-per-child` set so child processes are recycled instead of the whole instance being OOM-killed.
+BE-13: on a 512 MB Render instance, Celery's default concurrency (`multiprocessing.cpu_count()`) can reflect the *host* machine's core count rather than this instance's actual allocation, spawning far more prefork children than 512 MB can hold (each child rebuilds the full Flask app and, for image tasks, loads OpenCV/NumPy/Pillow/boto3). Keep `--concurrency` low (2) and `--max-tasks-per-child`/`--max-memory-per-child` set so child processes are recycled instead of the whole instance being OOM-killed. (The Render service `carr-worker-fra` in `render.yaml` deliberately runs `--concurrency=1`; the Procfile's generic line uses 2. The Render value is the one in production.)
 
 Minimum env:
 - `REDIS_URL=redis://...` (recommended; memory broker is dev-only)

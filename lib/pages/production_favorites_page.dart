@@ -25,7 +25,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
     final raw = (m['favorited_at'] ?? m['favoritedAt'])?.toString().trim();
     if (raw == null || raw.isEmpty) return -1;
     try {
-      return DateTime.parse(raw).millisecondsSinceEpoch;
+      return tryParseApiDateTime(raw)?.millisecondsSinceEpoch ?? -1;
     } catch (e, st) {
       logNonFatal(e, st);
       return -1;
@@ -39,6 +39,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
   void initState() {
     super.initState();
     ListingLayoutPrefs.load();
+    AccountScope.addSessionChangedListener(_onSessionChanged);
     _controller.addListener(() {
       if (_loading || _loadingMore || !_hasNext) return;
       final pos = _controller.position;
@@ -53,8 +54,28 @@ class _FavoritesPageState extends State<FavoritesPage> {
     );
   }
 
+  /// Drops the previous account's favorites immediately and reloads for the
+  /// account that is signed in now (F-34/F-39). Runs synchronously on every
+  /// authentication transition.
+  void _onSessionChanged() {
+    if (!mounted) return;
+    _fetchGeneration++;
+    setState(() {
+      _favorites = [];
+      _page = 1;
+      _hasNext = true;
+      _error = null;
+      _loading = true;
+      _loadingMore = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _fetch(refresh: true);
+    });
+  }
+
   @override
   void dispose() {
+    AccountScope.removeSessionChangedListener(_onSessionChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -66,6 +87,10 @@ class _FavoritesPageState extends State<FavoritesPage> {
   /// next page (infinite scroll / "load more").
   Future<void> _fetch({required bool refresh}) async {
     final requestGeneration = refresh ? ++_fetchGeneration : _fetchGeneration;
+    // F-34/F-39: everything this request shows or stores belongs to the
+    // session (and verified account) that started it.
+    final session = ApiService.captureSession();
+    final owner = session.accountId;
     final tok = ApiService.accessToken;
     if (tok == null || tok.isEmpty) {
       if (!mounted) return;
@@ -91,11 +116,11 @@ class _FavoritesPageState extends State<FavoritesPage> {
       // for a fresh page 1 is in flight (this is a best-effort perceived-
       // performance optimization, not the source of truth).
       try {
-        final sp = await SharedPreferences.getInstance();
-        final cached = sp.getString('cache_favorites');
+        final cached = await FavoritesCachePrefs.read(owner);
         if (cached != null &&
             cached.isNotEmpty &&
             mounted &&
+            ApiService.isSessionCurrent(session) &&
             requestGeneration == _fetchGeneration) {
           final data = json.decode(cached);
           if (data is List) {
@@ -138,6 +163,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
       if (items.isEmpty) hasNext = false;
 
       if (!mounted || requestGeneration != _fetchGeneration) return;
+      if (!ApiService.isSessionCurrent(session)) return;
       setState(() {
         if (refresh) {
           _favorites = items;
@@ -160,10 +186,13 @@ class _FavoritesPageState extends State<FavoritesPage> {
         _loadingMore = false;
       });
 
-      if (refresh) {
-        final sp = await SharedPreferences.getInstance();
-        unawaited(sp.setString('cache_favorites', json.encode(_favorites)));
+      if (refresh && ApiService.isSessionCurrent(session)) {
+        unawaited(FavoritesCachePrefs.write(owner, json.encode(_favorites)));
       }
+    } on ApiSessionChangedException {
+      // The account changed mid-request: this result is discarded; the
+      // session-changed listener restarts the load for the new account.
+      return;
     } on ApiException catch (e) {
       if (!mounted || requestGeneration != _fetchGeneration) return;
       if (e.statusCode == 401) {
@@ -346,6 +375,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                           ListingLayoutPrefs.gridChildAspectRatioForWidth(
                             listingColumns,
                             screenWidth,
+                            textScale: appTextScaleOf(context),
                           ),
                     ),
                     itemCount: _favorites.length + (_hasNext ? 1 : 0),
@@ -378,9 +408,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
                         clipBehavior: Clip.none,
                         children: [
                           card,
-                          Positioned(
+                          PositionedDirectional(
                             top: 6,
-                            right: 6,
+                            end: 6,
                             child: Material(
                               color: Colors.black54,
                               shape: const CircleBorder(),
@@ -391,7 +421,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                   padding: EdgeInsets.all(6),
                                   child: Icon(
                                     Icons.favorite,
-                                    color: AppColors.brandOrange,
+                                    color: AppColors.brandOrangeIcon,
                                     size: 22,
                                   ),
                                 ),

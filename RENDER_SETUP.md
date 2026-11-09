@@ -18,10 +18,16 @@ Add:
 | `APP_ENV`       | `production`             | No     |
 | `SECRET_KEY`    | (e.g. from `openssl rand -hex 32`) | Yes |
 | `JWT_SECRET_KEY`| (e.g. from `openssl rand -hex 32`) | Yes |
+| `DATABASE_URL`  | Postgres connection string (required in production; boot fails without it) | Yes |
+| `SUPPORT_EMAIL` | Monitored support inbox (required in production; boot fails without it) | No |
+| `REDIS_URL`     | Render Key Value / Redis internal URL, same region as the service (required in production) | Yes |
+| `R2_*`, `R2_CHAT_*` | Cloudflare R2 listing + private chat buckets (required in production; see `DEPLOYMENT.md`) | Yes |
+
+`render.yaml` declares all of these as dashboard-managed (`sync: false`) for `carr` and the
+Celery worker. Deploy order and post-deploy checks: `docs/RELEASE_DEPLOY_ORDER.md`.
 
 Optional:
 
-- **DATABASE_URL** – Postgres connection string if you use Render Postgres. If unset, the app uses SQLite (data is lost on redeploy).
 - **CORS_ORIGINS** – e.g. `https://your-app.com` if you have a web frontend.
 
 ### Universal Links & App Links (shared `/listing/<id>` URLs)

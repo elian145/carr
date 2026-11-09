@@ -293,73 +293,13 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
     BuildContext? messengerContext,
   }) async {
     try {
-      final sp = await SharedPreferences.getInstance();
-      final List<dynamic> raw = json.decode(
-        sp.getString(_HomePageFields._savedSearchesKey) ?? '[]',
+      // F-34: saved searches are stored per account by SavedSearchService;
+      // never touch the old global key from here.
+      await SavedSearchService.upsertFromFilters(
+        filters: _getCurrentFilterState(),
+        name: _generateSearchName(),
+        forceNotify: forceNotify,
       );
-      final currentFilters = SavedSearchService.normalizeFilters(
-        _getCurrentFilterState(),
-      );
-      final searchName = _generateSearchName();
-
-      Map<String, dynamic>? existing;
-      for (final item in raw) {
-        if (item is! Map) continue;
-        final filters = item['filters'] is Map
-            ? Map<String, dynamic>.from(
-                (item['filters'] as Map).cast<String, dynamic>(),
-              )
-            : <String, dynamic>{};
-        if (SavedSearchService.filtersEqual(filters, currentFilters)) {
-          existing = Map<String, dynamic>.from(item.cast<String, dynamic>());
-          break;
-        }
-      }
-
-      final bool notify = forceNotify
-          ? true
-          : (existing?['notify'] as bool? ?? false);
-
-      final Map<String, dynamic> payload = existing != null
-          ? {
-              ...existing,
-              'name': searchName,
-              'filters': currentFilters,
-              'notify': notify,
-              'created_at': DateTime.now().toIso8601String(),
-            }
-          : {
-              'id': DateTime.now().millisecondsSinceEpoch.toString(),
-              'name': searchName,
-              'filters': currentFilters,
-              'notify': notify,
-              'created_at': DateTime.now().toIso8601String(),
-            };
-
-      final withoutDup = raw
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e.cast<String, dynamic>()))
-          .where(
-            (e) => !SavedSearchService.filtersEqual(
-              e['filters'] is Map
-                  ? Map<String, dynamic>.from(
-                      (e['filters'] as Map).cast<String, dynamic>(),
-                    )
-                  : null,
-              currentFilters,
-            ),
-          )
-          .toList();
-      withoutDup.insert(0, payload);
-      final deduped = SavedSearchService.dedupeByFilters(withoutDup);
-
-      await sp.setString(_HomePageFields._savedSearchesKey, json.encode(deduped));
-      if (deduped.isNotEmpty) {
-        unawaited(SavedSearchService.pushItemToServer(
-          Map<String, dynamic>.from(deduped.first),
-        ));
-        unawaited(SavedSearchService.persistLocal(deduped));
-      }
       if (!mounted) return;
       final snackContext = messengerContext ?? context;
       if (!snackContext.mounted) return;

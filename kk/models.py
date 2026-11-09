@@ -11,8 +11,10 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 
 # Use a single UTC helper (avoids deprecated datetime.utcnow()).
-from .time_utils import utcnow
+from .time_utils import iso_utc, utcnow
 from .dealer_socials import public_dealership_socials as _public_dealership_socials
+from .reset_token_crypto import HashedEmailVerificationToken, HashedResetToken
+from .phone_format import normalize_stored_iraqi_mobile
 
 
 def _mask_phone_number(raw) -> str | None:
@@ -39,8 +41,17 @@ def _listing_contact_phone_list(car) -> list[str]:
         text = str(val).strip()
         if not text:
             return
-        digits = "".join(ch for ch in text if ch.isdigit())
-        key = digits or text
+        # Read-time display fix for legacy rows (no data rewrite): a stored value
+        # that is an Iraqi mobile in any spelling -- notably the malformed
+        # ``+96407701234567`` -- is shown as ``+9647701234567``. Values that
+        # cannot be normalised are left untouched.
+        canonical = normalize_stored_iraqi_mobile(text)
+        if canonical:
+            text = f"+964{canonical}"
+            key = canonical
+        else:
+            digits = "".join(ch for ch in text if ch.isdigit())
+            key = digits or text
         if key in seen:
             return
         seen.add(key)
@@ -314,7 +325,7 @@ class User(db.Model):
                 getattr(self, "dealership_socials", None)
             ),
             'is_featured_dealer': bool(getattr(self, "is_featured_dealer", False)),
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'created_at': iso_utc(self.created_at),
         }
 
         # H-05: exact GPS only for the owner/admin (include_private) or the
@@ -334,8 +345,8 @@ class User(db.Model):
                 'dealership_verified_phones': verified_phones_out,
                 'dealership_verified_emails': verified_emails_out,
                 'dealership_emails': emails_out,
-                'last_login': self.last_login.isoformat() if self.last_login else None,
-                'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+                'last_login': iso_utc(self.last_login),
+                'updated_at': iso_utc(self.updated_at),
                 # MI-03: own-account language preference only -- never part
                 # of the public shape embedded in listing/dealer responses.
                 'locale': getattr(self, "locale", None),
@@ -474,10 +485,10 @@ class DealerApplication(db.Model):
             "status": self.status,
             **self.snapshot(),
             "review_reason": self.review_reason,
-            "submitted_at": self.submitted_at.isoformat() if self.submitted_at else None,
-            "reviewed_at": self.reviewed_at.isoformat() if self.reviewed_at else None,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "submitted_at": iso_utc(self.submitted_at),
+            "reviewed_at": iso_utc(self.reviewed_at),
+            "created_at": iso_utc(self.created_at),
+            "updated_at": iso_utc(self.updated_at),
         }
         if include_decisions:
             data["decisions"] = [decision.to_dict() for decision in self.decisions]
@@ -547,8 +558,8 @@ class DealerProfile(db.Model):
             "dealership_opening_hours": self.dealership_opening_hours,
             "dealership_socials": _public_dealership_socials(self.dealership_socials),
             "is_featured_dealer": bool(self.is_featured),
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_at": iso_utc(self.created_at),
+            "updated_at": iso_utc(self.updated_at),
         }
         # H-05: same rule as User.to_dict() — exact GPS only for owner/admin
         # or the explicit public dealer-profile map feature.
@@ -603,7 +614,7 @@ class DealerDecision(db.Model):
                 if self.reviewer
                 else None
             ),
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": iso_utc(self.created_at),
         }
 
 
@@ -822,10 +833,10 @@ class Car(db.Model):
             # compute expiry to get correct behavior. The raw expiry is
             # still exposed separately via `featured_until`.
             'is_featured': self.is_effectively_featured,
-            'featured_until': self.featured_until.isoformat() if self.featured_until else None,
+            'featured_until': iso_utc(self.featured_until),
             'views_count': self.views_count,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at),
             'images': [img.to_dict() for img in self.images],
             'videos': [video.to_dict() for video in self.videos],
             'seller': (
@@ -841,7 +852,7 @@ class Car(db.Model):
             'ai_detected_body_type': self.ai_detected_body_type,
             'ai_detected_condition': self.ai_detected_condition,
             'ai_confidence_score': self.ai_confidence_score,
-            'ai_analysis_timestamp': self.ai_analysis_timestamp.isoformat() if self.ai_analysis_timestamp else None
+            'ai_analysis_timestamp': iso_utc(self.ai_analysis_timestamp)
         }
 
         if include_private:
@@ -1297,8 +1308,8 @@ class ListingAnalytics(db.Model):
             'calls': self.calls,
             'shares': self.shares,
             'favorites': self.favorites,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'last_updated': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': iso_utc(self.created_at),
+            'last_updated': iso_utc(self.updated_at),
         }
     
     def __repr__(self):
@@ -1502,6 +1513,19 @@ class Message(db.Model):
             'is_deleted': parent.is_deleted,
         }
 
+    def _safe_listing_preview(self):
+        """N-1: never return the stored client-era JSON as-is.
+
+        Rows written before the fix may hold a forged title/price/external
+        image URL; the preview is re-derived from the message's own listing
+        (or dropped). See kk/chat_payload.py::sanitize_stored_listing_preview.
+        """
+        if not self.listing_preview:
+            return None
+        from .chat_payload import sanitize_stored_listing_preview
+
+        return sanitize_stored_listing_preview(self.listing_preview, self.car)
+
     def to_dict(self):
         reply_parent = self.reply_to
         if reply_parent is None and self.reply_to_id:
@@ -1529,11 +1553,11 @@ class Message(db.Model):
             # know about it yet (see kk/routes/chat.py:edit_chat_message).
             'attachment_key': None if self.is_deleted else self.attachment_url,
             'attachments': [] if self.is_deleted else _resolve_chat_attachments_list(self.attachments),
-            'listing_preview': None if self.is_deleted else self.listing_preview,
+            'listing_preview': None if self.is_deleted else self._safe_listing_preview(),
             'is_read': self.is_read,
             'is_deleted': self.is_deleted,
-            'edited_at': self.edited_at.isoformat() if self.edited_at else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'edited_at': iso_utc(self.edited_at),
+            'created_at': iso_utc(self.created_at),
             'sender_name': f"{self.sender.first_name} {self.sender.last_name}".strip() if self.sender else None,
             'sender_username': self.sender.username if self.sender else None,
             'receiver_name': f"{self.receiver.first_name} {self.receiver.last_name}".strip() if self.receiver else None,
@@ -1564,7 +1588,7 @@ class Notification(db.Model):
             'notification_type': self.notification_type,
             'is_read': self.is_read,
             'data': self.data,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': iso_utc(self.created_at)
         }
     
     def __repr__(self):
@@ -1606,13 +1630,13 @@ class ScheduledNotification(db.Model):
             "target_user_id": self.target_user_public_id,
             "notification_type": self.notification_type,
             "send_push": bool(self.send_push),
-            "scheduled_at": self.scheduled_at.isoformat() if self.scheduled_at else None,
+            "scheduled_at": iso_utc(self.scheduled_at),
             "status": self.status,
             "result": self.result,
             "error_message": self.error_message,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "sent_at": self.sent_at.isoformat() if self.sent_at else None,
+            "created_at": iso_utc(self.created_at),
+            "updated_at": iso_utc(self.updated_at),
+            "sent_at": iso_utc(self.sent_at),
         }
 
     def __repr__(self):
@@ -1637,18 +1661,61 @@ class UserAction(db.Model):
             'target_type': self.target_type,
             'target_id': self.target_id,
             'action_metadata': self.action_metadata,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': iso_utc(self.created_at)
         }
     
     def __repr__(self):
         return f'<UserAction {self.action_type}>'
+
+class AdminAuditLog(db.Model):
+    """Append-only record of administrator actions (F-17).
+
+    Deliberately NOT linked to ``user`` by a foreign key: ``UserAction`` rows
+    cascade-delete with their user, which would erase the admin audit trail
+    whenever an admin or the affected account is deleted/purged. The actor is
+    kept as a plain id plus a username snapshot; the target is a free-form
+    (type, id) pair. Rows are never updated or deleted by application code
+    (enforced by the ORM guard below and, on PostgreSQL, by a trigger).
+    """
+
+    __tablename__ = 'admin_audit_log'
+
+    id = db.Column(db.Integer, primary_key=True)
+    admin_user_id = db.Column(db.Integer, nullable=True, index=True)  # no FK on purpose
+    admin_username = db.Column(db.String(80), nullable=True)
+    action_type = db.Column(db.String(50), nullable=False, index=True)
+    target_type = db.Column(db.String(50), nullable=True)
+    target_id = db.Column(db.String(50), nullable=True)
+    action_metadata = db.Column(db.JSON, nullable=True)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'admin_user_id': self.admin_user_id,
+            'admin_username': self.admin_username,
+            'action_type': self.action_type,
+            'target_type': self.target_type,
+            'target_id': self.target_id,
+            'action_metadata': self.action_metadata,
+            'created_at': iso_utc(self.created_at),
+        }
+
+
+@db.event.listens_for(AdminAuditLog, 'before_update')
+@db.event.listens_for(AdminAuditLog, 'before_delete')
+def _admin_audit_log_is_append_only(_mapper, _connection, _target):
+    raise RuntimeError('admin_audit_log is append-only')
+
 
 class PasswordReset(db.Model):
     __tablename__ = 'password_reset'
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
-    token = db.Column(db.String(100), unique=True, nullable=False)
+    # F-29: stored as "h1$" + HMAC-SHA256 hex (67 chars) -- never the raw token. Values bound to
+    # this column (inserts and filter_by(token=<raw>)) are hashed by HashedResetToken.
+    token = db.Column(HashedResetToken(), unique=True, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=utcnow)
@@ -1657,14 +1724,16 @@ class PasswordReset(db.Model):
         return utcnow() > self.expires_at
     
     def __repr__(self):
-        return f'<PasswordReset {self.token}>'
+        return f'<PasswordReset id={self.id} user_id={self.user_id}>'
 
 class EmailVerification(db.Model):
     __tablename__ = 'email_verification'
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
-    token = db.Column(db.String(100), unique=True, nullable=False)
+    # F-29 follow-up: stored as "h1$" + HMAC-SHA256 hex (67 chars), never the raw token
+    # (fits String(100): no migration). Pre-change rows hold plaintext for <= 1 day.
+    token = db.Column(HashedEmailVerificationToken(), unique=True, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=utcnow)
@@ -1673,7 +1742,7 @@ class EmailVerification(db.Model):
         return utcnow() > self.expires_at
     
     def __repr__(self):
-        return f'<EmailVerification {self.token}>'
+        return f'<EmailVerification id={self.id} user_id={self.user_id}>'
 
 class SavedSearch(db.Model):
     __tablename__ = 'saved_search'
@@ -1697,8 +1766,8 @@ class SavedSearch(db.Model):
             'filters': self.filters if isinstance(self.filters, dict) else {},
             'notify': bool(self.notify),
             'auto_saved': bool(self.auto_saved),
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at),
         }
 
     def __repr__(self):
@@ -1722,6 +1791,127 @@ class SavedSearchAlert(db.Model):
 
     def __repr__(self):
         return f'<SavedSearchAlert search={self.saved_search_id} car={self.car_id}>'
+
+
+class SavedSearchAlertJob(db.Model):
+    """F-04 durable alert marker: "saved-search alerts are owed for this listing".
+
+    One row per listing, at most (``UNIQUE(car_id)`` = the first-publication
+    marker: once a listing has had a job -- finished, expired or failed -- it
+    never gets another, so un-hide / sold -> active / re-approval cannot alert
+    again). Inserted in the SAME transaction that publishes the listing, only
+    while ``SAVED_SEARCH_ALERT_DURABILITY`` is ``record`` or ``on`` (see
+    ``kk/saved_search_alert_jobs.py``). State machine:
+
+    * pending  -- ``finished_at IS NULL``
+    * done     -- ``outcome='done'``     every matching saved search was handled
+    * expired  -- ``outcome='expired'``  older than the recovery window; never sent late
+    * failed   -- ``outcome='failed'``   attempts exhausted; surfaced in logs
+
+    Redis/Celery only transport work; this row is the durable intent.
+    """
+    __tablename__ = 'saved_search_alert_job'
+
+    id = db.Column(db.Integer, primary_key=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id', ondelete='CASCADE'), nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    # Lease start of the runner currently processing the job (NULL = free).
+    claimed_at = db.Column(db.DateTime, nullable=True)
+    # Earliest time the sweep may (re)dispatch the job (back-off / dispatch lease).
+    next_run_at = db.Column(db.DateTime, nullable=True)
+    finished_at = db.Column(db.DateTime, nullable=True)
+    outcome = db.Column(db.String(16), nullable=True)
+    attempts = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    last_error = db.Column(db.String(255), nullable=True)
+
+    __table_args__ = (
+        db.UniqueConstraint('car_id', name='uq_saved_search_alert_job_car'),
+        db.Index('ix_saved_search_alert_job_pending', 'finished_at', 'created_at'),
+    )
+
+    def __repr__(self):
+        return f'<SavedSearchAlertJob car={self.car_id} outcome={self.outcome}>'
+
+
+class AccountDeletionRequest(db.Model):
+    """Durable record of a PUBLIC web account-deletion request.
+
+    ``POST /api/account-deletion-request`` stores a row here BEFORE it reports
+    success, so a failed/unconfigured email provider can never lose a request
+    (the support email is only a best-effort notification of the row).
+    Operators work the queue through ``/api/admin/account-deletion-requests``.
+
+    * ``status``: ``pending`` -> ``completed`` (set by an authorized operator).
+      ``completed`` is NOT proof the account was deleted: it carries a
+      ``resolution`` and the server refuses ``account_deleted`` /
+      ``no_account_found`` while an account with that phone still exists.
+    * At most one ``pending`` row per ``phone_key`` (partial unique index), so
+      repeat submissions never create duplicates; the public response is
+      identical for new and duplicate submissions (no account enumeration --
+      the submission never looks up whether an account exists).
+    * On completion the contact details are scrubbed (``phone`` masked, ``email``
+      and ``details`` cleared, ``phone_key`` replaced by a one-way digest) so
+      the queue does not itself become a long-term store of the data the user
+      asked us to delete. No retention period is invented for completed rows.
+    """
+    __tablename__ = 'account_deletion_request'
+
+    id = db.Column(db.Integer, primary_key=True)
+    public_id = db.Column(
+        db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
+    )
+    phone = db.Column(db.String(32), nullable=False)
+    # Canonical dedupe key: ``7XXXXXXXXX`` for Iraqi mobiles, else ASCII digits.
+    phone_key = db.Column(db.String(64), nullable=False)
+    email = db.Column(db.String(120), nullable=True)
+    details = db.Column(db.Text, nullable=True)
+    # One-way digest of the submitting IP (abuse correlation only, never the raw IP).
+    ip_hash = db.Column(db.String(64), nullable=True)
+    status = db.Column(db.String(16), nullable=False, default='pending', server_default='pending')
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+    # Support-mailbox notification bookkeeping (best-effort, retried).
+    notify_attempts = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    notified_at = db.Column(db.DateTime, nullable=True)
+    last_notify_error = db.Column(db.String(255), nullable=True)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    completed_by_user_id = db.Column(
+        db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True
+    )
+    completion_note = db.Column(db.String(255), nullable=True)
+    # What 'completed' means: account_deleted | no_account_found | declined.
+    resolution = db.Column(db.String(24), nullable=True)
+
+    __table_args__ = (
+        db.Index(
+            'uq_account_deletion_request_pending_phone',
+            'phone_key',
+            unique=True,
+            postgresql_where=db.text("status = 'pending'"),
+            sqlite_where=db.text("status = 'pending'"),
+        ),
+        db.Index('ix_account_deletion_request_status_created', 'status', 'created_at'),
+    )
+
+    def to_admin_dict(self):
+        return {
+            'id': self.public_id,
+            'status': self.status,
+            'phone': self.phone,
+            'email': self.email,
+            'details': self.details,
+            'created_at': iso_utc(self.created_at),
+            'notified': self.notified_at is not None,
+            'notified_at': iso_utc(self.notified_at) if self.notified_at else None,
+            'notify_attempts': self.notify_attempts or 0,
+            'last_notify_error': self.last_notify_error,
+            'completed_at': iso_utc(self.completed_at) if self.completed_at else None,
+            'completion_note': self.completion_note,
+            'resolution': self.resolution,
+        }
+
+    def __repr__(self):
+        return f'<AccountDeletionRequest {self.public_id} {self.status}>'
 
 
 class BlockedUser(db.Model):
@@ -1769,8 +1959,8 @@ class UserReport(db.Model):
             'details': self.details,
             'status': self.status,
             'admin_notes': self.admin_notes,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'resolved_at': self.resolved_at.isoformat() if self.resolved_at else None,
+            'created_at': iso_utc(self.created_at),
+            'resolved_at': iso_utc(self.resolved_at),
             'reporter': {
                 'id': reporter.public_id if reporter else None,
                 'username': reporter.username if reporter else None,
@@ -1834,8 +2024,8 @@ class ListingReport(db.Model):
             'details': self.details,
             'status': self.status,
             'admin_notes': self.admin_notes,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'resolved_at': self.resolved_at.isoformat() if self.resolved_at else None,
+            'created_at': iso_utc(self.created_at),
+            'resolved_at': iso_utc(self.resolved_at),
             'reporter': {
                 'id': reporter.public_id if reporter else None,
                 'username': reporter.username if reporter else None,
@@ -1884,7 +2074,7 @@ class AppSetting(db.Model):
         return {
             "key": self.key,
             "value": self.value if isinstance(self.value, dict) else {},
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "updated_at": iso_utc(self.updated_at),
         }
 
     def __repr__(self):
@@ -1916,8 +2106,8 @@ class CatalogBrand(db.Model):
             "name": self.name,
             "is_active": bool(self.is_active),
             "sort_order": int(self.sort_order or 0),
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_at": iso_utc(self.created_at),
+            "updated_at": iso_utc(self.updated_at),
         }
         if include_model_count:
             data["model_count"] = self.models.count()
@@ -1962,8 +2152,8 @@ class CatalogVehicleModel(db.Model):
             "name": self.name,
             "is_active": bool(self.is_active),
             "sort_order": int(self.sort_order or 0),
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_at": iso_utc(self.created_at),
+            "updated_at": iso_utc(self.updated_at),
         }
         if include_trim_count:
             data["trim_count"] = self.trims.count()
@@ -2029,8 +2219,8 @@ class CatalogBodyType(db.Model):
             "name": self.name,
             "is_active": bool(self.is_active),
             "sort_order": int(self.sort_order or 0),
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_at": iso_utc(self.created_at),
+            "updated_at": iso_utc(self.updated_at),
         }
 
     def __repr__(self):

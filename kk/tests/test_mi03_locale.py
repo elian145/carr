@@ -534,7 +534,7 @@ def test_dealer_email_verification_code_localized_subject_and_body():
             "dealer@example.com", "123456", locale="ar"
         )
     assert ok is True
-    assert captured["subject"] != "Your Carzo verification code"
+    assert captured["subject"] != "Your CarNet verification code"
     assert "123456" in captured["text_body"]
 
 
@@ -549,7 +549,7 @@ def test_dealer_email_verification_code_defaults_to_english():
 
     with mock.patch("kk.email_service.send_email", side_effect=_fake_send_email):
         send_dealer_email_verification_code("dealer@example.com", "654321")
-    assert captured["subject"] == "Your Carzo verification code"
+    assert captured["subject"] == "Your CarNet verification code"
 
 
 def test_password_reset_console_sms_localized(monkeypatch, capsys):

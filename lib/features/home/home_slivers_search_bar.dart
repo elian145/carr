@@ -56,7 +56,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                         const Icon(
                           Icons.location_city,
                           size: 16,
-                          color: AppColors.brandOrange,
+                          color: AppColors.brandOrangeIcon,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -83,7 +83,12 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                     return Row(
                       children: [
                         Expanded(
-                          child: GestureDetector(
+                          child: Semantics(
+                            button: true,
+                            label: loc.homeSearchHeading,
+                            excludeSemantics: true,
+                            onTap: () => _openHomeSearchFiltersPage(context),
+                            child: GestureDetector(
                             onTap: () => _openHomeSearchFiltersPage(context),
                             child: Align(
                               alignment: AlignmentDirectional.centerStart,
@@ -93,17 +98,19 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                                 children: [
                                   const Icon(
                                     Icons.search,
-                                    color: AppColors.brandOrange,
+                                    color: AppColors.brandOrangeIcon,
                                   ),
                                   const SizedBox(width: 8),
                                   Flexible(
                                     child: Text(
                                       loc.homeSearchHeading,
-                                      maxLines: 1,
+                                      // F-10: wrap to two lines at large system text
+                                      // scale instead of ellipsizing the entry label.
+                                      maxLines: appTextScaleOf(context) > 1.3 ? 2 : 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: AppFonts.orbitronForLocale(
                                         Localizations.localeOf(context),
-                                        color: AppColors.brandOrange,
+                                        color: AppColors.brandOrangeIcon,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 20,
                                       ),
@@ -112,6 +119,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                                 ],
                               ),
                             ),
+                          ),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -210,7 +218,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: chips.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 6),
+            separatorBuilder: (_, _) => const SizedBox(width: 6),
             itemBuilder: (context, index) => chips[index],
           ),
         ),

@@ -7,6 +7,11 @@
   "navDealers": "Dealerships",
   "navLogin": "Login",
   "navProfile": "Profile",
+  "homeLayoutList": "List",
+  "homeLayoutGrid": "Grid",
+  "mainNavigationLabel": "Main navigation",
+  "sellPhotoProcessingFailed": "Photo processing failed. Please try again.",
+  "sellSubmissionCancelledByUser": "Cancelled by you",
   "addListingTitle": "Add Listing",
   "favoritesTitle": "Favorites",
   "chatTitle": "Chat",
@@ -184,6 +189,15 @@
   "whatsappListingInterestDefaultTitle": "car",
   "chatOnCarzo": "Chat on CarNet",
   "chatCarzoOwnListing": "You can't message yourself on your own listing.",
+  "chatUserTyping": "{name} is typing...",
+  "@chatUserTyping": {
+    "description": "Typing indicator shown above the chat composer",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "unableToOpenWhatsApp": "Unable to open WhatsApp",
   "unableToMakeCall": "Unable to make call",
   "failedToShareListing": "Failed to share listing",
@@ -476,6 +490,10 @@
   "accountActionsTitle": "Account Actions",
   "notificationsTitle": "Notifications",
   "noNotificationsYet": "No notifications yet",
+  "notificationChannelChatName": "Chat messages",
+  "notificationChannelChatDescription": "New chat message alerts",
+  "notificationChannelUpdatesName": "Account updates",
+  "notificationChannelUpdatesDescription": "Important account and dealership updates",
   "failedToLoadNotifications": "Failed to load notifications",
   "helpSupportTitle": "Help & Support",
   "carComparisonCount": "Car Comparison",
@@ -844,6 +862,8 @@
   "selectFromList": "Select from list",
   "searchMakeOrModel": "Search make or model",
   "noMakesOrModelsMatchYourSearch": "No makes or models match your search.",
+  "typeModelNameToSearch": "Type a model name to search. You can also type a brand to see all its models.",
+  "noModelsMatchYourSearch": "No models match your search.",
   "make": "Make",
   "sendMessage": "Send message",
   "filterSelectedCount": "{count} selected",
@@ -876,6 +896,7 @@
   "continueHereToFinishTheListingOrDiscardItIfYouWantToStartOver": "Continue here to finish the listing, or discard it if you want to start over.",
   "draftBadgeLabel": "DRAFT",
   "untitledDraftTitle": "Untitled draft",
+  "yourListingFallbackTitle": "Your listing",
   "continueEditing": "Continue editing",
   "addPhotosToContinue": "Add photos to continue",
   "failedToBlurPlatesPleaseTryAgain": "Failed to blur plates. Please try again.",
@@ -901,12 +922,13 @@
   "specsAppliedYearSetStep2FieldsPreFilled": "Specs applied — year set; step 2 fields pre-filled.",
   "search": "Search...",
   "loadingVehicleSpecs": "Loading vehicle specs…",
-  "specDatabaseUnavailableRestartTheAppAfterFlutterPubGet": "Spec database unavailable. Restart the app after flutter pub get.",
+  "specDatabaseUnavailableRestartTheAppAfterFlutterPubGet": "Vehicle specifications are unavailable right now. Please restart the app.",
   "catalogAutoFill": "Catalog auto-fill",
   "selectAModelYearToLoadMatchingSpecs": "Select a model year to load matching specs.",
   "modelYear": "Model year",
   "youCanChangeTheseInStep2": "You can change these in step 2.",
   "specsAvailableForThisYear": "Specs available for this year.",
+  "noSpecRowForThisYear": "No spec row for this year — try another year or variant.",
   "applySpecs": "Apply specs",
   "specifications": "Specifications",
   "vinOptional": "VIN (optional)",
@@ -1020,5 +1042,25 @@
   "notNowButton": "Not now",
   "tryAgainButton": "Try again",
   "forceUpdateFallbackMessage": "Please update CarNet to continue.",
-  "softUpdateFallbackMessage": "A newer version of CarNet is available."
+  "softUpdateFallbackMessage": "A newer version of CarNet is available.",
+  "currentPasswordLabel": "Current password",
+  "pleaseEnterCurrentPassword": "Please enter your current password",
+  "passwordChangedSuccessfully": "Password changed successfully",
+  "unableToChangePasswordCheckCurrent": "Unable to change password. Please check your current password and try again.",
+  "unableToChangePasswordTryLater": "Unable to change password. Please try again later.",
+  "sendingEllipsis": "Sending...",
+  "videoBadge": "VIDEO",
+  "viewDetailsButton": "View Details",
+  "a11yPhotoXOfY": "Photo {index} of {total}",
+  "@a11yPhotoXOfY": {
+    "placeholders": {
+      "index": { "type": "int", "example": "1" },
+      "total": { "type": "int", "example": "5" }
+    }
+  },
+  "a11yCancelUpload": "Cancel upload",
+  "a11yCancelUploadConfirm": "Stop uploading? If your listing isn't created yet, your draft is kept.",
+  "a11yKeepUploading": "Keep uploading",
+  "a11yUploadCancelledDraftKept": "Upload cancelled. Your draft was kept.",
+  "a11yUploadCancelTooLate": "It's too late to cancel: your listing is already being published."
 }

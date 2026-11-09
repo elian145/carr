@@ -54,7 +54,7 @@ mixin _EditDealerPageBuild on _EditDealerPageBuildBody {
         title: Text(
           _tr('Edit dealer', ar: 'تعديل الوكيل', ku: 'دەستکاری وەکیل'),
         ),
-        backgroundColor: _editDealerAccent,
+        backgroundColor: AppColors.brandOrangeStrong,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -94,7 +94,7 @@ mixin _EditDealerPageBuild on _EditDealerPageBuildBody {
                   child: FilledButton.icon(
                     onPressed: _saving ? null : _save,
                     style: FilledButton.styleFrom(
-                      backgroundColor: _editDealerAccent,
+                      backgroundColor: AppColors.brandOrangeStrong,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shadowColor: Colors.transparent,

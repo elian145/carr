@@ -82,8 +82,8 @@ mixin _SellStep3Build on _SellStep3BuildDetails {
       if (!ok) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(l.verifyContactPhonesBeforeContinuing),
-            backgroundColor: Colors.orange,
+            content: WarningSnackBarText(l.verifyContactPhonesBeforeContinuing),
+            backgroundColor: AppColors.warningSnackBarBackground,
           ),
         );
         return;

@@ -3,8 +3,24 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../features/sell/pending_sell_submission_service.dart';
+import '../../features/sell/sell_cancel_refused_feedback.dart';
+import '../../theme/app_colors.dart';
 import '../../l10n/app_localizations.dart';
 import '../carzo_shared.dart' show productionNavigatorKey;
+
+/// F-41: determinate fraction for the banner spinner, or null (indeterminate)
+/// while the total is unknown.
+double? sellSubmissionProgressFraction(SellSubmissionUiStatus status) {
+  if (status.totalMediaCount <= 0) return null;
+  return (status.completedMediaCount / status.totalMediaCount)
+      .clamp(0.0, 1.0)
+      .toDouble();
+}
+
+/// Test hook / stable finder for the banner's cancel button.
+const Key kSellSubmissionBannerCancelKey = ValueKey<String>(
+  'sell-submission-banner-cancel',
+);
 
 /// Global, page-independent UI for `PendingSellSubmissionService` (req.
 /// #10): a persistent slim progress banner while a submission is actively
@@ -49,7 +65,9 @@ class _SellSubmissionStatusBannerState
               'Your listing was submitted and is pending review.')
           : (loc?.listingSubmittedSuccess ??
               'Your listing was submitted successfully.');
-      background = event.pendingReview ? const Color(0xFFF57C00) : Colors.green;
+      background = event.pendingReview
+          ? AppColors.warningSnackBarBackground
+          : Colors.green.shade800;
     } else if (event.needsAttention) {
       // Permanent failure (req. #11): never auto-retried. The backend
       // listing may already exist (its id survives on the failed record
@@ -67,7 +85,7 @@ class _SellSubmissionStatusBannerState
           : (loc?.sellSubmissionNeedsAttentionNoListing ??
               "We couldn't finish creating your listing. Open My Listings to "
                   'find and fix the draft.');
-      background = Colors.red;
+      background = Colors.red.shade700;
     } else {
       // Transient failure — a background retry is already scheduled
       // automatically (connectivity restore / app resume / next
@@ -79,7 +97,12 @@ class _SellSubmissionStatusBannerState
     try {
       messenger.showSnackBar(
         SnackBar(
-          content: Text(message),
+          // A coloured background needs an explicit white foreground (the theme's
+          // default text colour follows the inverse surface, not this colour).
+          content: Text(
+            message,
+            style: background == null ? null : AppColors.warningSnackBarTextStyle,
+          ),
           backgroundColor: background,
           duration: Duration(seconds: event.needsAttention ? 8 : 4),
           action: event.needsAttention
@@ -110,6 +133,48 @@ class _SellSubmissionStatusBannerState
     super.dispose();
   }
 
+
+  static String? _progressValueText(SellSubmissionUiStatus status) {
+    final f = sellSubmissionProgressFraction(status);
+    return f == null ? null : '${(f * 100).round()}%';
+  }
+
+  /// F-41: ask before cancelling (accidental taps must not lose an upload).
+  Future<void> _confirmCancel(String draftId) async {
+    final ctx = productionNavigatorKey.currentContext;
+    if (ctx == null) return;
+    final loc = AppLocalizations.of(ctx);
+    if (loc == null) return;
+    final ok = await showDialog<bool>(
+      context: ctx,
+      builder: (dctx) => AlertDialog(
+        content: Text(loc.a11yCancelUploadConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dctx).pop(false),
+            child: Text(loc.a11yKeepUploading),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dctx).pop(true),
+            child: Text(loc.a11yCancelUpload),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final outcome =
+        await PendingSellSubmissionService.instance.cancelSubmission(draftId);
+    if (!mounted) return;
+    if (outcome == SellCancelOutcome.draftKept) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(loc.a11yUploadCancelledDraftKept)),
+      );
+    } else if (outcome == null) {
+      // Refused (too late: everything is uploaded and the listing is being
+      // published). Say so instead of silently doing nothing.
+      showSellCancelTooLateFeedback(ScaffoldMessenger.maybeOf(context), loc);
+    }
+  }
   String _phaseLabel(
     AppLocalizations? loc,
     SellSubmissionUiStatus status,
@@ -161,49 +226,95 @@ class _SellSubmissionStatusBannerState
         final bg = theme.colorScheme.primaryContainer;
         final fg = theme.colorScheme.onPrimaryContainer;
 
+        // `verticalDirection: up` + the bar as the LAST child keeps the bar
+        // visually on top while painting it AFTER the app content. The
+        // Navigator's route barrier uses BlockSemantics, which drops the
+        // semantics of anything painted before it; with the bar first, its
+        // live-region progress and cancel button were invisible to TalkBack /
+        // VoiceOver (F-41).
         return Column(
+          verticalDirection: VerticalDirection.up,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Expanded(child: child),
             Material(
               color: bg,
               elevation: 1,
               child: SafeArea(
                 bottom: false,
-                child: Semantics(
-                  liveRegion: true,
-                  label: _phaseLabel(loc, status),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: fg,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            _phaseLabel(loc, status),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: fg,
-                              fontWeight: FontWeight.w600,
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.only(
+                    start: 16,
+                    end: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        // F-41: one announced node -- label + percentage value
+                        // (live region, so progress changes are spoken).
+                        child: Semantics(
+                          liveRegion: true,
+                          label: _phaseLabel(loc, status),
+                          value: _progressValueText(status),
+                          excludeSemantics: true,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: fg,
+                                    value: sellSubmissionProgressFraction(status),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _phaseLabel(loc, status),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: fg,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      if (!status.isEdit && loc != null)
+                        // No `tooltip:` on purpose: this banner is mounted in
+                        // `MaterialApp.builder`, ABOVE the Navigator, so there is
+                        // no Overlay ancestor and a Tooltip would assert while a
+                        // submission is active. The accessible name comes from
+                        // Semantics instead; the 48dp target is kept.
+                        // MergeSemantics => ONE labelled button node (not a
+                        // label node plus an unlabelled button child).
+                        MergeSemantics(
+                          child: Semantics(
+                            label: loc.a11yCancelUpload,
+                            child: IconButton(
+                              key: kSellSubmissionBannerCancelKey,
+                              // a11y-exempt-no-overlay (see f24 tooltip guard)
+                              constraints: const BoxConstraints(
+                                minWidth: 48,
+                                minHeight: 48,
+                              ),
+                              icon: Icon(Icons.close, color: fg),
+                              onPressed: () => _confirmCancel(status.draftId),
+                            ),
+                          ),
+                        )
+                      else
+                        const SizedBox(width: 12),
+                    ],
                   ),
                 ),
               ),
             ),
-            Expanded(child: child),
           ],
         );
       },

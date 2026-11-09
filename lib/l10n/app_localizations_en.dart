@@ -33,6 +33,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navProfile => 'Profile';
 
   @override
+  String get homeLayoutList => 'List';
+
+  @override
+  String get homeLayoutGrid => 'Grid';
+
+  @override
+  String get mainNavigationLabel => 'Main navigation';
+
+  @override
+  String get sellPhotoProcessingFailed =>
+      'Photo processing failed. Please try again.';
+
+  @override
+  String get sellSubmissionCancelledByUser => 'Cancelled by you';
+
+  @override
   String get addListingTitle => 'Add Listing';
 
   @override
@@ -500,6 +516,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get chatCarzoOwnListing =>
       'You can\'t message yourself on your own listing.';
+
+  @override
+  String chatUserTyping(String name) {
+    return '$name is typing...';
+  }
 
   @override
   String get unableToOpenWhatsApp => 'Unable to open WhatsApp';
@@ -1341,6 +1362,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noNotificationsYet => 'No notifications yet';
+
+  @override
+  String get notificationChannelChatName => 'Chat messages';
+
+  @override
+  String get notificationChannelChatDescription => 'New chat message alerts';
+
+  @override
+  String get notificationChannelUpdatesName => 'Account updates';
+
+  @override
+  String get notificationChannelUpdatesDescription =>
+      'Important account and dealership updates';
 
   @override
   String get failedToLoadNotifications => 'Failed to load notifications';
@@ -2398,6 +2432,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'No makes or models match your search.';
 
   @override
+  String get typeModelNameToSearch =>
+      'Type a model name to search. You can also type a brand to see all its models.';
+
+  @override
+  String get noModelsMatchYourSearch => 'No models match your search.';
+
+  @override
   String get make => 'Make';
 
   @override
@@ -2475,6 +2516,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get untitledDraftTitle => 'Untitled draft';
 
   @override
+  String get yourListingFallbackTitle => 'Your listing';
+
+  @override
   String get continueEditing => 'Continue editing';
 
   @override
@@ -2536,7 +2580,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get specDatabaseUnavailableRestartTheAppAfterFlutterPubGet =>
-      'Spec database unavailable. Restart the app after flutter pub get.';
+      'Vehicle specifications are unavailable right now. Please restart the app.';
 
   @override
   String get catalogAutoFill => 'Catalog auto-fill';
@@ -2553,6 +2597,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get specsAvailableForThisYear => 'Specs available for this year.';
+
+  @override
+  String get noSpecRowForThisYear =>
+      'No spec row for this year — try another year or variant.';
 
   @override
   String get applySpecs => 'Apply specs';
@@ -2879,4 +2927,53 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get softUpdateFallbackMessage =>
       'A newer version of CarNet is available.';
+
+  @override
+  String get currentPasswordLabel => 'Current password';
+
+  @override
+  String get pleaseEnterCurrentPassword => 'Please enter your current password';
+
+  @override
+  String get passwordChangedSuccessfully => 'Password changed successfully';
+
+  @override
+  String get unableToChangePasswordCheckCurrent =>
+      'Unable to change password. Please check your current password and try again.';
+
+  @override
+  String get unableToChangePasswordTryLater =>
+      'Unable to change password. Please try again later.';
+
+  @override
+  String get sendingEllipsis => 'Sending...';
+
+  @override
+  String get videoBadge => 'VIDEO';
+
+  @override
+  String get viewDetailsButton => 'View Details';
+
+  @override
+  String a11yPhotoXOfY(int index, int total) {
+    return 'Photo $index of $total';
+  }
+
+  @override
+  String get a11yCancelUpload => 'Cancel upload';
+
+  @override
+  String get a11yCancelUploadConfirm =>
+      'Stop uploading? If your listing isn\'t created yet, your draft is kept.';
+
+  @override
+  String get a11yKeepUploading => 'Keep uploading';
+
+  @override
+  String get a11yUploadCancelledDraftKept =>
+      'Upload cancelled. Your draft was kept.';
+
+  @override
+  String get a11yUploadCancelTooLate =>
+      'It\'s too late to cancel: your listing is already being published.';
 }

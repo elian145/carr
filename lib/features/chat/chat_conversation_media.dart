@@ -45,7 +45,7 @@ mixin _ChatConversationMedia on _ChatConversationTransport {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: WarningSnackBarText(
           _chatText(
             context,
             'Allow microphone access in Settings to send voice messages.',
@@ -54,6 +54,7 @@ mixin _ChatConversationMedia on _ChatConversationTransport {
           ),
         ),
         action: SnackBarAction(
+          textColor: AppColors.onWarningSnackBar,
           label: _chatText(
             context,
             'Settings',
@@ -65,7 +66,7 @@ mixin _ChatConversationMedia on _ChatConversationTransport {
           },
         ),
         duration: const Duration(seconds: 6),
-        backgroundColor: Colors.orange,
+        backgroundColor: AppColors.warningSnackBarBackground,
       ),
     );
   }
@@ -218,7 +219,7 @@ mixin _ChatConversationMedia on _ChatConversationTransport {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: WarningSnackBarText(
             _chatText(
               context,
               'Hold to record at least 1 second.',
@@ -226,7 +227,7 @@ mixin _ChatConversationMedia on _ChatConversationTransport {
               ku: 'لانیکەم ١ چرکە تۆمار بکە.',
             ),
           ),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warningSnackBarBackground,
         ),
       );
       return;
@@ -237,6 +238,7 @@ mixin _ChatConversationMedia on _ChatConversationTransport {
   Future<void> _sendVoiceMessage(XFile file) async {
     if (_isSending) return;
     if (!await ensurePhoneVerifiedForAction(context)) return;
+    if (!_ensurePageOwnerStillSignedIn()) return;
     unawaited(AppHaptics.light());
     setState(() => _isSending = true);
     final replyToMessageId = _replyingToMessage?.id;
@@ -255,6 +257,7 @@ mixin _ChatConversationMedia on _ChatConversationTransport {
       receiverId: widget.receiverId,
       replyToMessageId: replyToMessageId,
       restoreFile: restoreFile,
+      expectedOwnerUserId: _ownerUserId,
     );
   }
 
@@ -263,6 +266,7 @@ mixin _ChatConversationMedia on _ChatConversationTransport {
         .where((file) => _chatIsImageFile(file) || _chatIsVideoFile(file))
         .toList();
     if (validFiles.isEmpty) return false;
+    if (!_ensurePageOwnerStillSignedIn()) return false;
 
     unawaited(AppHaptics.light());
     final listingPreviewForMessage = _pendingInitialListingContext
@@ -295,6 +299,7 @@ mixin _ChatConversationMedia on _ChatConversationTransport {
       listingPreview: listingPreviewForMessage,
       restoreFiles: restoreFiles,
       restoreCaption: caption,
+      expectedOwnerUserId: _ownerUserId,
     );
     return true;
   }

@@ -81,7 +81,7 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
               for (final phone in phones)
                 ListTile(
                   leading: const Icon(Icons.phone_outlined),
-                  title: Text(phone),
+                  title: Text(phone, textDirection: TextDirection.ltr),
                   onTap: () => Navigator.pop(ctx, phone),
                 ),
               TextButton(
@@ -115,8 +115,9 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
       );
       return;
     }
-    final String digits = (raw ?? '').replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.isEmpty) {
+    // F-40: keep the leading `+` of E.164 numbers (digits-only broke dialing).
+    final Uri? callUri = telUriFor(raw);
+    if (callUri == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context)!.sellerPhoneNotAvailable)),
@@ -124,7 +125,6 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
       }
       return;
     }
-    final Uri callUri = Uri.parse('tel:$digits');
     final launched = await launchUrl(callUri, mode: LaunchMode.externalApplication).catchError((_) => false);
     if (launched) {
       await AnalyticsService.trackCall(widget.carId.toString());

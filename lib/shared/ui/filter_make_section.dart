@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../../data/car_name_translations.dart';
 import '../../l10n/app_localizations.dart';
+import '../../theme/app_colors.dart';
+import 'app_text_scale.dart';
 import 'brand_logo_image.dart';
 import 'brand_tile_label.dart';
 import 'filter_card_sections.dart';
 
-const double _brandRowHeight = 92;
+/// Brand grid row height: 92 dp at text scale 1.0, taller for larger system
+/// text (see [BrandTileLabel.rowHeightFor]).
+double _brandRowHeight(BuildContext context) =>
+    BrandTileLabel.rowHeightFor(appTextScaleOf(context));
 const double _brandTileWidth = 72;
 const double _brandGridSpacing = 10;
 const int _brandExpandedVisibleRows = 4;
@@ -166,7 +171,7 @@ class FilterMakeSection extends StatelessWidget {
             LayoutBuilder(
               builder: (context, constraints) {
                 final crossAxisCount = _brandGridCrossAxisCount(constraints.maxWidth);
-                final expandedHeight = _brandRowHeight * _brandExpandedVisibleRows +
+                final expandedHeight = _brandRowHeight(context) * _brandExpandedVisibleRows +
                     _brandGridSpacing * (_brandExpandedVisibleRows - 1);
                 return SizedBox(
                   height: expandedHeight,
@@ -176,7 +181,7 @@ class FilterMakeSection extends StatelessWidget {
                       crossAxisCount: crossAxisCount,
                       mainAxisSpacing: _brandGridSpacing,
                       crossAxisSpacing: _brandGridSpacing,
-                      mainAxisExtent: _brandRowHeight,
+                      mainAxisExtent: _brandRowHeight(context),
                     ),
                     itemCount: brands.length + 1,
                     itemBuilder: (context, index) {
@@ -205,11 +210,11 @@ class FilterMakeSection extends StatelessWidget {
             )
           else
             SizedBox(
-              height: _brandRowHeight,
+              height: _brandRowHeight(context),
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: collapsedBrands.length + 1,
-                separatorBuilder: (_, __) => const SizedBox(width: _brandGridSpacing),
+                separatorBuilder: (_, _) => const SizedBox(width: _brandGridSpacing),
                 itemBuilder: (context, index) {
                   if (index == 0) {
                     return _BrandActionTile(
@@ -466,7 +471,7 @@ class _BrandTile extends StatelessWidget {
             const SizedBox(height: 8),
             BrandTileLabel(
               display,
-              color: selected ? kFilterAccentColor : labelColor,
+              color: selected ? AppColors.accentTextOnTint(context) : labelColor,
             ),
           ],
         ),

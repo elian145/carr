@@ -137,7 +137,7 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor:
-                            AlwaysStoppedAnimation<Color>(AppColors.brandOrange),
+                            AlwaysStoppedAnimation<Color>(AppColors.brandOrangeIcon),
                       ),
                     ),
                   ),
@@ -177,9 +177,9 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
           ),
 
           // Back button
-          Positioned(
+          PositionedDirectional(
             top: MediaQuery.of(context).padding.top + 8,
-            left: 8,
+            start: 8,
             child: IconButton(
               tooltip: AppLocalizations.of(context)!.backAction,
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
@@ -316,9 +316,9 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
                         const Icon(Icons.touch_app,
                             color: Colors.white, size: 16),
                         const SizedBox(width: 6),
-                        const Text(
-                          'View Details',
-                          style: TextStyle(
+                        Text(
+                          AppLocalizations.of(context)!.viewDetailsButton,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -333,8 +333,8 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
           ),
 
           // Scroll hint arrows
-          Positioned(
-            right: 16,
+          PositionedDirectional(
+            end: 16,
             top: MediaQuery.of(context).size.height * 0.45,
             child: Column(
               children: [

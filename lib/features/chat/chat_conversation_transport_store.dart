@@ -60,7 +60,7 @@ mixin _ChatConversationTransportStore on _ChatConversationFields {
     if (remaining <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: WarningSnackBarText(
             _chatText(
               context,
               'You can attach up to 10 files.',
@@ -68,7 +68,7 @@ mixin _ChatConversationTransportStore on _ChatConversationFields {
               ku: 'دەتوانیت تەنها تا 10 فایل زیاد بکەیت.',
             ),
           ),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warningSnackBarBackground,
         ),
       );
       return;
@@ -81,7 +81,7 @@ mixin _ChatConversationTransportStore on _ChatConversationFields {
     if (valid.length > toAdd.length) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: WarningSnackBarText(
             _chatText(
               context,
               'Only the first 10 attachments were added.',
@@ -89,7 +89,7 @@ mixin _ChatConversationTransportStore on _ChatConversationFields {
               ku: 'تەنها یەکەم 10 پاشکۆ زیاد کران.',
             ),
           ),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warningSnackBarBackground,
         ),
       );
     }

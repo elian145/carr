@@ -194,7 +194,7 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
               height: 36,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: AppColors.brandOrange,
+                color: AppColors.brandOrangeIcon,
               ),
             ),
           ),

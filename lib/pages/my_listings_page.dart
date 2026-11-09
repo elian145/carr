@@ -18,12 +18,14 @@ import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/sell_submission_state_prefs.dart';
 import '../shared/prefs/legacy_sell_draft_list.dart';
+import '../shared/ui/app_text_scale.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/listings/owner_media_overlay.dart';
 import '../shared/listings/owner_pending_media_merge.dart';
 import '../features/sell/pending_sell_submission_service.dart';
 import '../features/sell/sell_draft_helpers.dart';
 import '../features/sell/sell_pending_media_resume.dart';
+import '../features/sell/sell_submission_messages.dart';
 import '../features/sell/sell_submission_visibility.dart';
 import '../shared/ui/listing_feed_skeleton.dart';
 import '../shared/ui/empty_state_panel.dart';
@@ -407,7 +409,7 @@ class _MyListingsPageState extends State<MyListingsPage>
           return false;
         }
         final owner = (r.ownerUserId ?? '').trim();
-        if (owner.isEmpty) return true;
+        if (owner.isEmpty) return false; // quarantined: owner unknown (F-34)
         if (currentOwner.isEmpty) return true;
         return owner == currentOwner;
       });
@@ -738,6 +740,7 @@ class _MyListingsPageState extends State<MyListingsPage>
                                         ListingLayoutPrefs.gridChildAspectRatioForWidth(
                                           listingColumns,
                                           screenWidth,
+                                          textScale: appTextScaleOf(context),
                                         ),
                                     crossAxisSpacing: 8,
                                     mainAxisSpacing: 8,
@@ -792,9 +795,9 @@ class _MyListingsPageState extends State<MyListingsPage>
                                   clipBehavior: Clip.none,
                                   children: [
                                     cardWidget,
-                                    Positioned(
+                                    PositionedDirectional(
                                       bottom: listingColumns == 1 ? 12 : 8,
-                                      left: listingColumns == 1 ? 12 : 8,
+                                      start: listingColumns == 1 ? 12 : 8,
                                       child: _buildProcessingMediaBadge(
                                         context,
                                       ),
@@ -837,6 +840,7 @@ class _MyListingsPageState extends State<MyListingsPage>
         leading: Navigator.of(context).canPop()
             ? null
             : IconButton(
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
                   Navigator.of(context).pushNamedAndRemoveUntil(

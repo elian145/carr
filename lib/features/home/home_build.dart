@@ -19,7 +19,7 @@ mixin _HomePageBuild on _HomePageSlivers {
         ? AppColors.brandOrange.withValues(alpha: 0.45)
         : Colors.white.withValues(alpha: 0.35);
     final searchPillFg =
-        isLight ? AppColors.brandOrange : Colors.white;
+        isLight ? AppColors.brandOrangeDeep : Colors.white;
 
     return Scaffold(
       appBar: AppBar(
@@ -142,7 +142,7 @@ mixin _HomePageBuild on _HomePageSlivers {
             Padding(
               padding: const EdgeInsets.only(top: 0.0),
               child: RefreshIndicator(
-                color: AppColors.brandOrange,
+                color: AppColors.brandOrangeIcon,
                 onRefresh: refreshHomeFeed,
                 child: CustomScrollView(
                   controller: _homeScrollController,

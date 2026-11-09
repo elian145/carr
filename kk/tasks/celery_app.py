@@ -63,6 +63,7 @@ def make_celery() -> Celery:
             "kk.tasks.video_tasks",
             "kk.tasks.media_readiness_tasks",
             "kk.tasks.moderation_tasks",
+            "kk.tasks.retention_tasks",
         ],
     )
     c.Task = FlaskContextTask
@@ -171,6 +172,13 @@ def make_celery() -> Celery:
                 "task": "kk.tasks.listing_tasks.clear_expired_featured_listings",
                 "schedule": 3600.0,  # hourly
             },
+            # F-16: opt-in retention cleanup. A no-op unless RETENTION_ENABLED=1,
+            # and counts only (dry-run) unless RETENTION_DRY_RUN=0
+            # (see kk/retention.py, docs/RETENTION_CLEANUP.md).
+            "retention-cleanup": {
+                "task": "kk.tasks.retention_tasks.run_retention_cleanup",
+                "schedule": 86400.0,  # daily
+            },
             # OOM-fix follow-up: backstop sweep for R2 async-image-staging
             # objects abandoned by a lost/crashed job (see
             # kk/tasks/image_tasks.py::cleanup_stale_image_staging_objects).
@@ -239,6 +247,22 @@ def make_celery() -> Celery:
             "sweep-listing-moderation": {
                 "task": "kk.sweep_listing_moderation",
                 "schedule": 120.0,
+            },
+            # F-04 durable saved-search alerts (see
+            # kk/saved_search_alert_jobs.py). A no-op (returns immediately,
+            # no DB access) unless SAVED_SEARCH_ALERT_DURABILITY is
+            # "record" (count/log only) or "on" (redrive). Each tick is
+            # bounded (<= SAVED_SEARCH_ALERT_SWEEP_BATCH enqueues of short
+            # per-job tasks, never inline alert loops), so it cannot
+            # monopolise the single-concurrency worker. ``expires`` (< the
+            # 300 s tick) drops a tick that queued up behind a long task
+            # (e.g. an ffmpeg transcode) or while the worker was down,
+            # instead of stampeding when the worker returns.
+            # Registered name == Beat 'task' string.
+            "reconcile-saved-search-alerts": {
+                "task": "kk.reconcile_saved_search_alerts",
+                "schedule": 300.0,
+                "options": {"expires": 290},
             },
         },
     )

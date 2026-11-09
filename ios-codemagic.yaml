@@ -10,7 +10,7 @@ workflows:
           include: true
           source: true
     environment:
-      flutter: stable
+      flutter: 3.47.5
       xcode: latest
       cocoapods: default
       vars:

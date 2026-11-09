@@ -106,7 +106,7 @@ Widget buildFloatingBottomNav(
       type: BottomNavigationBarType.fixed,
       backgroundColor: useSolid ? solidFill : Colors.transparent,
       elevation: 0,
-      selectedItemColor: AppColors.brandOrange,
+      selectedItemColor: AppColors.accentText(context),
       unselectedItemColor: unselectedItemColor,
       selectedFontSize: compact ? 10 : 12,
       unselectedFontSize: compact ? 10 : 11,
@@ -159,7 +159,7 @@ Widget buildFloatingBottomNav(
 
   return Semantics(
     container: true,
-    label: 'Main navigation',
+    label: AppLocalizations.of(context)!.mainNavigationLabel,
     // SafeArea outside decorative padding so the 10dp gap stays above the
     // Android system navigation bar (edge-to-edge), not under it.
     child: SafeArea(

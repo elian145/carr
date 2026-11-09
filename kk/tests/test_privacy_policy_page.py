@@ -193,3 +193,22 @@ def test_privacy_page_get_only():
     is GET-only; this also documents current API behavior is unchanged)."""
     resp = _client().post("/privacy")
     assert resp.status_code == 405
+
+
+def test_privacy_page_states_chat_media_is_retained_without_inventing_a_period():
+    """B8-3: chat photos, videos and voice notes are NOT deleted with the
+    account (kk/routes/auth.py::delete_account keeps chat rows and the chat
+    bucket objects) and there is no expiry job, so the page must say exactly
+    that -- and must not promise a retention period."""
+    import re
+
+    body = _client().get("/privacy").get_data(as_text=True)
+    assert "chat media (photos, videos and voice notes) are not deleted" in body
+    assert "remain visible to the other participant in that conversation and to authorized administrators" in body
+    assert "do not currently delete them automatically or state a fixed retention period" in body
+    # The generic "no longer than necessary" promise must not cover chat data.
+    assert "Apart from chat messages and chat media, any information we retain" in body
+    # No invented number of days/months/years anywhere near chat retention.
+    retention = body[body.index("We retain information while your account is active"):]
+    retention = retention[: retention.index("</p>")]
+    assert not re.search(r"\b\d+\s*(day|week|month|year)s?\b", retention, re.I)

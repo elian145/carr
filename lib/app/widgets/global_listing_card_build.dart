@@ -225,9 +225,9 @@ Widget _buildGlobalCarCard(
                                 enableSwipeCarousel: enableImageCarousel,
                               ),
                               if (showVideoCountBadge)
-                                Positioned(
+                                PositionedDirectional(
                                   top: 8,
-                                  right: 8,
+                                  end: 8,
                                   child: _globalListingCardVideoCountBadge(car),
                                 ),
                               if (sold)
@@ -277,9 +277,11 @@ Widget _buildGlobalCarCard(
           builder: (context, constraints) {
             // Room for two-line title + trim chips + specs + footer; keep a few
             // px slack so Arabic metrics don't clip on some devices.
-            final textReserve = AppResponsive.isCompactPhone(context)
-                ? 136.0
-                : 150.0;
+            // The text block grows with the system text scale (the grid cell
+            // does too, see ListingLayoutPrefs.gridChildAspectRatioForWidth).
+            final textReserve =
+                (AppResponsive.isCompactPhone(context) ? 136.0 : 150.0) *
+                appTextScaleOf(context);
             // Prefer a shorter image over stealing from the text block — the
             // preferred 120px floor must not win when the card is short.
             final availableForImage = constraints.maxHeight - textReserve;
@@ -386,15 +388,15 @@ Widget _buildGlobalCarCard(
           else
             cardInner,
           if (!listLayout && showVideoCountBadge)
-            Positioned(
+            PositionedDirectional(
               top: 12,
-              right: 12,
+              end: 12,
               child: _globalListingCardVideoCountBadge(car),
             ),
           if (featured)
-            Positioned(
+            PositionedDirectional(
               top: listLayout ? 8 : 10,
-              left: listLayout ? 8 : 10,
+              start: listLayout ? 8 : 10,
               child: buildListingFeaturedBadge(context, compact: listLayout),
             ),
         ],

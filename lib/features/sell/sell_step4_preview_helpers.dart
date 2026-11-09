@@ -98,9 +98,11 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
   }
 
   Widget _buildSpecCard(_SpecItem item) {
-    const brandOrange = AppColors.brandOrange;
-    const labelGrey = Color(0xFF8E8E93);
+    const brandOrange = AppColors.brandOrangeIcon;
     final isLight = Theme.of(context).brightness == Brightness.light;
+    // F-24: 8E8E93 is ~3.3:1 on a white card (below 4.5:1 for small text).
+    final labelGrey =
+        isLight ? AppColors.mutedText : AppColors.mutedTextOnDark;
     final cardBg = isLight ? Colors.white : const Color(0xFF1E1E1E);
     final iconCircleFill = isLight
         ? const Color(0xFFFFF0E6)
@@ -171,7 +173,7 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
                       maxLines: 1,
                       textAlign: TextAlign.center,
                       textScaleFactor: 1.0,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         height: 1.1,
                         color: labelGrey,
@@ -215,11 +217,15 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
     required IconData icon,
     required String label,
     required String? value,
+    // Inherently-LTR values (phone numbers): keep their digit order in RTL.
+    bool ltrValue = false,
   }) {
     if (value == null || value.isEmpty) return const SizedBox.shrink();
     final isLight = Theme.of(context).brightness == Brightness.light;
-    const brandOrange = AppColors.brandOrange;
-    const labelGrey = Color(0xFF8E8E93);
+    const brandOrange = AppColors.brandOrangeIcon;
+    // F-24: 8E8E93 is ~3.3:1 on a white card (below 4.5:1 for 12px text).
+    final labelGrey =
+        isLight ? AppColors.mutedText : AppColors.mutedTextOnDark;
     final cardBg = isLight ? Colors.white : const Color(0xFF1E1E1E);
     final iconCircleFill = isLight
         ? const Color(0xFFFFF0E6)
@@ -274,7 +280,7 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
                     children: [
                       Text(
                         label,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: labelGrey,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -284,6 +290,7 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
                       const SizedBox(height: 3),
                       Text(
                         value,
+                        textDirection: ltrValue ? ui.TextDirection.ltr : null,
                         style: TextStyle(
                           color: valueColor,
                           fontSize: 15,
@@ -442,6 +449,7 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
       _detailRow(
         icon: Icons.phone,
         label: loc.phoneLabel,
+        ltrValue: true,
         value: () {
           final phones = sellContactPhonesFromCarData(data);
           if (phones.isNotEmpty) return phones.join(' · ');

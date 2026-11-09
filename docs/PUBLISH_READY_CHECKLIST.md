@@ -6,15 +6,15 @@ Desktop (`macos` / `windows` / `linux`) and web are **not** store targets — se
 
 ## 1) Required identifiers
 
-- Android `applicationId` and `namespace` are `com.carzo.app` (prod flavor).
-- iOS bundle identifier is `com.carzo.app`.
+- Android **production** `applicationId` is `com.carnetiq.app` (the `prod` flavor in `android/app/build.gradle.kts`). The Gradle `namespace` and the base/default `applicationId` remain `com.carzo.app`; `dev`/`stage` flavors use `com.carzo.app.dev` / `com.carzo.app.stage`.
+- iOS bundle identifier is `com.carzo.app` (unchanged).
 - No `com.example.*` identifier remains in production files.
 
 ## 2) Required secrets/configuration
 
 - `android/signing.properties` exists for release builds.
 - Android Firebase config exists for the production package:
-  - `android/app/src/prod/google-services.json` with `package_name: com.carzo.app`
+  - `android/app/src/prod/google-services.json` with `package_name: com.carnetiq.app` (the file also lists the legacy `com.carzo.app*` clients)
 - iOS Firebase config exists:
   - `ios/Runner/GoogleService-Info.plist`
 - iOS map keys are provided at build time:

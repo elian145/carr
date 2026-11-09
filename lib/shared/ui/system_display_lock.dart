@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-/// Locks out phone Font size and Display size so layouts keep designed dp.
+/// Locks out phone Display size (density) so layouts keep designed dp, and
+/// bounds the phone Font size to [minTextScale]..[maxTextScale] (it is
+/// honoured, not locked).
 abstract final class SystemDisplayLock {
   static const _channel = MethodChannel('carzo/display_lock');
   static Future<void>? _initFuture;
@@ -51,8 +53,35 @@ abstract final class SystemDisplayLock {
     return stableDpr / currentDpr;
   }
 
-  /// Respect system text scale up to 1.3× so larger accessibility fonts work
-  /// without blowing up dense marketplace layouts. Also restores logical size
+  /// Smallest / largest system text scale the app honours.
+  ///
+  /// Floor 1.0: layouts are designed at 1.0 and were never tuned for smaller
+  /// text, so a "small" system font simply renders at the designed size.
+  /// Ceiling 2.0: Android's largest Font size setting is ~2.0 (nonlinear
+  /// scaling since Android 14 also tops out at 2.0) and WCAG 1.4.4 asks for
+  /// 200% resize, so every content screen must work at 2.0. Anything beyond
+  /// (third-party OEM sliders, adb overrides) is clamped here so a single
+  /// absurd value can never make the UI unusable.
+  static const double minTextScale = 1.0;
+  static const double maxTextScale = 2.0;
+
+  /// Pure clamp used by [lock]. Non-finite / non-positive input falls back to
+  /// the designed size (1.0).
+  static double clampTextScale(double factor) {
+    if (factor.isNaN || factor.isInfinite || factor <= 0) return 1.0;
+    return factor.clamp(minTextScale, maxTextScale).toDouble();
+  }
+
+  /// Effective linear factor of [scaler] for body-sized text (14 sp), so
+  /// Android 14+ nonlinear scalers are represented by what users actually
+  /// read rather than by a 1 sp probe.
+  static double textScaleFactorOf(TextScaler scaler) {
+    const probe = 14.0;
+    return scaler.scale(probe) / probe;
+  }
+
+  /// Respect the system text scale between [minTextScale] (1.0) and
+  /// [maxTextScale] (2.0). Also restores logical size
   /// when Android Display size changed the density.
   ///
   /// Also keeps [MediaQueryData.padding] bottom at least [viewPadding] when the
@@ -66,14 +95,14 @@ abstract final class SystemDisplayLock {
   /// only compares its own raw min/max arguments for equality before
   /// computing the actual intersected bounds, so when our lower bound
   /// (1.0) and the nested call's upper bound (1.0) intersect to an equal
-  /// range, its constructor's `assert(maxScale > minScale)` fires — the
+  /// range, its constructor's `assert(maxScale > minScale)` fires - the
   /// known `_ClampedTextScaler` assertion. Resolving the clamp to a plain
   /// scale factor and wrapping it in [TextScaler.linear] keeps the exact
-  /// same effective scaling (still clamped to [1.0, 1.3]) while avoiding
+  /// same effective scaling (clamped to [1.0, 2.0]) while avoiding
   /// that nested-clamp code path entirely, since `_LinearTextScaler.clamp()`
   /// has no such bug.
   static MediaQueryData lock(MediaQueryData mq) {
-    final clampedFactor = mq.textScaler.scale(1.0).clamp(1.0, 1.3);
+    final clampedFactor = clampTextScale(textScaleFactorOf(mq.textScaler));
     final clampedScale = TextScaler.linear(clampedFactor);
     var data = mq.copyWith(textScaler: clampedScale);
     data = _ensureBottomSystemInset(data);

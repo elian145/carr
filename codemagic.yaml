@@ -5,7 +5,7 @@ workflows:
     max_build_duration: 90
     instance_type: mac_mini_m1
     environment:
-      flutter: stable
+      flutter: 3.47.5
       xcode: latest
       cocoapods: default
       groups:
@@ -91,6 +91,9 @@ workflows:
           else
             echo "AIRBRIDGE_APP_NAME / AIRBRIDGE_APP_TOKEN not set; listing shares use HTTPS only."
           fi
+      # F-20: iOS has one prod-project plist; fails on project/bundle id mismatch.
+      - name: Firebase release guard (fail-closed)
+        script: python3 scripts/verify_firebase_isolation.py --release --flavor prod --platform ios
       - name: Analyze + tests
         script: |
           flutter analyze
@@ -143,7 +146,7 @@ workflows:
     integrations:
       app_store_connect: App Store Connect
     environment:
-      flutter: stable
+      flutter: 3.47.5
       xcode: latest
       cocoapods: default
       groups:
@@ -182,6 +185,9 @@ workflows:
               /usr/libexec/PlistBuddy -c "Add :GOOGLE_PLACES_API_KEY string $IOS_GOOGLE_PLACES_API_KEY" ios/Runner/Info.plist 2>/dev/null || true
             fi
           fi
+      # F-20: iOS has one prod-project plist; fails on project/bundle id mismatch.
+      - name: Firebase release guard (fail-closed)
+        script: python3 scripts/verify_firebase_isolation.py --release --flavor prod --platform ios
       - name: Analyze + tests
         script: |
           flutter analyze
@@ -221,17 +227,28 @@ workflows:
           /usr/libexec/PlistBuddy -c 'Print :provisioningProfiles' "$EXPORT_PLIST" 2>/dev/null || true
           # Apple requires CFBundleVersion to increase on every upload and be ≤18 chars.
           # CM_BUILD_ID is unique per build but can exceed Apple's 18-character limit.
-          RAW_BUILD_ID="${CM_BUILD_ID:-${CM_BUILD_NUMBER:-2}}"
-          BUILD_NUM="${RAW_BUILD_ID: -18}"
-          BUILD_NUM="${BUILD_NUM#"${BUILD_NUM%%[!0]*}"}"
-          BUILD_NUM="${BUILD_NUM:-1}"
+          if [ "${USE_MONOTONIC_BUILD_NUMBER:-}" = "1" ]; then
+            # Preferred: BUILD_NUMBER_OFFSET + sequential CI counter (never below
+            # the pubspec build number). Owner must set BUILD_NUMBER_OFFSET above
+            # the highest build already in App Store Connect (docs/OWNER_ACTIONS.md).
+            BUILD_NUM="$(python3 scripts/compute_build_number.py)"
+          else
+            # LEGACY (default until the owner opts in): last 18 chars of CM_BUILD_ID,
+            # which is not guaranteed numeric or monotonic.
+            RAW_BUILD_ID="${CM_BUILD_ID:-${CM_BUILD_NUMBER:-2}}"
+            BUILD_NUM="${RAW_BUILD_ID: -18}"
+            BUILD_NUM="${BUILD_NUM#"${BUILD_NUM%%[!0]*}"}"
+            BUILD_NUM="${BUILD_NUM:-1}"
+          fi
           if [ "${#BUILD_NUM}" -gt 18 ]; then
             echo "ERROR: CFBundleVersion exceeds 18 chars: $BUILD_NUM"
             exit 1
           fi
           echo "iOS build number (CFBundleVersion): $BUILD_NUM (from CM_BUILD_ID=$CM_BUILD_ID)"
+          # No --build-name: Flutter takes CFBundleShortVersionString from the
+          # pubspec.yaml `version:` (same source as Android), so an iOS
+          # min_app_version floor can actually be met by a newer release.
           flutter build ipa --release \
-            --build-name="1.0.0" \
             --build-number="$BUILD_NUM" \
             --export-options-plist="$EXPORT_PLIST" \
             --dart-define=API_BASE="$API_BASE" \
@@ -270,22 +287,32 @@ workflows:
         submit_to_testflight: true
 
   android_release_unsigned:
-    name: Android APK (release, unsigned)
+    name: Android APK (release, UNSIGNED - CI test artifact only)
     environment:
-      flutter: stable
+      flutter: 3.47.5
       vars:
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
         # Release builds enforce HTTPS. Override in Codemagic UI.
         API_BASE: "https://carr-5hrm.onrender.com"
         LISTING_SHARE_WEB_BASE: "https://carr-5hrm.onrender.com"
         LISTING_SHARE_URL_PATH: "listing"
-        # This workflow is intentionally for test APKs only; store builds must use real signing.
-        ALLOW_DEBUG_RELEASE_SIGNING: "true"
+        # F-13: this workflow produces an explicitly UNSIGNED test APK (no signing
+        # config, never the debug key). It is not installable or distributable;
+        # store builds must use android-prod-release (real signing). The opt-in is
+        # honoured by android/app/build.gradle.kts and is allowed ONLY here.
+        CARNET_UNSIGNED_RELEASE: "true"
     scripts:
       - name: Flutter pub get
         script: |
           flutter --version
           flutter pub get
+      - name: Verify Android release-signing safeguards
+        script: python scripts/verify_android_release_signing.py
+      # F-20: fails if the prod Firebase config is not the configured expected project.
+      - name: Firebase release guard (fail-closed)
+        script: python scripts/verify_firebase_isolation.py --release --flavor prod --platform android
+      - name: Analyze
+        script: flutter analyze
       - name: Build APK
         script: |
           flutter build apk --release --flavor prod \
@@ -296,15 +323,22 @@ workflows:
             --dart-define=AIRBRIDGE_APP_TOKEN="${AIRBRIDGE_APP_TOKEN:-}" \
             --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}" \
             --dart-define=SENTRY_DSN="${SENTRY_DSN:-}"
+      - name: Assert APK is unsigned and mark it UNSIGNED
+        script: |
+          APK_DIR=build/app/outputs/flutter-apk
+          python scripts/verify_android_release_signing.py \
+            --assert-unsigned-apk "$APK_DIR/app-prod-release.apk"
+          mv "$APK_DIR/app-prod-release.apk" "$APK_DIR/carnet-prod-release-UNSIGNED.apk"
+          rm -f "$APK_DIR/app-prod-release.apk.sha1"
     artifacts:
-      - build/app/outputs/flutter-apk/app-release.apk
+      - build/app/outputs/flutter-apk/carnet-prod-release-UNSIGNED.apk
 
   android-dev-debug:
     name: Android (dev) - Debug
     max_build_duration: 60
     instance_type: linux_x2
     environment:
-      flutter: stable
+      flutter: 3.47.5
       groups:
         - a
       vars:
@@ -333,6 +367,9 @@ workflows:
           else
             echo "ANDROID_GOOGLE_MAPS_API_KEY not set; maps will fail/blank on Android builds."
           fi
+      # F-20: warns while dev shares the prod project; set CARNET_FIREBASE_STRICT=1 once separate projects exist. A pinned-ID mismatch always fails.
+      - name: Firebase isolation lint
+        script: python scripts/verify_firebase_isolation.py --flavor "$FLAVOR" --platform android
       - name: Analyze
         script: flutter analyze
       - name: Tests
@@ -347,7 +384,7 @@ workflows:
     max_build_duration: 90
     instance_type: linux_x2
     environment:
-      flutter: stable
+      flutter: 3.47.5
       groups:
         - a
       vars:
@@ -420,8 +457,11 @@ workflows:
           printf 'STORE_FILE=%s\nSTORE_PASSWORD=%s\nKEY_ALIAS=%s\nKEY_PASSWORD=%s\n' \
             "$KEYSTORE_PATH" "$CM_KEYSTORE_PASSWORD" "$CM_KEY_ALIAS" "$CM_KEY_PASSWORD" \
             > "$CM_BUILD_DIR/android/signing.properties"
+      # F-20: fails if the Firebase config for this flavor is not the configured expected project.
+      - name: Firebase release guard (fail-closed)
+        script: python scripts/verify_firebase_isolation.py --release --flavor "$FLAVOR" --platform android
       - name: Analyze
-        script: flutter analyze --no-fatal-warnings --no-fatal-infos --no-pub
+        script: flutter analyze --no-pub
       - name: Tests
         script: bash scripts/flutter_test_ci.sh --no-pub
       - name: Publish preflight (static + deployed)

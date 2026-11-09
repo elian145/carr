@@ -16,6 +16,11 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
       ? AppThemes.lightAppBackground
       : AppThemes.darkHomeShellBackground;
 
+  /// Widest the price may grow in the model/price row: 60% of the content
+  /// width. Only binds when scaled text would otherwise starve the model name.
+  double _priceMaxWidth(BuildContext context) =>
+      (MediaQuery.sizeOf(context).width - 32) * 0.6;
+
   /// Model/price row height at fixed fontSize 22 (model may wrap).
   double _modelPriceRowHeight(BuildContext context) {
     const fontSize = 22.0;
@@ -39,10 +44,10 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
           ),
         ),
         textDirection: textDir,
-        textScaler: TextScaler.noScaling,
+        textScaler: MediaQuery.textScalerOf(context),
         maxLines: 1,
       )..layout();
-      maxWidth -= 12 + pricePainter.width;
+      maxWidth -= 12 + math.min(pricePainter.width, _priceMaxWidth(context));
     }
 
     final modelPainter = TextPainter(
@@ -55,7 +60,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
         ),
       ),
       textDirection: textDir,
-      textScaler: TextScaler.noScaling,
+      textScaler: MediaQuery.textScalerOf(context),
     )..layout(maxWidth: maxWidth.clamp(1.0, double.infinity));
 
     return hasPrice
@@ -68,7 +73,9 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
         _displayModelName(context).isNotEmpty ||
         tryParseCurrencyValue(car!['price']) != null;
     // Sheet content from top padding through Specifications.
-    double height = 12 + 22;
+    // Brand row: 18sp * 1.15 line (+1.3 slack), scaled with the system text.
+    double height =
+        12 + MediaQuery.textScalerOf(context).scale(18 * 1.15) + 1.3;
     if (hasModelOrPrice) height += 4 + _modelPriceRowHeight(context);
     height += _metaBlockHeight(context);
     height += _metaToDividerGap + 1;
@@ -89,7 +96,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
       fontWeight: FontWeight.bold,
       height: 1.4,
       leadingDistribution: TextLeadingDistribution.even,
-      color: AppColors.brandOrange,
+      color: AppColors.brandOrangeIcon,
     );
   }
 
@@ -129,7 +136,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
           ),
         ),
         textDirection: textDir,
-        textScaler: TextScaler.noScaling,
+        textScaler: MediaQuery.textScalerOf(context),
         maxLines: 2,
       )..layout(
           maxWidth: _relativeAgeMaxWidth(
@@ -154,7 +161,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
       final cityPainter = TextPainter(
         text: TextSpan(text: cityText, style: cityLabelStyle),
         textDirection: textDir,
-        textScaler: TextScaler.noScaling,
+        textScaler: MediaQuery.textScalerOf(context),
         maxLines: 2,
       )..layout(maxWidth: cityTextMaxWidth.clamp(1.0, double.infinity));
       cityRowHeight = math.max(14.0, cityPainter.height);
@@ -170,7 +177,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
         style: _specsTitleStyle(),
       ),
       textDirection: Directionality.of(context),
-      textScaler: TextScaler.noScaling,
+      textScaler: MediaQuery.textScalerOf(context),
       maxLines: 1,
     )..layout();
     // Small buffer for bold ascenders that can exceed TextPainter on some fonts.
@@ -200,26 +207,20 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
-                    child: MediaQuery(
-                      data: MediaQuery.of(
-                        context,
-                      ).copyWith(textScaler: TextScaler.noScaling),
-                      child: AutoSizeText(
-                        _displayBrandName(context),
-                        textScaleFactor: 1.0,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          height: 1.15,
-                          color: isLightShell
-                              ? const Color(0xFF858585)
-                              : Colors.white60,
-                        ),
-                        maxLines: 1,
-                        minFontSize: 11,
-                        stepGranularity: 0.5,
-                        overflow: TextOverflow.clip,
+                    child: AutoSizeText(
+                      _displayBrandName(context),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        height: 1.15,
+                        color: isLightShell
+                            ? const Color(0xFF858585)
+                            : Colors.white60,
                       ),
+                      maxLines: 1,
+                      minFontSize: 11,
+                      stepGranularity: 0.5,
+                      overflow: TextOverflow.clip,
                     ),
                   ),
                 ],
@@ -234,7 +235,6 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                           ? const SizedBox.shrink()
                           : Text(
                               _displayModelName(context),
-                              textScaler: const TextScaler.linear(1.0),
                               softWrap: true,
                               style: TextStyle(
                                 fontSize: 22,
@@ -250,15 +250,25 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                     ),
                     if (hasPrice) ...[
                       const SizedBox(width: 12),
-                      Text(
-                        formatCurrency(context, car!['price']),
-                        textScaler: const TextScaler.linear(1.0),
-                        maxLines: 1,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.brandOrange,
-                          height: 1.15,
+                      // Scaled price may shrink to fit its cap but never starves
+                      // the model name (see [_priceMaxWidth]).
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: _priceMaxWidth(context),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: Text(
+                            formatCurrency(context, car!['price']),
+                            maxLines: 1,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.brandOrangeIcon,
+                              height: 1.15,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -311,9 +321,6 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                                         child: Text(
                                           '${AppLocalizations.of(context)!.cityLabel}: '
                                           '${translateListingValue(context, listingFirstNonEmpty(car!, ['city', 'location'])) ?? listingFirstNonEmpty(car!, ['city', 'location'])}',
-                                          textScaler: const TextScaler.linear(
-                                            1.0,
-                                          ),
                                           style: cityLabelStyle,
                                           maxLines: 2,
                                           overflow: TextOverflow.clip,
@@ -336,7 +343,6 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                                   'listing-relative-age',
                                 ),
                                 uploadedDetail,
-                                textScaler: const TextScaler.linear(1.0),
                                 textAlign: TextAlign.end,
                                 style: cityLabelStyle.copyWith(
                                   fontWeight: FontWeight.w600,
@@ -366,12 +372,16 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
               // open a gap between Specs and the grid below.
               const Spacer(),
               const SizedBox(height: _specsTitleTopGap),
-              Text(
-                AppLocalizations.of(context)!.specificationsLabel,
-                textScaler: TextScaler.noScaling,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: _specsTitleStyle(),
+              // Shrinks (never clips) when the scaled 28sp heading is wider
+              // than the sheet, e.g. 2.0x text on a 320dp phone.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  AppLocalizations.of(context)!.specificationsLabel,
+                  maxLines: 1,
+                  style: _specsTitleStyle(),
+                ),
               ),
             ],
           ),
@@ -582,9 +592,9 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
           // indicator -- see `_showProcessingMedia`'s own doc comment for
           // the exact completion rule. Never shown to a non-owner.
           if (_isListingOwner && _showProcessingMedia)
-            Positioned(
+            PositionedDirectional(
               top: 12,
-              left: 12,
+              start: 12,
               child: const IgnorePointer(
                 ignoring: true,
                 child: ProcessingMediaBadge(),

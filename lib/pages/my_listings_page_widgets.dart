@@ -34,7 +34,7 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
             label: Text(label),
             selected: _filter == filter,
             onSelected: (_) => _selectFilter(filter),
-            selectedColor: AppColors.brandOrange,
+            selectedColor: AppColors.brandOrangeStrong,
             labelStyle: TextStyle(
               color: _filter == filter ? Colors.white : null,
               fontWeight: FontWeight.w700,
@@ -214,7 +214,7 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
               ),
               child: const Icon(
                 Icons.add_a_photo_outlined,
-                color: AppColors.brandOrange,
+                color: AppColors.brandOrangeIcon,
                 size: 26,
               ),
             ),
@@ -357,7 +357,7 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
                         ),
                         onPressed: () => unawaited(_resumeDraft(snapshot)),
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.brandOrange,
+                          backgroundColor: AppColors.brandOrangeStrong,
                           foregroundColor: Colors.white,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 10),
@@ -473,7 +473,9 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
         ? (record.lastErrorMessage ?? '').trim()
         : '';
     final canRetry = (needsAttention || retryable) && !running;
-    final accent = needsAttention ? Colors.red.shade400 : AppColors.brandOrange;
+    final accent = needsAttention
+        ? (isLight ? Colors.red.shade700 : Colors.red.shade400)
+        : AppColors.accentText(context);
 
     return Padding(
       padding: const EdgeInsets.all(4),
@@ -527,7 +529,10 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
                 const SizedBox(height: 4),
                 Expanded(
                   child: Text(
-                    detail,
+                    localizedSellSubmissionDetail(
+                      AppLocalizations.of(context),
+                      detail,
+                    ),
                     maxLines: listLayout ? 2 : 4,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: metaColor, fontSize: 11),
@@ -554,7 +559,7 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
               else
                 LinearProgressIndicator(
                   minHeight: 3,
-                  color: AppColors.brandOrange,
+                  color: AppColors.accentText(context),
                 ),
             ],
           ),

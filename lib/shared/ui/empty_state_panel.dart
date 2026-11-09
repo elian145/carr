@@ -21,7 +21,7 @@ class EmptyStatePanel extends StatelessWidget {
   final VoidCallback? onAction;
   final IconData? actionIcon;
 
-  static const Color _accent = AppColors.brandOrange;
+  static const Color _accent = AppColors.brandOrangeIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +65,7 @@ class EmptyStatePanel extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onAction,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _accent,
+                  backgroundColor: AppColors.brandOrangeStrong,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,

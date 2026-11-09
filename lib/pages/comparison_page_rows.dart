@@ -139,7 +139,7 @@ extension _CarComparisonPageRows on CarComparisonPage {
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: AppColors.brandOrange,
+              color: AppColors.brandOrangeIcon,
             ),
           ),
         ),

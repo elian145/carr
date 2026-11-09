@@ -51,7 +51,7 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
       cardWidget = Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.brandOrange, width: 2),
+          border: Border.all(color: AppColors.brandOrangeIcon, width: 2),
         ),
         child: cardWidget,
       );
@@ -108,7 +108,7 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [AppColors.brandOrange, Color(0xFFFF8A50)],
+                        colors: AppColors.brandGradientBehindWhiteText,
                       ),
                     ),
                     child: Row(
@@ -131,7 +131,7 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Analytics Dashboard',
+                                AppLocalizations.of(context)!.analyticsDashboard,
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 20,
@@ -140,7 +140,7 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
                                 ),
                               ),
                               Text(
-                                'Performance insights',
+                                AppLocalizations.of(context)!.performanceInsights,
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.9),
                                   fontSize: 14,
@@ -277,10 +277,7 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
                                   ),
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [
-                                        AppColors.brandOrange,
-                                        Color(0xFFFF8A50),
-                                      ],
+                                      colors: AppColors.brandGradientBehindWhiteText,
                                     ),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
@@ -302,7 +299,7 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
                           SizedBox(height: 32),
                           // Modern metrics section
                           Text(
-                            'Performance Metrics',
+                            AppLocalizations.of(context)!.performanceMetrics,
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,

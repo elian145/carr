@@ -7,6 +7,18 @@ Map<String, dynamic> unwrapCarApiPayload(Map<String, dynamic> payload) {
   return Map<String, dynamic>.from(payload);
 }
 
+/// N-1: the only part of a chat listing preview the server honours is the
+/// listing id (it derives title/price/image from its own Listing row and
+/// ignores everything else). Send just that instead of the whole local card.
+/// An empty id still yields a non-empty map so the server falls back to the
+/// conversation's own listing.
+Map<String, dynamic>? chatListingPreviewRefForSend(
+  Map<String, dynamic>? preview,
+) {
+  if (preview == null || preview.isEmpty) return null;
+  return <String, dynamic>{'id': listingPrimaryId(preview)};
+}
+
 String listingPrimaryId(Map<String, dynamic> listing) {
   final publicId = (listing['public_id'] ?? '').toString().trim();
   if (publicId.isNotEmpty) return publicId;

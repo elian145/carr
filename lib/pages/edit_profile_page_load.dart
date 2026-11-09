@@ -180,7 +180,7 @@ mixin _EditProfilePageLoad on _EditProfilePageStyle {
         final uploadResponse = await authService.uploadProfilePicture(
           _profileImage!,
         );
-        if (uploadResponse['profile_picture'] != null) {
+        if (uploadResponse['profile_picture'] != null && mounted) {
           setState(() {
             _currentProfilePicture = uploadResponse['profile_picture'];
             _profileImage =

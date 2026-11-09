@@ -88,3 +88,25 @@ Existing uploads that were already lost cannot be recovered; re-upload or restor
 ## Local development
 
 Leave `UPLOAD_FOLDER` unset to use `kk/static/uploads/` inside the repo. Production fail-fast does not apply when `APP_ENV=development` or `testing`.
+
+
+## Dealer verification photos (private)
+
+Dealer-verification photos are **not** listing media and are never public.
+They are stored in the **private chat-media R2 bucket** (`R2_CHAT_*`, no public
+URL) under the `dealer_verification/` prefix, and the existing column
+`dealer_application.verification_photo_filename` holds `r2:dealer_verification/<token>.<ext>`.
+A bare filename in that column is a **legacy local-disk file** under
+`PRIVATE_UPLOAD_FOLDER/dealer_verification/` (ephemeral on Render: `render.yaml`
+defines no disk), which is still read if present.
+
+* Production requires the private bucket at boot, and an R2 failure returns
+  `503` (upload) or `503` (admin read) -- there is no silent fallback to disk.
+  Local disk is used only when `APP_ENV` is `development`/`testing` and the
+  private bucket is not configured.
+* Reads go through `GET /api/admin/dealers/<id>/verification-photo`
+  (admin + `dealers` permission), which proxies the bytes server-side with
+  `Cache-Control: no-store, private`; no public or presigned URL is issued.
+* Account deletion and photo replacement delete the R2 object (best effort).
+* Check legacy rows (read-only):
+  `SELECT status, count(*) FROM dealer_application WHERE verification_photo_filename IS NOT NULL AND verification_photo_filename NOT LIKE 'r2:%' GROUP BY status;`

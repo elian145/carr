@@ -1441,8 +1441,11 @@ def test_migration_is_single_head_additive_and_reversible(tmp_path):
     script = ScriptDirectory.from_config(cfg)
     heads = script.get_heads()
     # Single head. The car_revision migration is no longer the tip: the
-    # automated-moderation tables (v0w1x2y3z4a5) were stacked directly on it.
-    assert heads == ["v0w1x2y3z4a5"]
+    # automated-moderation tables (v0w1x2y3z4a5) were stacked directly on it,
+    # and the F-04 saved_search_alert_job migration (f04a1b2c3d4e) on those, and
+    # the B8 account_deletion_request migration (a7d3e1c9b5f2) on that.
+    # and the F-17 admin_audit_log migration (b8e4f2a6c1d3) on that.
+    assert heads == ["b8e4f2a6c1d3"]
     assert script.get_revision("v0w1x2y3z4a5").down_revision == "u9v0w1x2y3z4"
     rev = script.get_revision("u9v0w1x2y3z4")
     assert rev.down_revision == "t8u9v0w1x2y3"

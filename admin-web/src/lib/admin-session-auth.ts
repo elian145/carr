@@ -15,7 +15,27 @@ export function apiUpstreamBase(): string {
   ).replace(/\/+$/, "");
 }
 
+function isProductionRuntime(): boolean {
+  return (
+    (process.env.NODE_ENV || "").trim() === "production" ||
+    (process.env.APP_ENV || "").trim().toLowerCase() === "production"
+  );
+}
+
+/**
+ * F-32: in production the session cookies are ALWAYS `Secure`; the flag no
+ * longer depends on a client/proxy-supplied `x-forwarded-proto`. Plain-HTTP
+ * production-mode runs (e.g. `next start` on localhost) must opt out
+ * explicitly with ADMIN_COOKIE_ALLOW_HTTP=1. Outside production the scheme is
+ * derived from the request as before.
+ */
 export function cookieSecureFromRequest(request: Request): boolean {
+  if (
+    isProductionRuntime() &&
+    (process.env.ADMIN_COOKIE_ALLOW_HTTP || "").trim() !== "1"
+  ) {
+    return true;
+  }
   const proto = request.headers.get("x-forwarded-proto");
   if (proto) return proto.split(",")[0].trim() === "https";
   try {
@@ -29,11 +49,17 @@ function jwtSecret(): string {
   return (process.env.JWT_SECRET_KEY || "").trim();
 }
 
+/**
+ * F-19: PUBLIC key (PEM) of the API's admin-token signing key. This is all the
+ * admin service needs to verify its session cookie; it cannot sign anything.
+ */
+function adminPublicKey(): string {
+  return (process.env.ADMIN_JWT_PUBLIC_KEY || "").trim();
+}
+
+/** Production fails closed unless the edge can actually verify signatures. */
 function requireSecretInProd(): boolean {
-  const isProd =
-    (process.env.NODE_ENV || "").trim() === "production" ||
-    (process.env.APP_ENV || "").trim().toLowerCase() === "production";
-  return isProd && !jwtSecret();
+  return isProductionRuntime() && !jwtSecret() && !adminPublicKey();
 }
 
 type CookieJar = {
@@ -164,9 +190,24 @@ export async function resolveAdminAccessToken(
 ): Promise<string | null> {
   if (requireSecretInProd()) return null;
   const secret = jwtSecret();
+  const publicKey = adminPublicKey();
+  const verifyOptions = {
+    // F-32: unsigned claims only with an explicit, non-production opt-in.
+    allowUnsignedDev:
+      !isProductionRuntime() &&
+      (process.env.ADMIN_ALLOW_UNSIGNED_DEV || "").trim() === "1",
+    // Optional overrides; must equal the API's ADMIN_JWT_ISSUER/AUDIENCE.
+    issuer: (process.env.ADMIN_JWT_ISSUER || "").trim(),
+    audience: (process.env.ADMIN_JWT_AUDIENCE || "").trim(),
+  };
   const accessRaw = jar.get(ADMIN_JWT_COOKIE)?.value || "";
   if (accessRaw) {
-    const check = await verifyAdminAccessJwt(accessRaw, secret);
+    const check = await verifyAdminAccessJwt(
+      accessRaw,
+      secret,
+      publicKey,
+      verifyOptions,
+    );
     if (check.ok) return accessRaw;
   }
 
@@ -174,6 +215,16 @@ export async function resolveAdminAccessToken(
   if (!refreshRaw) return null;
   const rotated = await refreshAccessWithRefreshToken(refreshRaw);
   if (!rotated) return null;
+  // A freshly rotated access token goes through the same checks (signature,
+  // iss/aud, admin scope, exp) instead of being trusted because it came from
+  // the upstream refresh endpoint.
+  const rotatedCheck = await verifyAdminAccessJwt(
+    rotated.access,
+    secret,
+    publicKey,
+    verifyOptions,
+  );
+  if (!rotatedCheck.ok) return null;
   onRotated?.(rotated.access, rotated.refresh);
   return rotated.access;
 }

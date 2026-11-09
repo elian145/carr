@@ -184,6 +184,37 @@ def log_fcm_startup_status() -> None:
         )
 
 
+def firebase_project_isolation_error(project_id: str | None, app_env: str | None = None) -> str | None:
+    """F-20: why a service account for ``project_id`` must NOT be used here, or None.
+
+    Config (env, never secrets; owner-supplied):
+      FIREBASE_EXPECTED_PROJECT_ID    the one project this deployment may push through;
+                                      any other project is refused.
+      FIREBASE_PRODUCTION_PROJECT_ID  the production project; refused whenever
+                                      ``APP_ENV`` is not production (dev/test/staging
+                                      must never send FCM through production).
+    Neither set -> no restriction (legacy behaviour) and the caller logs a hint.
+    """
+    pid = (project_id or "").strip()
+    if app_env is None:
+        from .config import get_app_env
+
+        app_env = get_app_env()
+    expected = (os.environ.get("FIREBASE_EXPECTED_PROJECT_ID") or "").strip()
+    prod = (os.environ.get("FIREBASE_PRODUCTION_PROJECT_ID") or "").strip()
+    if expected and pid != expected:
+        return (
+            f"service account project {pid or '<missing>'!r} does not match "
+            f"FIREBASE_EXPECTED_PROJECT_ID {expected!r}"
+        )
+    if prod and app_env != "production" and pid == prod:
+        return (
+            f"APP_ENV={app_env!r} must not use the production Firebase project {prod!r} "
+            "(FIREBASE_PRODUCTION_PROJECT_ID)"
+        )
+    return None
+
+
 def _ensure_firebase():
     """Lazy-init Firebase Admin SDK (once)."""
     global _firebase_app, _init_attempted
@@ -204,7 +235,13 @@ def _ensure_firebase():
         import firebase_admin  # type: ignore
         from firebase_admin import credentials  # type: ignore
 
-        cred = credentials.Certificate(json.loads(creds_json))
+        info = json.loads(creds_json)
+        # F-20: fail closed (push disabled) rather than send through the wrong project.
+        isolation_error = firebase_project_isolation_error(info.get("project_id"))
+        if isolation_error:
+            logger.error("FCM disabled by Firebase isolation guard: %s", isolation_error)
+            return None
+        cred = credentials.Certificate(info)
 
         _firebase_app = firebase_admin.initialize_app(cred)
         logger.info("Firebase Admin SDK initialised for push notifications.")

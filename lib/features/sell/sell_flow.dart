@@ -43,6 +43,10 @@ import '../../shared/listings/listing_identity.dart' as listing_identity;
 import '../../features/listing/listing_spec_icons.dart';
 import '../../features/listing/listing_spec_item.dart';
 import '../../globals.dart';
+import 'sell_listing_media_upload.dart' show SellSubmissionCancelledException;
+import 'sell_cancel_refused_feedback.dart';
+import 'sell_media_overlay_button.dart';
+import 'sell_submission_messages.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/online_spec_variant.dart';
 import '../../models/sell_spec_reconcile.dart';
@@ -356,7 +360,7 @@ Widget buildSellWizardNavRow(
     child: OutlinedButton(
       onPressed: onPrevious,
       style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: AppColors.brandOrange),
+        side: const BorderSide(color: AppColors.brandOrangeIcon),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: FittedBox(
@@ -364,10 +368,10 @@ Widget buildSellWizardNavRow(
         child: Text(
           AppLocalizations.of(context)!.previousButton,
           maxLines: 1,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.brandOrange,
+            color: AppColors.accentText(context),
           ),
         ),
       ),
@@ -382,7 +386,7 @@ Widget buildSellWizardNavRow(
       child: ElevatedButton(
         onPressed: onNext,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.brandOrange,
+          backgroundColor: AppColors.brandOrangeStrong,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

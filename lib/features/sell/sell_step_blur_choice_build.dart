@@ -232,7 +232,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: selected
-                            ? kFilterAccentColor
+                            ? AppColors.accentText(context)
                             : Colors.grey.shade900,
                       ),
                     ),
@@ -383,7 +383,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
                 icon: const Icon(Icons.refresh),
                 label: Text(loc.blurPlatesNow),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: kFilterAccentColor,
+                  backgroundColor: AppColors.brandOrangeStrong,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -407,7 +407,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
               icon: const Icon(Icons.refresh),
               label: Text(loc.blurPlatesNow),
               style: ElevatedButton.styleFrom(
-                backgroundColor: kFilterAccentColor,
+                backgroundColor: AppColors.brandOrangeStrong,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -499,10 +499,10 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
               if (_useBlurredPlates == true && blurring) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(
+                    content: WarningSnackBarText(
                       AppLocalizations.of(context)!.pleaseWaitForPlateBlurringToFinish,
                     ),
-                    backgroundColor: Colors.orange,
+                    backgroundColor: AppColors.warningSnackBarBackground,
                   ),
                 );
                 return;

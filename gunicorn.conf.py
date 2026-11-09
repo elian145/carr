@@ -30,7 +30,21 @@ workers = _resolve_workers(
     redis_url=os.environ.get("REDIS_URL"),
     socketio_message_queue=os.environ.get("SOCKETIO_MESSAGE_QUEUE"),
 )
-threads = int(os.environ.get("GUNICORN_THREADS", "4"))
+# C-1: each open WebSocket pins one thread of this single gthread worker, so the
+# default must leave room for sockets AND REST traffic (was 4: four sockets
+# starved the API). kk/realtime_limits.py caps sockets so that at least half of
+# these threads (min 8) always remain for HTTP.
+try:
+    from kk.socketio_deploy import resolve_gunicorn_threads as _resolve_threads
+except Exception:  # pragma: no cover
+    def _resolve_threads(raw=None):  # type: ignore[misc]
+        try:
+            n = int((raw or "").strip() or "32")
+            return n if n > 0 else 32
+        except Exception:
+            return 32
+
+threads = _resolve_threads(os.environ.get("GUNICORN_THREADS"))
 if workers > 1 and not _mq:
     print(
         "WARNING: WEB_CONCURRENCY=%s without REDIS_URL/SOCKETIO_MESSAGE_QUEUE; "
@@ -69,16 +83,24 @@ _allow_eventlet = (os.environ.get("SOCKETIO_ALLOW_EVENTLET") or "").strip().lowe
     "true",
     "yes",
 )
+# Gunicorn >= 26 REMOVED the eventlet worker class (deprecated in 25.0) and the
+# `eventlet` package is no longer a dependency, so the eventlet break-glass can
+# no longer be honoured: asking for it degrades to gthread (never a boot
+# failure). Keep `kk.app_factory._socketio_async_mode` in step with this.
 _use_async_worker = (
-    _allow_eventlet and bool(_mq) and _sio_async in ("eventlet", "gevent")
+    _allow_eventlet and bool(_mq) and _sio_async == "gevent"
 )
-if _use_async_worker and _sio_async == "eventlet":
-    worker_class = "eventlet"
-elif _use_async_worker and _sio_async == "gevent":
+if _use_async_worker:
     worker_class = "gevent"
 else:
     worker_class = "gthread"
-    if _sio_async in ("eventlet", "gevent"):
+    if _sio_async == "eventlet":
+        print(
+            "WARNING: ignoring SOCKETIO_ASYNC_MODE=eventlet: Gunicorn >= 26 "
+            "removed the eventlet worker; using gthread. Unset SOCKETIO_ASYNC_MODE.",
+            file=sys.stderr,
+        )
+    elif _sio_async == "gevent":
         reason = (
             "SOCKETIO_ALLOW_EVENTLET is not set"
             if not _allow_eventlet

@@ -33,6 +33,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get navProfile => 'الملف الشخصي';
 
   @override
+  String get homeLayoutList => 'قائمة';
+
+  @override
+  String get homeLayoutGrid => 'شبكة';
+
+  @override
+  String get mainNavigationLabel => 'التنقل الرئيسي';
+
+  @override
+  String get sellPhotoProcessingFailed =>
+      'فشلت معالجة الصور. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get sellSubmissionCancelledByUser => 'ألغيتَ العملية';
+
+  @override
   String get addListingTitle => 'إضافة إعلان';
 
   @override
@@ -499,6 +515,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chatCarzoOwnListing => 'لا يمكنك مراسلة نفسك على إعلانك.';
+
+  @override
+  String chatUserTyping(String name) {
+    return '$name يكتب...';
+  }
 
   @override
   String get unableToOpenWhatsApp => 'تعذر فتح واتساب';
@@ -1354,6 +1375,20 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noNotificationsYet => 'لا توجد إشعارات بعد';
+
+  @override
+  String get notificationChannelChatName => 'رسائل المحادثة';
+
+  @override
+  String get notificationChannelChatDescription =>
+      'تنبيهات رسائل المحادثة الجديدة';
+
+  @override
+  String get notificationChannelUpdatesName => 'تحديثات الحساب';
+
+  @override
+  String get notificationChannelUpdatesDescription =>
+      'تحديثات مهمة للحساب والمعارض';
 
   @override
   String get failedToLoadNotifications => 'تعذر تحميل الإشعارات';
@@ -2404,6 +2439,13 @@ class AppLocalizationsAr extends AppLocalizations {
       'لا توجد ماركات أو موديلات مطابقة.';
 
   @override
+  String get typeModelNameToSearch =>
+      'اكتب اسم موديل للبحث. يمكنك أيضاً كتابة اسم ماركة لعرض جميع موديلاتها.';
+
+  @override
+  String get noModelsMatchYourSearch => 'لا توجد موديلات مطابقة.';
+
+  @override
   String get make => 'الماركة';
 
   @override
@@ -2481,6 +2523,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get untitledDraftTitle => 'مسودة بدون عنوان';
 
   @override
+  String get yourListingFallbackTitle => 'إعلانك';
+
+  @override
   String get continueEditing => 'متابعة التعديل';
 
   @override
@@ -2542,7 +2587,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get specDatabaseUnavailableRestartTheAppAfterFlutterPubGet =>
-      'قاعدة بيانات المواصفات غير متاحة. أعد تشغيل التطبيق بعد flutter pub get.';
+      'مواصفات المركبات غير متاحة حاليًا. يرجى إعادة تشغيل التطبيق.';
 
   @override
   String get catalogAutoFill => 'تعبئة تلقائية من الكتالوج';
@@ -2559,6 +2604,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get specsAvailableForThisYear => 'المواصفات متاحة لهذه السنة.';
+
+  @override
+  String get noSpecRowForThisYear =>
+      'لا توجد مواصفات لهذه السنة — جرّب سنة أو فئة أخرى.';
 
   @override
   String get applySpecs => 'تطبيق المواصفات';
@@ -2880,4 +2929,53 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get softUpdateFallbackMessage => 'يتوفر إصدار أحدث من CarNet.';
+
+  @override
+  String get currentPasswordLabel => 'كلمة المرور الحالية';
+
+  @override
+  String get pleaseEnterCurrentPassword => 'يرجى إدخال كلمة المرور الحالية';
+
+  @override
+  String get passwordChangedSuccessfully => 'تم تغيير كلمة المرور بنجاح';
+
+  @override
+  String get unableToChangePasswordCheckCurrent =>
+      'تعذر تغيير كلمة المرور. يرجى التحقق من كلمة المرور الحالية والمحاولة مرة أخرى.';
+
+  @override
+  String get unableToChangePasswordTryLater =>
+      'تعذر تغيير كلمة المرور. يرجى المحاولة لاحقًا.';
+
+  @override
+  String get sendingEllipsis => 'جارٍ الإرسال...';
+
+  @override
+  String get videoBadge => 'فيديو';
+
+  @override
+  String get viewDetailsButton => 'عرض التفاصيل';
+
+  @override
+  String a11yPhotoXOfY(int index, int total) {
+    return 'الصورة $index من $total';
+  }
+
+  @override
+  String get a11yCancelUpload => 'إلغاء الرفع';
+
+  @override
+  String get a11yCancelUploadConfirm =>
+      'إيقاف الرفع؟ إذا لم يتم إنشاء إعلانك بعد، فسيتم الاحتفاظ بالمسودة.';
+
+  @override
+  String get a11yKeepUploading => 'متابعة الرفع';
+
+  @override
+  String get a11yUploadCancelledDraftKept =>
+      'تم إلغاء الرفع. تم الاحتفاظ بالمسودة.';
+
+  @override
+  String get a11yUploadCancelTooLate =>
+      'فات أوان الإلغاء: يتم نشر إعلانك الآن.';
 }

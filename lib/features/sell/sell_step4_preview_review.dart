@@ -151,6 +151,11 @@ class _SellReviewCarDetailScrollViewState
       ? AppThemes.lightAppBackground
       : AppThemes.darkHomeShellBackground;
 
+  /// Widest the price may grow in the model/price row (60% of content width);
+  /// only binds when scaled text would otherwise starve the model name.
+  double _priceMaxWidth(BuildContext context) =>
+      (MediaQuery.sizeOf(context).width - 32) * 0.6;
+
   double _modelPriceRowHeight(BuildContext context) {
     const fontSize = 22.0;
     const lineHeight = 1.15;
@@ -173,10 +178,10 @@ class _SellReviewCarDetailScrollViewState
           ),
         ),
         textDirection: textDir,
-        textScaler: TextScaler.noScaling,
+        textScaler: MediaQuery.textScalerOf(context),
         maxLines: 1,
       )..layout();
-      maxWidth -= 12 + pricePainter.width;
+      maxWidth -= 12 + math.min(pricePainter.width, _priceMaxWidth(context));
     }
 
     final modelPainter = TextPainter(
@@ -189,7 +194,7 @@ class _SellReviewCarDetailScrollViewState
         ),
       ),
       textDirection: textDir,
-      textScaler: TextScaler.noScaling,
+      textScaler: MediaQuery.textScalerOf(context),
     )..layout(maxWidth: maxWidth.clamp(1.0, double.infinity));
 
     return hasPrice
@@ -203,7 +208,9 @@ class _SellReviewCarDetailScrollViewState
         _sellReviewListingModel(context, car).isNotEmpty ||
         _sellReviewHasPrice(car);
 
-    double height = 12 + 22;
+    // Brand row: 18sp * 1.15 line (+1.3 slack), scaled with the system text.
+    double height =
+        12 + MediaQuery.textScalerOf(context).scale(18 * 1.15) + 1.3;
     if (hasModelOrPrice) height += 4 + _modelPriceRowHeight(context);
     height += _metaBlockHeight(context, car);
     height += _metaToDividerGap + 1;
@@ -219,9 +226,13 @@ class _SellReviewCarDetailScrollViewState
       fontWeight: FontWeight.bold,
       height: 1.4,
       leadingDistribution: TextLeadingDistribution.even,
-      color: AppColors.brandOrange,
+      color: AppColors.brandOrangeIcon,
     );
   }
+
+  /// Widest the relative-age text may be (48% of content width).
+  double _uploadedMaxWidth(BuildContext context) =>
+      (MediaQuery.sizeOf(context).width - 32) * 0.48;
 
   double _metaBlockHeight(BuildContext context, Map<String, dynamic> car) {
     String? pickCity(List<String> keys) {
@@ -255,9 +266,9 @@ class _SellReviewCarDetailScrollViewState
           ),
         ),
         textDirection: textDir,
-        textScaler: TextScaler.noScaling,
+        textScaler: MediaQuery.textScalerOf(context),
         maxLines: 1,
-      )..layout();
+      )..layout(maxWidth: _uploadedMaxWidth(context));
       uploadedWidth = uploadedPainter.width;
       uploadedHeight = uploadedPainter.height;
     }
@@ -275,7 +286,7 @@ class _SellReviewCarDetailScrollViewState
       final cityPainter = TextPainter(
         text: TextSpan(text: cityText, style: cityLabelStyle),
         textDirection: textDir,
-        textScaler: TextScaler.noScaling,
+        textScaler: MediaQuery.textScalerOf(context),
         maxLines: 2,
       )..layout(maxWidth: cityTextMaxWidth.clamp(1.0, double.infinity));
       cityRowHeight = math.max(14.0, cityPainter.height);
@@ -291,7 +302,7 @@ class _SellReviewCarDetailScrollViewState
         style: _specsTitleStyle(),
       ),
       textDirection: Directionality.of(context),
-      textScaler: TextScaler.noScaling,
+      textScaler: MediaQuery.textScalerOf(context),
       maxLines: 1,
     )..layout();
     return painter.height.ceilToDouble() + 6;
@@ -462,26 +473,20 @@ class _SellReviewCarDetailScrollViewState
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
-                    child: MediaQuery(
-                      data: MediaQuery.of(context).copyWith(
-                        textScaler: TextScaler.noScaling,
+                    child: AutoSizeText(
+                      brandStr,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        height: 1.15,
+                        color: isLightShell
+                            ? const Color(0xFF858585)
+                            : Colors.white60,
                       ),
-                      child: AutoSizeText(
-                        brandStr,
-                        textScaleFactor: 1.0,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          height: 1.15,
-                          color: isLightShell
-                              ? const Color(0xFF858585)
-                              : Colors.white60,
-                        ),
-                        maxLines: 1,
-                        minFontSize: 11,
-                        stepGranularity: 0.5,
-                        overflow: TextOverflow.clip,
-                      ),
+                      maxLines: 1,
+                      minFontSize: 11,
+                      stepGranularity: 0.5,
+                      overflow: TextOverflow.clip,
                     ),
                   ),
                 ],
@@ -496,7 +501,6 @@ class _SellReviewCarDetailScrollViewState
                           ? const SizedBox.shrink()
                           : Text(
                               modelStr,
-                              textScaler: const TextScaler.linear(1.0),
                               softWrap: true,
                               style: TextStyle(
                                 fontSize: 22,
@@ -512,15 +516,25 @@ class _SellReviewCarDetailScrollViewState
                     ),
                     if (hasPrice) ...[
                       const SizedBox(width: 12),
-                      Text(
-                        formatCurrency(context, car['price']),
-                        textScaler: const TextScaler.linear(1.0),
-                        maxLines: 1,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.brandOrange,
-                          height: 1.15,
+                      // Scaled price may shrink to fit its cap but never starves
+                      // the model name (see [_priceMaxWidth]).
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: _priceMaxWidth(context),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: Text(
+                            formatCurrency(context, car['price']),
+                            maxLines: 1,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.brandOrangeIcon,
+                              height: 1.15,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -575,9 +589,6 @@ class _SellReviewCarDetailScrollViewState
                                       Flexible(
                                         child: Text(
                                           '${AppLocalizations.of(context)!.cityLabel}: ${_translateValueGlobal(context, pickCity(['city', 'location'])) ?? pickCity(['city', 'location'])}',
-                                          textScaler: const TextScaler.linear(
-                                            1.0,
-                                          ),
                                           style: cityLabelStyle,
                                           maxLines: 2,
                                           overflow: TextOverflow.clip,
@@ -588,15 +599,19 @@ class _SellReviewCarDetailScrollViewState
                           ),
                           if (uploadedDetail.isNotEmpty) ...[
                             if (cityDetail.isNotEmpty) const SizedBox(width: 8),
-                            Text(
-                              uploadedDetail,
-                              textScaler: const TextScaler.linear(1.0),
-                              style: cityLabelStyle.copyWith(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: _uploadedMaxWidth(context),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              child: Text(
+                                uploadedDetail,
+                                style: cityLabelStyle.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ],
@@ -615,12 +630,16 @@ class _SellReviewCarDetailScrollViewState
               ),
               const Spacer(),
               const SizedBox(height: 4),
-              Text(
-                AppLocalizations.of(context)!.specificationsLabel,
-                textScaler: TextScaler.noScaling,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: _specsTitleStyle(),
+              // Shrinks (never clips) when the scaled 28sp heading is wider
+              // than the sheet, e.g. 2.0x text on a 320dp phone.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  AppLocalizations.of(context)!.specificationsLabel,
+                  maxLines: 1,
+                  style: _specsTitleStyle(),
+                ),
               ),
             ],
           ),
