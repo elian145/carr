@@ -9,8 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
-
 import '../app/widgets/listing_hero_image.dart';
 import '../app/widgets/listing_network_image.dart';
 import '../app/widgets/owner_fallback_hero_image.dart';
@@ -61,6 +59,7 @@ import '../shared/listings/listing_sold_badge.dart';
 import '../shared/listings/listing_status.dart';
 import '../shared/listings/listing_uploaded_ago.dart';
 import '../shared/media/media_url.dart';
+import '../shared/media/remote_video_thumbnail.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/trust/report_dialog.dart';

@@ -38,6 +38,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show MissingPluginException;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -48,6 +49,7 @@ import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/auth_service.dart';
 import 'package:car_listing_app/shared/ui/processing_media_badge.dart';
 import 'package:car_listing_app/shared/prefs/owner_optimistic_media_prefs.dart';
+import 'package:car_listing_app/shared/media/remote_video_thumbnail.dart';
 
 import 'fake_api_server.dart';
 
@@ -154,6 +156,7 @@ void main() {
     FakeApiServer.carDetailOverrides.clear();
     debugCarDetailsBackgroundImageProbeOverride = null;
     debugCarDetailsBackgroundVideoProbeOverride = null;
+    RemoteVideoThumbnail.debugReset();
   });
 
   tearDownAll(() async {
@@ -406,7 +409,11 @@ void main() {
   /// Server payload with [imageCount] attached, id-matched images plus one
   /// id-matched video whose `video_url` is the RELATIVE path the legacy
   /// (non-R2) storage returns.
-  Map<String, dynamic> fullyAttachedCar(String carId, {int imageCount = 2}) =>
+  Map<String, dynamic> fullyAttachedCar(
+    String carId, {
+    int imageCount = 2,
+    String videoUrl = 'uploads/car_videos/stuck_vid.mp4',
+  }) =>
       {
         'car': _carWithMedia(
           carId,
@@ -424,7 +431,7 @@ void main() {
           videos: [
             {
               'id': 1,
-              'video_url': 'uploads/car_videos/stuck_vid.mp4',
+              'video_url': videoUrl,
               'client_media_id': 'vid_0',
             },
           ],
@@ -556,6 +563,116 @@ void main() {
         () => OwnerOptimisticMediaPrefs.load(carId),
       );
       expect(record, isNull);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  // ---- video_thumbnail 800 ms failure / 0 ms fallback (device evidence) --
+
+  const cdnVideoUrl = 'https://cdn.example.com/videos/stuck_vid.mp4';
+
+  testWidgets(
+    'device repro: real probe path, 800 ms attempt throws '
+    'MissingPluginException and 0 ms succeeds -- the video slot is '
+    'confirmed ready, the badge clears and the persisted optimistic '
+    'record is removed',
+    (tester) async {
+      const carId = 'stuck_badge_800_fail_0_ok';
+      await _seedOptimisticRecord(carId: carId, imageCount: 2, videoCount: 1);
+      final calls = <int>[];
+      final urls = <String>{};
+      debugCarDetailsBackgroundImageProbeOverride = (url) async => true;
+      // NOT using debugCarDetailsBackgroundVideoProbeOverride: this drives
+      // the real probe -> RemoteVideoThumbnail path, faking only the
+      // platform call exactly as the device behaved.
+      RemoteVideoThumbnail.debugFetcherOverride =
+          (video, headers, timeMs, maxWidth) async {
+        calls.add(timeMs);
+        urls.add(video);
+        if (timeMs == 800) {
+          throw MissingPluginException(
+            'No implementation found for method data on channel '
+            'video_thumbnail',
+          );
+        }
+        return Uint8List.fromList(List<int>.filled(46320 ~/ 1000, 7));
+      };
+      FakeApiServer.carDetailOverrides[carId] = () =>
+          _jsonResponse(200, fullyAttachedCar(carId, videoUrl: cdnVideoUrl));
+
+      await _openCarDetailAndSettle(tester, carId);
+      await tester.pump(const Duration(seconds: 2, milliseconds: 100));
+      await drainProbesAndCleanup(tester);
+
+      expect(calls.take(2).toList(), [800, 0],
+          reason: 'preferred 800 ms first, then the 0 ms fallback');
+      expect(urls, {cdnVideoUrl});
+      expect(find.byType(ProcessingMediaBadge), findsNothing);
+      expect(await OwnerOptimisticMediaPrefs.load(carId), isNull,
+          reason: 'confirmed-ready record must be cleaned up');
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'both 800 ms and 0 ms attempts fail: the video stays UNCONFIRMED '
+    '(badge preserved, record kept) and repeated poll ticks are THROTTLED '
+    '-- no native call every 2 seconds -- until the backoff elapses',
+    (tester) async {
+      const carId = 'stuck_badge_both_fail';
+      await _seedOptimisticRecord(carId: carId, imageCount: 2, videoCount: 1);
+      var now = DateTime(2030, 1, 1, 12);
+      RemoteVideoThumbnail.debugNow = () => now;
+      final calls = <int>[];
+      debugCarDetailsBackgroundImageProbeOverride = (url) async => true;
+      RemoteVideoThumbnail.debugFetcherOverride =
+          (video, headers, timeMs, maxWidth) async {
+        calls.add(timeMs);
+        throw MissingPluginException('data');
+      };
+      FakeApiServer.carDetailOverrides[carId] = () =>
+          _jsonResponse(200, fullyAttachedCar(carId, videoUrl: cdnVideoUrl));
+
+      Future<void> settleProbes() async {
+        for (var i = 0; i < 6; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 50)),
+          );
+          await tester.pump();
+        }
+      }
+
+      await _openCarDetailAndSettle(tester, carId);
+      await tester.pump(const Duration(seconds: 2, milliseconds: 100));
+      await settleProbes();
+      expect(calls, [800, 0], reason: 'one attempt chain, both timestamps');
+
+      // Several more 2 s poll ticks inside the backoff window: no new
+      // native calls.
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(seconds: 2, milliseconds: 100));
+        await settleProbes();
+      }
+      expect(calls, [800, 0],
+          reason: 'failure throttling: must not retry every 2 s');
+      expect(find.byType(ProcessingMediaBadge), findsOneWidget);
+      final kept = await tester.runAsync(
+        () => OwnerOptimisticMediaPrefs.load(carId),
+      );
+      expect(kept, isNotNull);
+      expect(kept!.allRemoteDisplayReady, isFalse);
+      expect(
+        kept.items.where((i) => i.remoteDisplayReady).map((i) => i.kind),
+        everyElement('image'),
+        reason: 'the video must stay unconfirmed',
+      );
+
+      // After the backoff the video is tried again (still failing here).
+      now = now.add(RemoteVideoThumbnail.backoffFor(1) * 2);
+      await tester.pump(const Duration(seconds: 2, milliseconds: 100));
+      await settleProbes();
+      expect(calls, [800, 0, 800, 0]);
+      expect(find.byType(ProcessingMediaBadge), findsOneWidget);
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );
