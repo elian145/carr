@@ -338,8 +338,9 @@ void main() {
   );
 
   test(
-    'cleanup skips folder delete while a retryable submission still needs '
-    'the media, then deletes after the pending record is gone',
+    'blocked cleanup: while a retryable submission still needs the draft '
+    'folder, the folder AND the pending submission are left untouched, but '
+    'the all-ready optimistic record is still removed (no stuck badge)',
     () async {
       const draftId = 'draft_cleanup_pending';
       final draftDir = await SellDraftMediaPersistence.draftDirectory(draftId);
@@ -365,22 +366,134 @@ void main() {
       );
       await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes(draftId);
 
+      // Nothing the unfinished submission needs was deleted...
       expect(await draftDir.exists(), isTrue);
       expect(SellDraftMediaPersistence.isDraftMediaTombstoned(draftId), isFalse);
-      final kept = await OwnerOptimisticMediaPrefs.load(listingId);
-      expect(kept, isNotNull);
-      expect(kept!.allRemoteDisplayReady, isTrue);
-
-      await SellSubmissionStatePrefs.remove(draftId);
-      await OwnerOptimisticMediaCleanup.snapshotAtSubmissionCompleteAndMaybeFinalize(
-        listingId: listingId,
-        freshItems: kept.items,
-        draftId: draftId,
-      );
-      await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes(draftId);
-
-      expect(await draftDir.exists(), isFalse);
+      final pending = await SellSubmissionStatePrefs.load(draftId);
+      expect(pending, isNotNull);
+      expect(pending!.status, SellSubmissionStatus.retryable);
+      // ...but the all-ready record no longer lingers: it is what kept
+      // `serverStillProcessing` (the badge) true forever after a restart.
       expect(await OwnerOptimisticMediaPrefs.load(listingId), isNull);
+      final overlay = await OwnerMediaOverlay.buildFromOptimisticRecordForCarId(
+        car: const {'id': listingId, 'images': <dynamic>[]},
+        carId: listingId,
+      );
+      expect(overlay.isEmpty, isTrue);
+      expect(overlay.serverStillProcessing, isFalse);
     },
   );
+
+  group('stuck "Processing media" badge (persisted all-ready record)', () {
+    OwnerOptimisticMediaRecord allReadyRecord({String? draftId}) =>
+        OwnerOptimisticMediaRecord(
+          listingId: listingId,
+          draftId: draftId,
+          updatedAt: DateTime.now().millisecondsSinceEpoch,
+          items: [
+            for (var i = 0; i < 3; i++)
+              OwnerOptimisticMediaItem(
+                clientMediaId: i < 2 ? 'img_$i' : 'vid_0',
+                kind: i < 2 ? 'image' : 'video',
+                order: i < 2 ? i : 0,
+                remoteUrl: 'https://cdn.example.com/r_$i',
+                remoteDisplayReady: true,
+              ),
+          ],
+        );
+
+    test(
+      'pure builder: an all-ready record can never recreate a processing '
+      'overlay (restart cannot resurrect the badge)',
+      () {
+        final result = OwnerMediaOverlay.buildFromOptimisticRecord(
+          car: const {'id': listingId, 'images': <dynamic>[]},
+          record: allReadyRecord(),
+        );
+        expect(result.isEmpty, isTrue);
+        expect(result.serverStillProcessing, isFalse);
+      },
+    );
+
+    test(
+      'restart: a record persisted all-ready (cleanup was skipped before '
+      'the kill) self-heals on the next overlay build -- record dropped, '
+      'draft folder and pending submission untouched',
+      () async {
+        const draftId = 'draft_stuck_badge';
+        final draftDir = await SellDraftMediaPersistence.draftDirectory(draftId);
+        File(p.join(draftDir.path, 'listing_orig_keep.jpg'))
+            .writeAsBytesSync(const [1, 2, 3]);
+        final now = DateTime.now().millisecondsSinceEpoch;
+        await SellSubmissionStatePrefs.upsert(
+          SellSubmissionRecord(
+            draftId: draftId,
+            status: SellSubmissionStatus.retryable,
+            carData: const {'brand': 'toyota'},
+            idempotencyKey: 'sell-create-$draftId',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        // What the OLD code left behind: all-ready record, folder blocked.
+        await OwnerOptimisticMediaPrefs.upsert(allReadyRecord(draftId: draftId));
+        // A fresh process: no in-memory tombstone for this draft.
+        SellDraftMediaPersistence.debugResetMediaLifecycleForTest();
+        expect(SellDraftMediaPersistence.isDraftMediaTombstoned(draftId), isFalse);
+
+        final result = await OwnerMediaOverlay.buildFromOptimisticRecordForCarId(
+          car: const {'id': listingId, 'images': <dynamic>[]},
+          carId: listingId,
+        );
+
+        expect(result.isEmpty, isTrue);
+        expect(result.serverStillProcessing, isFalse);
+        expect(await OwnerOptimisticMediaPrefs.load(listingId), isNull);
+        await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes(draftId);
+        expect(await draftDir.exists(), isTrue,
+            reason: 'self-heal must not delete any media files');
+        expect(await SellSubmissionStatePrefs.load(draftId), isNotNull,
+            reason: 'self-heal must not delete an unfinished submission');
+      },
+    );
+
+    test(
+      'a record with even ONE unconfirmed item is never dropped, and still '
+      'reports "processing" after a restart',
+      () async {
+        final partial = allReadyRecord().copyWith(
+          items: [
+            ...allReadyRecord().items.take(2),
+            const OwnerOptimisticMediaItem(
+              clientMediaId: 'vid_0',
+              kind: 'video',
+              order: 0,
+              localPath: '/tmp/still_local.mp4',
+              remoteUrl: 'https://cdn.example.com/v.mp4',
+            ),
+          ],
+        );
+        await OwnerOptimisticMediaPrefs.upsert(partial);
+
+        expect(
+          await OwnerOptimisticMediaCleanup.removeRecordIfAllReady(listingId),
+          isFalse,
+        );
+        expect(await OwnerOptimisticMediaPrefs.load(listingId), isNotNull);
+        final result = await OwnerMediaOverlay.buildFromOptimisticRecordForCarId(
+          car: const {'id': listingId, 'images': <dynamic>[]},
+          carId: listingId,
+        );
+        expect(result.slots, hasLength(3));
+        expect(result.serverStillProcessing, isTrue);
+      },
+    );
+
+    test('removeRecordIfAllReady is a no-op for a missing record', () async {
+      expect(
+        await OwnerOptimisticMediaCleanup.removeRecordIfAllReady(listingId),
+        isTrue,
+      );
+    });
+  });
 }

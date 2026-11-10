@@ -400,4 +400,163 @@ void main() {
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );
+
+  // ---- Stuck "Processing media" badge regressions -----------------------
+
+  /// Server payload with [imageCount] attached, id-matched images plus one
+  /// id-matched video whose `video_url` is the RELATIVE path the legacy
+  /// (non-R2) storage returns.
+  Map<String, dynamic> fullyAttachedCar(String carId, {int imageCount = 2}) =>
+      {
+        'car': _carWithMedia(
+          carId,
+          images: List.generate(
+            imageCount,
+            (i) => {
+              'id': i + 1,
+              'image_url': 'https://cdn.example.com/stuck_$i.jpg',
+              'is_primary': i == 0,
+              'order': i,
+              'kind': 'listing',
+              'client_media_id': 'img_$i',
+            },
+          ),
+          videos: [
+            {
+              'id': 1,
+              'video_url': 'uploads/car_videos/stuck_vid.mp4',
+              'client_media_id': 'vid_0',
+            },
+          ],
+        ),
+      };
+
+  Future<void> drainProbesAndCleanup(WidgetTester tester) async {
+    for (var i = 0; i < 20; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump();
+      if (find.byType(ProcessingMediaBadge).evaluate().isEmpty) break;
+    }
+  }
+
+  testWidgets(
+    'video probe SUCCESS: the background probe receives the RESOLVED '
+    '(absolute) video URL -- same resolution as the hero slide/player -- '
+    'and the badge clears and the record is removed',
+    (tester) async {
+      const carId = 'stuck_badge_video_ok';
+      await _seedOptimisticRecord(carId: carId, imageCount: 2, videoCount: 1);
+      final probedVideoUrls = <String>[];
+      debugCarDetailsBackgroundImageProbeOverride = (url) async => true;
+      debugCarDetailsBackgroundVideoProbeOverride = (url) async {
+        probedVideoUrls.add(url);
+        return Uint8List.fromList(const [1, 2, 3]);
+      };
+      FakeApiServer.carDetailOverrides[carId] =
+          () => _jsonResponse(200, fullyAttachedCar(carId));
+
+      await _openCarDetailAndSettle(tester, carId);
+      await tester.pump(const Duration(seconds: 2, milliseconds: 100));
+      await drainProbesAndCleanup(tester);
+
+      expect(probedVideoUrls, isNotEmpty);
+      for (final u in probedVideoUrls) {
+        expect(u, startsWith('http'),
+            reason: 'raw relative path must not reach the probe: $u');
+        expect(u, endsWith('/static/uploads/car_videos/stuck_vid.mp4'));
+      }
+      expect(find.byType(ProcessingMediaBadge), findsNothing);
+      expect(await OwnerOptimisticMediaPrefs.load(carId), isNull);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'video probe FAILURE: images confirmed but the video thumbnail probe '
+    'fails -- the badge is PRESERVED and the record is kept (media has not '
+    'genuinely been confirmed)',
+    (tester) async {
+      const carId = 'stuck_badge_video_fail';
+      await _seedOptimisticRecord(carId: carId, imageCount: 2, videoCount: 1);
+      debugCarDetailsBackgroundImageProbeOverride = (url) async => true;
+      debugCarDetailsBackgroundVideoProbeOverride = (url) async => null;
+      FakeApiServer.carDetailOverrides[carId] =
+          () => _jsonResponse(200, fullyAttachedCar(carId));
+
+      await _openCarDetailAndSettle(tester, carId);
+      await tester.pump(const Duration(seconds: 2, milliseconds: 100));
+      for (var i = 0; i < 6; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)),
+        );
+        await tester.pump();
+      }
+
+      expect(find.byType(ProcessingMediaBadge), findsOneWidget);
+      final record = await tester.runAsync(
+        () => OwnerOptimisticMediaPrefs.load(carId),
+      );
+      expect(record, isNotNull);
+      expect(record!.allRemoteDisplayReady, isFalse);
+      expect(
+        record.items.where((i) => i.remoteDisplayReady).map((i) => i.kind),
+        everyElement('image'),
+        reason: 'only the images were confirmed; the video must stay '
+            'unconfirmed',
+      );
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'restart persistence: a record persisted ALL-READY (old cleanup was '
+    'blocked) shows NO badge when Listing Details opens fresh, and the '
+    'stale record is removed',
+    (tester) async {
+      const carId = 'stuck_badge_restart';
+      await OwnerOptimisticMediaPrefs.upsert(
+        OwnerOptimisticMediaRecord(
+          listingId: carId,
+          draftId: 'draft_stuck_badge_restart',
+          updatedAt: DateTime.now().millisecondsSinceEpoch,
+          items: [
+            for (var i = 0; i < 2; i++)
+              OwnerOptimisticMediaItem(
+                clientMediaId: 'img_$i',
+                kind: 'image',
+                order: i,
+                remoteUrl: 'https://cdn.example.com/stuck_$i.jpg',
+                remoteDisplayReady: true,
+              ),
+            const OwnerOptimisticMediaItem(
+              clientMediaId: 'vid_0',
+              kind: 'video',
+              order: 0,
+              remoteUrl: 'uploads/car_videos/stuck_vid.mp4',
+              remoteDisplayReady: true,
+            ),
+          ],
+        ),
+      );
+      FakeApiServer.carDetailOverrides[carId] =
+          () => _jsonResponse(200, fullyAttachedCar(carId));
+
+      await _openCarDetailAndSettle(tester, carId);
+      for (var i = 0; i < 6; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)),
+        );
+        await tester.pump();
+      }
+
+      expect(find.byType(ProcessingMediaBadge), findsNothing);
+      final record = await tester.runAsync(
+        () => OwnerOptimisticMediaPrefs.load(carId),
+      );
+      expect(record, isNull);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
 }

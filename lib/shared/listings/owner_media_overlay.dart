@@ -331,6 +331,17 @@ abstract final class OwnerMediaOverlay {
     if (persisted == null || persisted.isEmpty) {
       return OwnerMediaOverlayResult.empty;
     }
+    if (persisted.allRemoteDisplayReady) {
+      // Stuck-"Processing media" fix: a record persisted with EVERY item
+      // already remote-display-ready has nothing left to reconcile --
+      // nothing can ever call `markRemoteDisplayReadyAndCleanup` for it
+      // again (all items are already confirmed), so without this it would
+      // keep the badge on across every restart. Self-heal: drop the stale
+      // record (record only -- no file/draft/submission is touched) and
+      // report "nothing to reconcile".
+      await OwnerOptimisticMediaCleanup.removeRecordIfAllReady(carId);
+      return OwnerMediaOverlayResult.empty;
+    }
     return buildFromOptimisticRecord(car: car, record: persisted);
   }
 
@@ -373,6 +384,12 @@ abstract final class OwnerMediaOverlay {
     required OwnerOptimisticMediaRecord record,
   }) {
     if (record.isEmpty) return OwnerMediaOverlayResult.empty;
+    // Stuck-"Processing media" fix: `serverStillProcessing` below is
+    // hard-wired to `true` ("the record's mere existence means something
+    // is unconfirmed"), which is only valid while at least one item is
+    // still NOT remote-display-ready. An all-ready record must never
+    // recreate a processing overlay (e.g. after an app restart).
+    if (record.allRemoteDisplayReady) return OwnerMediaOverlayResult.empty;
     final remoteImages = _remoteImageSources(car);
     final remoteVideos = _remoteVideoSources(car);
     final imageById = <String, String>{};

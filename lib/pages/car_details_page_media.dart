@@ -570,7 +570,15 @@ mixin _CarDetailsPageMedia on _CarDetailsPageOwner {
   /// own `initState`/build lifecycle. Honors the same test-only override
   /// hook so widget tests can exercise this deterministically without a
   /// real video file.
-  Future<bool> _backgroundProbeVideoThumbnail(String url) async {
+  Future<bool> _backgroundProbeVideoThumbnail(String rawUrl) async {
+    // Resolve exactly like the hero video slide / player do
+    // (`_resolveHeroMediaUrl`, i.e. `buildLegacyFullImageUrl`): the overlay
+    // slot carries the server's RAW `video_url`, which for a relative path
+    // (`uploads/car_videos/...`) is not a loadable URL by itself, so the
+    // probe could never succeed and the badge stayed on. Absolute URLs
+    // (R2/CDN) are unchanged apart from the existing `/static/` rewrite.
+    final url = _resolveHeroMediaUrl(rawUrl);
+    if (url.isEmpty) return false;
     final override = debugCarDetailsBackgroundVideoProbeOverride;
     if (override != null) {
       final data = await override(url);
