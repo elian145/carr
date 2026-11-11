@@ -162,10 +162,37 @@ abstract final class OwnerOptimisticMediaCleanup {
     }
   }
 
-  static bool _folderCleanupBlocked(OwnerOptimisticMediaRecord record) {
-    final draftId = record.draftId?.trim() ?? '';
-    if (draftId.isEmpty) return false;
-    return !SellDraftMediaPersistence.isDraftMediaTombstoned(draftId);
+  /// "Processing media" stuck-badge fix: removes [listingId]'s durable
+  /// record IFF every one of its items is already `remoteDisplayReady`
+  /// (re-checked inside the per-listing lock, so a concurrent not-ready
+  /// write can never lose its record to a stale caller).
+  ///
+  /// Only ever drops the SharedPreferences record itself -- it never
+  /// touches a local file, a draft directory, or a `SellSubmissionRecord`.
+  /// Every tracked local file of an all-ready record was already deleted
+  /// per item when that item was confirmed, so there is nothing left for
+  /// this to leak; draft-directory cleanup keeps its own, separate (and
+  /// lease/pending-submission-aware) rules in [_deleteDraftDirectoryIfKnown].
+  ///
+  /// This is what lets a record that was persisted all-ready (cleanup was
+  /// previously skipped/interrupted, e.g. while the draft folder was still
+  /// needed by a live submission) heal itself after an app restart instead
+  /// of keeping `serverStillProcessing` true forever. Returns `true` iff no
+  /// record remains afterwards.
+  static Future<bool> removeRecordIfAllReady(String listingId) {
+    if (listingId.trim().isEmpty) return Future.value(true);
+    return _withListingLock(listingId, () async {
+      try {
+        final record = await OwnerOptimisticMediaPrefs.load(listingId);
+        if (record == null) return true;
+        if (!record.allRemoteDisplayReady) return false;
+        await OwnerOptimisticMediaPrefs.remove(listingId);
+        return true;
+      } catch (e, st) {
+        logNonFatal(e, st);
+        return false;
+      }
+    });
   }
 
   /// Seeds a `car_details_page_fields.dart`-style in-memory
@@ -252,17 +279,14 @@ abstract final class OwnerOptimisticMediaCleanup {
         );
         final allReady = updatedItems.every((i) => i.remoteDisplayReady);
         if (allReady) {
+          // Best-effort draft-directory cleanup (skipped while a live
+          // submission still needs the folder -- unchanged). The record
+          // itself is removed REGARDLESS: every tracked item is confirmed
+          // ready, so keeping it only made `serverStillProcessing` (and
+          // the "Processing media" badge) stick after a restart, and the
+          // in-memory tombstone this used to consult is gone after one.
           await _deleteDraftDirectoryIfKnown(record);
-          if (_folderCleanupBlocked(record)) {
-            await OwnerOptimisticMediaPrefs.upsert(
-              record.copyWith(
-                items: updatedItems,
-                updatedAt: DateTime.now().millisecondsSinceEpoch,
-              ),
-            );
-          } else {
-            await OwnerOptimisticMediaPrefs.remove(listingId);
-          }
+          await OwnerOptimisticMediaPrefs.remove(listingId);
         } else {
           await OwnerOptimisticMediaPrefs.upsert(
             record.copyWith(
@@ -309,9 +333,7 @@ abstract final class OwnerOptimisticMediaCleanup {
       if (record == null || record.isEmpty) return;
       if (record.allRemoteDisplayReady) {
         await _deleteDraftDirectoryIfKnown(record);
-        if (!_folderCleanupBlocked(record)) {
-          await OwnerOptimisticMediaPrefs.remove(listingId);
-        }
+        await OwnerOptimisticMediaPrefs.remove(listingId);
       }
     } catch (e, st) {
       logNonFatal(e, st);

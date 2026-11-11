@@ -570,24 +570,35 @@ mixin _CarDetailsPageMedia on _CarDetailsPageOwner {
   /// own `initState`/build lifecycle. Honors the same test-only override
   /// hook so widget tests can exercise this deterministically without a
   /// real video file.
-  Future<bool> _backgroundProbeVideoThumbnail(String url) async {
+  Future<bool> _backgroundProbeVideoThumbnail(String rawUrl) async {
+    // Resolve exactly like the hero video slide / player do
+    // (`_resolveHeroMediaUrl`, i.e. `buildLegacyFullImageUrl`): the overlay
+    // slot carries the server's RAW `video_url`, which for a relative path
+    // (`uploads/car_videos/...`) is not a loadable URL by itself, so the
+    // probe could never succeed and the badge stayed on. Absolute URLs
+    // (R2/CDN) are unchanged apart from the existing `/static/` rewrite.
+    final url = _resolveHeroMediaUrl(rawUrl);
+    if (url.isEmpty) return false;
     final override = debugCarDetailsBackgroundVideoProbeOverride;
     if (override != null) {
       final data = await override(url);
       return data != null && data.isNotEmpty;
     }
-    try {
-      final data = await VideoThumbnail.thumbnailData(
-        video: url,
-        imageFormat: ImageFormat.JPEG,
-        maxWidth: 720,
-        quality: 80,
-        timeMs: 800,
-      );
-      return data != null && data.isNotEmpty;
-    } catch (_) {
-      return false;
-    }
+    // Real-device diagnosis (Samsung A17): `timeMs: 800` fails for some
+    // remote clips (the plugin turns "no frame decodable at that exact
+    // timestamp" into a MissingPluginException) while the first frame
+    // (0 ms) decodes fine. The shared generator tries 800 ms, then falls
+    // back to 0 ms, never throws, and throttles repeated failures of the
+    // same remote URL -- this probe runs on every 2s badge poll tick, so a
+    // genuinely unavailable video must not be re-attempted every time. A
+    // video that really cannot produce ANY frame stays unconfirmed (the
+    // badge is preserved); only a decoded frame confirms the slot.
+    final result = await RemoteVideoThumbnail.generate(
+      url,
+      preferredTimeMs: 800,
+      maxWidth: 720,
+    );
+    return result.ok;
   }
 
   /// (optimistic-local-media fix) Combined "Processing media" badge rule

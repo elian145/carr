@@ -2,8 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
-
+import '../../shared/media/remote_video_thumbnail.dart';
 import '../../widgets/network_video_thumbnail.dart';
 
 /// Test-only interception point for [_OwnerFallbackVideoThumbnailState]'s
@@ -100,13 +99,15 @@ class _OwnerFallbackVideoThumbnailState
       final override = debugOwnerFallbackVideoRemoteProbeOverride;
       final data = override != null
           ? await override(url)
-          : await VideoThumbnail.thumbnailData(
-              video: url,
-              imageFormat: ImageFormat.JPEG,
+          // Shared generator: preferred timestamp, then first-frame (0 ms)
+          // fallback, with remote-failure throttling -- see
+          // RemoteVideoThumbnail. Never throws.
+          : (await RemoteVideoThumbnail.generate(
+              url,
+              preferredTimeMs: widget.timeMs,
               maxWidth: widget.maxWidth,
-              quality: 80,
-              timeMs: widget.timeMs,
-            );
+            ))
+              .bytes;
       if (!mounted || _probingUrl != url) return;
       if (data == null || data.isEmpty) {
         return; // keep local (STATE E) -- a later rebuild may retry.

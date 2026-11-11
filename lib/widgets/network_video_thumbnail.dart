@@ -2,8 +2,8 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 import '../shared/debug/app_log.dart';
+import '../shared/media/remote_video_thumbnail.dart';
 
 /// Loads a preview frame from a local path or **network video URL** using the
 /// platform thumbnail generator (same plugin as local file previews).
@@ -91,19 +91,23 @@ class _NetworkVideoThumbnailPreviewState
       return;
     }
     try {
-      final data = await VideoThumbnail.thumbnailData(
-        video: url,
+      // Shared generator: tries `widget.timeMs` first, then falls back to
+      // the first frame (0 ms) -- some remote clips cannot be decoded at
+      // an exact later timestamp (plugin reports that as a bogus
+      // MissingPluginException) but their first frame decodes fine. Never
+      // throws; remote failures are throttled (see RemoteVideoThumbnail).
+      final result = await RemoteVideoThumbnail.generate(
+        url,
         headers: widget.httpHeaders,
-        imageFormat: ImageFormat.JPEG,
+        preferredTimeMs: widget.timeMs,
         maxWidth: widget.maxWidth,
-        quality: 80,
-        timeMs: widget.timeMs,
       );
+      final data = result.bytes;
       if (!mounted) return;
-      final ok = data != null && data.isNotEmpty;
+      final ok = result.ok;
       double? ratio;
       if (ok) {
-        ratio = await _aspectRatioFromImageBytes(data);
+        ratio = await _aspectRatioFromImageBytes(data!);
       }
       if (!mounted) return;
       setState(() {
