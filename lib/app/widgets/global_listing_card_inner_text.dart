@@ -33,10 +33,14 @@ _ListingPriceBadgeStyle _listingPriceBadgeStyle({
   final double horizontalPadding =
       hasPrice ? 7.0 + 1.0 * tight : 5.5 + 1.0 * tight;
   // The pill height is fixed so Roboto vs SF Pro metrics cannot change it,
-  // but it grows with the system text scale so scaled prices are not clipped.
-  final double badgeHeight = (24.0 + 2.0 * tight) * textScale;
+  // but it grows with the system text scale so scaled prices are not clipped
+  // - up to ListingLayoutPrefs.priceBadgeMaxTextScale (1.3x). Above that the
+  // pill (and the price text inside it, see [_listingBadgeTextScaler]) stays
+  // compact instead of doubling in height.
+  final double badgeScale = ListingLayoutPrefs.priceBadgeTextScale(textScale);
+  final double badgeHeight = (24.0 + 2.0 * tight) * badgeScale;
   final double radius = 7.0 + 0.5 * tight;
-  final double footerHeight = (26.0 + 2.0 * tight) * textScale;
+  final double footerHeight = (26.0 + 2.0 * tight) * badgeScale;
 
   return _ListingPriceBadgeStyle(
     fontSize: fontSize,
@@ -45,6 +49,46 @@ _ListingPriceBadgeStyle _listingPriceBadgeStyle({
     radius: radius,
     footerHeight: footerHeight,
   );
+}
+
+/// Free height of a list card WITHOUT engine/trim chips is split in this ratio
+/// (above the title : title -> specs : specs -> price). The title/specs gap is
+/// the smallest because those two rows belong together; the price footer is
+/// anchored at the bottom like on every other card.
+const int _kListNoChipsTopFlex = 5;
+const int _kListNoChipsTitleGapFlex = 2;
+const int _kListNoChipsPriceGapFlex = 5;
+
+/// Text scaler of the price inside the orange badge: follows the system text
+/// size up to [ListingLayoutPrefs.priceBadgeMaxTextScale], then stays put.
+/// (Not `TextScaler.noScaling`: the price still honours the user's size up to
+/// 1.3x, and the F-10 source guard only flags a fixed 1.0.)
+TextScaler _listingBadgeTextScaler(double textScale) =>
+    TextScaler.linear(ListingLayoutPrefs.priceBadgeTextScale(textScale));
+
+/// Measures [text] exactly as the `Text` widget will paint it: the inherited
+/// `DefaultTextStyle` (app font family) merged with [style]. A bare
+/// `TextPainter` ignores the app font, so its width disagreed with the painted
+/// text (in tests the fallback font is 1 em per glyph) and the badge was
+/// stretched to its maximum width with the price shrunk inside it.
+double _measureBadgeText(
+  BuildContext context,
+  String text,
+  TextStyle style,
+  TextScaler scaler,
+) {
+  final painter = TextPainter(
+    text: TextSpan(
+      text: text,
+      style: DefaultTextStyle.of(context).style.merge(style),
+    ),
+    textDirection: TextDirection.ltr,
+    textScaler: scaler,
+    maxLines: 1,
+  )..layout(minWidth: 0, maxWidth: double.infinity);
+  final width = painter.width;
+  painter.dispose();
+  return width;
 }
 
 /// Height of one chip row (engine/trim or year/mileage) at [textScale]: the
@@ -560,14 +604,13 @@ Widget _buildGridCarCardInnerText(
         height: 1,
         forceStrutHeight: true,
       );
-      final pricePainter = TextPainter(
-        text: TextSpan(text: priceText, style: priceTextStyle),
-        textDirection: TextDirection.ltr,
-        textScaler: TextScaler.linear(ts),
-        maxLines: 1,
-      )..layout(minWidth: 0, maxWidth: double.infinity);
-      final priceTextW = pricePainter.width;
-      pricePainter.dispose();
+      final badgeScaler = _listingBadgeTextScaler(ts);
+      final priceTextW = _measureBadgeText(
+        context,
+        priceText,
+        priceTextStyle,
+        badgeScaler,
+      );
       final priceNeeded =
           priceTextW + priceStyle.horizontalPadding * 2;
       final bool priceNeedsShrink = priceNeeded > maxPriceWidth;
@@ -578,6 +621,7 @@ Widget _buildGridCarCardInnerText(
         maxLines: 1,
         softWrap: false,
         overflow: TextOverflow.visible,
+        textScaler: badgeScaler,
         style: priceTextStyle,
         strutStyle: priceStrut,
       );
@@ -775,14 +819,13 @@ Widget _buildListCarCardInnerText(
       height: 1,
       forceStrutHeight: true,
     );
-    final pricePainter = TextPainter(
-      text: TextSpan(text: priceText, style: textStyle),
-      textDirection: TextDirection.ltr,
-      textScaler: TextScaler.linear(ts),
-      maxLines: 1,
-    )..layout(minWidth: 0, maxWidth: double.infinity);
-    final priceTextW = pricePainter.width;
-    pricePainter.dispose();
+    final badgeScaler = _listingBadgeTextScaler(ts);
+    final priceTextW = _measureBadgeText(
+      context,
+      priceText,
+      textStyle,
+      badgeScaler,
+    );
     final priceNeeded = priceTextW + style.horizontalPadding * 2;
     final bool bounded =
         maxWidth != null && maxWidth.isFinite && maxWidth > 0;
@@ -794,6 +837,7 @@ Widget _buildListCarCardInnerText(
       maxLines: 1,
       softWrap: false,
       overflow: TextOverflow.visible,
+      textScaler: badgeScaler,
       style: textStyle,
       strutStyle: priceStrut,
     );
@@ -1101,6 +1145,55 @@ Widget _buildListCarCardInnerText(
     },
   );
 
+  if (!hasDetailRow) {
+    // No engine/trim chips: three rows (title, year/mileage, price) share the
+    // height of a four-row card. The title keeps its two-line reserve (so the
+    // card, the specs row and the price never move between one-line and
+    // two-line names), and the rest of the height is split into a gap above
+    // the title, a SHORT gap between title and specs, and a gap above the
+    // price - instead of the flex slots of the chip layout, which left the
+    // whole missing chip row (~25 dp) between title and specs.
+    final double titleLinesHeight = 15.0 * 1.28 * ts * 2 + 2;
+    final double titleSlotHeight = titleLinesHeight > 32
+        ? titleLinesHeight
+        : 32;
+    final double specsSlotHeight = _listingCardChipSlotHeight(
+      compact: compact,
+      textScale: ts,
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Same footer slot (3 of 13 units) as the chip layout, so price and
+        // city sit at exactly the same place on every card.
+        final double footerSlotHeight = constraints.maxHeight * 3 / 13;
+        final Alignment startCenter = isRtl
+            ? Alignment.centerRight
+            : Alignment.centerLeft;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            const Spacer(flex: _kListNoChipsTopFlex),
+            SizedBox(
+              height: titleSlotHeight,
+              child: Align(alignment: startCenter, child: titleRow),
+            ),
+            const Spacer(flex: _kListNoChipsTitleGapFlex),
+            SizedBox(
+              height: specsSlotHeight,
+              child: Align(
+                alignment: startCenter,
+                child: SizedBox(width: constraints.maxWidth, child: specsRow),
+              ),
+            ),
+            const Spacer(flex: _kListNoChipsPriceGapFlex),
+            SizedBox(height: footerSlotHeight, child: priceRow),
+          ],
+        );
+      },
+    );
+  }
+
   return Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     mainAxisSize: MainAxisSize.max,
@@ -1139,31 +1232,23 @@ Widget _buildListCarCardInnerText(
           },
         ),
       ),
-      if (hasDetailRow)
-        Expanded(
-          flex: 3,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return Align(
-                alignment:
-                    isRtl ? Alignment.centerRight : Alignment.centerLeft,
-                child: SizedBox(
-                  width: constraints.maxWidth,
-                  child: Transform.translate(
-                    offset: const Offset(0, -2),
-                    child: engineTrimRow,
-                  ),
+      Expanded(
+        flex: 3,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Align(
+              alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
+              child: SizedBox(
+                width: constraints.maxWidth,
+                child: Transform.translate(
+                  offset: const Offset(0, -2),
+                  child: engineTrimRow,
                 ),
-              );
-            },
-          ),
-        )
-      else
-        // No engine/trim chips: keep the (empty) row slot so year/mileage and
-        // price sit exactly where they do on listings that have chips, instead
-        // of the spare height being split into a taller gap below the title
-        // and above the price.
-        const Expanded(flex: 3, child: SizedBox.shrink()),
+              ),
+            );
+          },
+        ),
+      ),
       Expanded(
         flex: 3,
         child: LayoutBuilder(

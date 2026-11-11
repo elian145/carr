@@ -350,11 +350,12 @@ void main() {
                   'gap=${m.gap.toStringAsFixed(1)}');
             }
             expect(m.gap, greaterThanOrEqualTo(0), reason: label);
-            // The horizontal card is sized by flex rows (its height grows
-            // linearly with the text scale), so allow a little more than the
-            // grid at 2.0x, but never the old 45-57 dp hole for chip-less
-            // listings.
-            expect(m.gap, lessThanOrEqualTo(36), reason: label);
+            // Cards with engine/trim keep the compact 14 dp rhythm. Chip-less
+            // listings have one chip row of spare height to place, which is
+            // shared between the gap above the title, the title -> specs gap
+            // and this gap (see rect_listing_card_layout_test.dart), so this
+            // one may reach ~38 dp - never the old 45-57 dp hole.
+            expect(m.gap, lessThanOrEqualTo(detail ? 24 : 38), reason: label);
             expect(m.badgeBottom, lessThanOrEqualTo(m.cardBottom + 0.5),
                 reason: label);
           });
@@ -363,13 +364,22 @@ void main() {
     }
     for (final entry in _devices.entries) {
       for (final scale in _scales) {
-        testWidgets('list ${entry.key} @${scale}x: chip-less == chips',
+        testWidgets('list ${entry.key} @${scale}x: price footer chip-less == chips',
             (tester) async {
           final withChips = await measure(tester,
               size: entry.value, scale: scale, detail: true, list: true);
           final without = await measure(tester,
               size: entry.value, scale: scale, detail: false, list: true);
-          expect((withChips.gap - without.gap).abs(), lessThanOrEqualTo(1.0));
+          // Same card height, and the price / city footer sits at exactly the
+          // same place with and without engine/trim. (The year/mileage row
+          // is no longer forced to the chip layout's y: be8fc19 did that with
+          // an empty slot, which opened a large gap under the title.)
+          expect(without.cellH, closeTo(withChips.cellH, 0.01));
+          expect(
+            without.cardBottom - without.badgeBottom,
+            closeTo(withChips.cardBottom - withChips.badgeBottom, 1.0),
+            reason: 'price badge moved between chip and chip-less cards',
+          );
         });
       }
     }

@@ -103,6 +103,27 @@ final class _SpecsFontSizes {
   final double value;
 }
 
+/// The six specification boxes stop following the system text size at this
+/// scale. They are fixed-size tiles in a 3x2 grid whose type was already
+/// limited by the tile width (~19 px on a Pro Max), so above 1.3x the tiles
+/// only got taller (150 dp vs 113 dp at 2.0x) without the text getting
+/// bigger. Everything else on the page (title, description, seller block,
+/// contact bar...) keeps following the system text size.
+const double _specsMaxTextScale = 1.3;
+
+/// Caps the text scale seen by the six specification boxes at
+/// [_specsMaxTextScale]. Below the cap the inherited scaler is left untouched.
+/// (Not `TextScaler.noScaling`: the boxes still honour the user's size up to
+/// 1.3x.)
+Widget _specsCappedTextScale(BuildContext context, {required Widget child}) {
+  final mq = MediaQuery.of(context);
+  if (appTextScaleOf(context) <= _specsMaxTextScale) return child;
+  return MediaQuery(
+    data: mq.copyWith(textScaler: const TextScaler.linear(_specsMaxTextScale)),
+    child: child,
+  );
+}
+
 /// Lowest rendered size (as a fraction of the design size) the shared type may
 /// shrink to just to fit one long value. Anything longer than that is shrunk
 /// inside its own tile only (the per-tile FittedBox), so a single long

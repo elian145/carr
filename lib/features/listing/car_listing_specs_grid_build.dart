@@ -295,7 +295,7 @@ Widget buildCarListingSpecsGrid(
   }
 
   final isLightSpecs = Theme.of(context).brightness == Brightness.light;
-  final primGrid = LayoutBuilder(
+  final primGridInner = LayoutBuilder(
     builder: (context, constraints) {
       final metrics = _specsGridMetrics(
         availableWidth: constraints.maxWidth,
@@ -338,6 +338,11 @@ Widget buildCarListingSpecsGrid(
       );
     },
   );
+
+  // The six boxes stop following the system text size at 1.3x (see
+  // _specsMaxTextScale); metrics, shared font sizes and the tiles below all
+  // read the capped scaler.
+  final primGrid = _specsCappedTextScale(context, child: primGridInner);
 
   final topSpecs = Container(
     width: double.infinity,

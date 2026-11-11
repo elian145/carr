@@ -94,6 +94,38 @@ class ListingLayoutPrefs {
       ? gridCardCompactTextBlockGrowthPerScale
       : gridCardTextBlockGrowthPerScale;
 
+  /// The orange price badge (and the footer row it sits in) stops following
+  /// the system text size at this scale: the price is already bold 15 sp text
+  /// in a solid pill, and an unbounded pill doubled in height (52 dp at 2.0x)
+  /// while the text inside could not grow with it. Title, chips and city keep
+  /// following the system text size.
+  static const double priceBadgeMaxTextScale = 1.3;
+
+  /// Height of the price footer row per 1.0 of (uncapped) text scale:
+  /// `(26 + 2) * scale` in `_listingPriceBadgeStyle`.
+  static const double priceFooterHeightPerScale = 28;
+
+  /// Text scale the price badge / footer is laid out with.
+  static double priceBadgeTextScale(double textScale) {
+    if (!(textScale > 1.0)) return 1.0;
+    return textScale < priceBadgeMaxTextScale
+        ? textScale
+        : priceBadgeMaxTextScale;
+  }
+
+  /// How much taller the card's text block is at [ts] (already clamped to
+  /// 1.0..2.0) than at 1.0: [_textBlockGrowth] per scale step, minus the part
+  /// of the footer that no longer grows above [priceBadgeMaxTextScale].
+  static double _contentGrowth(double ts, {required bool compact}) {
+    final footerNotGrown = ts > priceBadgeMaxTextScale
+        ? priceFooterHeightPerScale * (ts - priceBadgeMaxTextScale)
+        : 0.0;
+    return _textBlockGrowth(compact: compact) * (ts - 1.0) - footerNotGrown;
+  }
+
+  static double _clampScale(double textScale) =>
+      textScale > 1.0 ? (textScale > 2.0 ? 2.0 : textScale) : 1.0;
+
   /// Text block height for a grid card at system text scale [textScale]. Used
   /// both for the cell height ([gridChildAspectRatioForWidth]) and by the card
   /// itself (`textReserve` in global_listing_card_build.dart) so the two can
@@ -102,18 +134,22 @@ class ListingLayoutPrefs {
     double textScale, {
     bool compact = false,
   }) {
-    final ts = textScale > 1.0 ? (textScale > 2.0 ? 2.0 : textScale) : 1.0;
+    final ts = _clampScale(textScale);
     final base = compact
         ? gridCardCompactTextBlockHeight
         : gridCardTextBlockHeight;
-    return base + _textBlockGrowth(compact: compact) * (ts - 1.0);
+    return base + _contentGrowth(ts, compact: compact);
   }
 
   /// Aspect ratio for a listing cell at system text scale [textScale]
   /// (1.0..2.0, see `SystemDisplayLock`). At 1.0 this is exactly
   /// [_baseGridChildAspectRatioForWidth]. Above 1.0 the cell gets taller so
   /// the scaled title / chips / price fit instead of overflowing:
-  /// - list (1 column): the whole card is text rows -> height * textScale;
+  /// - list (1 column): the card is text rows next to the photo; it grows by
+  ///   the content's real growth (title, two chip rows, footer), NOT by
+  ///   `height * textScale`. The old `base / textScale` made the card grow
+  ///   ~169 dp per scale step on a Pro Max while the content needs ~93 dp, and
+  ///   the surplus became a large gap under the title (CarNet TestFlight);
   /// - grid: only the text block under the photo grows.
   static double gridChildAspectRatioForWidth(
     int listingColumns,
@@ -122,15 +158,18 @@ class ListingLayoutPrefs {
   }) {
     final base = _baseGridChildAspectRatioForWidth(listingColumns, width);
     if (!(textScale > 1.0)) return base;
-    final ts = textScale > 2.0 ? 2.0 : textScale;
+    final ts = _clampScale(textScale);
+    final compact = width < _compactPhoneWidth;
     if (listingColumns == 1) {
-      return base / ts;
+      // List pages inset the cell by 4 dp on each side.
+      final cellW = (width - 8.0).clamp(120.0, 900.0);
+      final baseH = cellW / base;
+      return cellW / (baseH + _contentGrowth(ts, compact: compact));
     }
     final cols = listingColumns < 2 ? 2 : listingColumns;
     final cellW = ((width - 8.0 * (cols + 1)) / cols).clamp(120.0, 600.0);
     final baseH = cellW / base;
-    final growth = _textBlockGrowth(compact: width < _compactPhoneWidth);
-    return cellW / (baseH + growth * (ts - 1.0));
+    return cellW / (baseH + _contentGrowth(ts, compact: compact));
   }
 
   static double _baseGridChildAspectRatioForWidth(
