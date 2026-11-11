@@ -83,6 +83,127 @@ _SpecsGridMetrics _specsGridMetrics({
   );
 }
 
+/// Inner (text + icon) height of one tile: the tile minus the orange bar and
+/// the vertical padding. Shared by [carListingSpecsCard] and
+/// [_specsSharedFontSizes] so both always agree on the label / value zones.
+double _specsInnerHeight(double tileHeight, double scale) => math.max(
+      0.0,
+      tileHeight -
+          _specsDim(_specsDesignOrangeBar, scale) -
+          _specsDim(_specsDesignPadTop, scale) -
+          _specsDim(_specsDesignPadBottom, scale),
+    );
+
+/// The one label size and one value size used by all six tiles (pre-text-scale
+/// font sizes, i.e. what goes into `TextStyle.fontSize`).
+final class _SpecsFontSizes {
+  const _SpecsFontSizes({required this.label, required this.value});
+
+  final double label;
+  final double value;
+}
+
+/// Lowest rendered size (as a fraction of the design size) the shared type may
+/// shrink to just to fit one long value. Anything longer than that is shrunk
+/// inside its own tile only (the per-tile FittedBox), so a single long
+/// translation cannot drag the other five values down.
+const double _specsMinSharedFraction = 0.85;
+
+/// Largest label size relative to the value size. The design ratio is
+/// 11 / 14 = 0.79; this keeps labels visibly smaller than values when the
+/// label zone is the tighter one.
+const double _specsMaxLabelToValue = 0.8;
+
+/// Picks one value size and one label size for the whole grid.
+///
+/// Each tile used to size itself with its own FittedBox(scaleDown): short
+/// values ("4", "2.0L") stayed at full size while "123,456 km" / "Automatic"
+/// shrank to the tile width, so at larger text scales or with iOS Bold Text
+/// (wider glyphs) the six values rendered at very different sizes. Here the
+/// longest value is measured with the real text scaler and weight (Bold Text
+/// forces `FontWeight.bold` on every `Text`), and everyone gets the size that
+/// fits it. Normal text sizes are unaffected: if everything fits, the design
+/// size is kept.
+_SpecsFontSizes _specsSharedFontSizes(
+  BuildContext context,
+  List<ListingSpecItem> items, {
+  required double tileWidth,
+  required double tileHeight,
+  required double scale,
+}) {
+  final designLabel = _specsDim(_specsDesignLabelFontSize, scale);
+  final designValue = _specsDim(_specsDesignValueFontSize, scale);
+  final padH = _specsDim(_specsDesignPadH, scale);
+  final innerH = _specsInnerHeight(tileHeight, scale);
+  final zoneW = math.max(0.0, tileWidth - padH * 2);
+  final labelZoneH = innerH * _specsLabelFlex / _specsContentFlexTotal;
+  final valueZoneH = innerH * _specsValueFlex / _specsContentFlexTotal;
+
+  final textScaler = MediaQuery.textScalerOf(context);
+  final textScale = appTextScaleOf(context);
+  final bold = MediaQuery.boldTextOf(context);
+  final direction = Directionality.of(context);
+  final locale = Localizations.maybeLocaleOf(context);
+  final base = DefaultTextStyle.of(context).style;
+
+  double fit({
+    required Iterable<String> texts,
+    required double design,
+    required FontWeight weight,
+    required double zoneHeight,
+  }) {
+    final style = base.merge(
+      TextStyle(
+        fontSize: design,
+        height: 1.05,
+        // Text() forces FontWeight.bold when Bold Text is on; measure with
+        // the weight that will really be painted.
+        fontWeight: bold ? FontWeight.bold : weight,
+      ),
+    );
+    var widest = 0.0;
+    var lineHeight = 0.0;
+    for (final t in texts) {
+      if (t.isEmpty) continue;
+      final painter = TextPainter(
+        text: TextSpan(text: t, style: style),
+        textDirection: direction,
+        textScaler: textScaler,
+        locale: locale,
+        maxLines: 1,
+      )..layout();
+      widest = math.max(widest, painter.width);
+      lineHeight = math.max(lineHeight, painter.height);
+      painter.dispose();
+    }
+    var k = 1.0;
+    if (widest > zoneW && widest > 0) k = zoneW / widest;
+    if (lineHeight > zoneHeight && lineHeight > 0) {
+      k = math.min(k, zoneHeight / lineHeight);
+    }
+    // Never below ~85% of the design size once text scale is applied.
+    final floorK = math.min(1.0, _specsMinSharedFraction / textScale);
+    return design * math.min(1.0, math.max(k, floorK));
+  }
+
+  final value = fit(
+    texts: items.map((i) => i.value ?? ''),
+    design: designValue,
+    weight: FontWeight.w800,
+    zoneHeight: valueZoneH,
+  );
+  final label = fit(
+    texts: items.map((i) => i.label),
+    design: designLabel,
+    weight: FontWeight.w500,
+    zoneHeight: labelZoneH,
+  );
+  return _SpecsFontSizes(
+    label: math.min(label, value * _specsMaxLabelToValue),
+    value: value,
+  );
+}
+
 Widget carListingSpecsDetailRow(
   BuildContext context, {
     required IconData icon,
@@ -240,7 +361,14 @@ Widget carListingSpecsDetailRow(
     );
   }
 
-Widget carListingSpecsCard(ListingSpecItem item, {required double scale}) {
+Widget carListingSpecsCard(
+  ListingSpecItem item, {
+  required double scale,
+  // Shared across the six tiles by buildCarListingSpecsGrid; null keeps the
+  // design size scaled by [scale] (standalone use).
+  double? labelFontSize,
+  double? valueFontSize,
+}) {
   const brandOrange = AppColors.brandOrangeIcon;
   final radius = _specsDim(_specsDesignRadius, scale);
 
@@ -284,14 +412,14 @@ Widget carListingSpecsCard(ListingSpecItem item, {required double scale}) {
                 final padH = _specsDim(_specsDesignPadH, scale);
                 final padTop = _specsDim(_specsDesignPadTop, scale);
                 final padBottom = _specsDim(_specsDesignPadBottom, scale);
-                final labelFontSize = _specsDim(_specsDesignLabelFontSize, scale);
-                final valueFontSize = _specsDim(_specsDesignValueFontSize, scale);
+                // One shared size for all six tiles (see _specsSharedFontSizes).
+                final labelFontSizePx = labelFontSize ??
+                    _specsDim(_specsDesignLabelFontSize, scale);
+                final valueFontSizePx = valueFontSize ??
+                    _specsDim(_specsDesignValueFontSize, scale);
                 final orangeBar = _specsDim(_specsDesignOrangeBar, scale);
 
-                final innerH = math.max(
-                  0.0,
-                  constraints.maxHeight - orangeBar - padTop - padBottom,
-                );
+                final innerH = _specsInnerHeight(constraints.maxHeight, scale);
                 final iconZoneH =
                     innerH * _specsIconFlex / _specsContentFlexTotal;
                 final labelZoneH =
@@ -372,7 +500,7 @@ Widget carListingSpecsCard(ListingSpecItem item, {required double scale}) {
                                   maxLines: 1,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    fontSize: labelFontSize,
+                                    fontSize: labelFontSizePx,
                                     height: 1.05,
                                     color: labelGrey,
                                     fontWeight: FontWeight.w500,
@@ -390,7 +518,7 @@ Widget carListingSpecsCard(ListingSpecItem item, {required double scale}) {
                                   maxLines: 1,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    fontSize: valueFontSize,
+                                    fontSize: valueFontSizePx,
                                     height: 1.05,
                                     color: valueColor,
                                     fontWeight: FontWeight.w800,

@@ -279,9 +279,10 @@ Widget _buildGlobalCarCard(
             // px slack so Arabic metrics don't clip on some devices.
             // The text block grows with the system text scale (the grid cell
             // does too, see ListingLayoutPrefs.gridChildAspectRatioForWidth).
-            final textReserve =
-                (AppResponsive.isCompactPhone(context) ? 136.0 : 150.0) *
-                appTextScaleOf(context);
+            final textReserve = ListingLayoutPrefs.gridCardTextBlockHeightAt(
+              appTextScaleOf(context),
+              compact: AppResponsive.isCompactPhone(context),
+            );
             // Prefer a shorter image over stealing from the text block — the
             // preferred 120px floor must not win when the card is short.
             final availableForImage = constraints.maxHeight - textReserve;

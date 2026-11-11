@@ -22,6 +22,7 @@ import '../../shared/ui/app_haptics.dart';
 import '../../shared/listings/listing_status.dart';
 import '../../shared/listings/listing_sold_badge.dart';
 import '../../shared/listings/listing_pending_badge.dart';
+import '../../shared/prefs/listing_layout_prefs.dart';
 import '../../shared/errors/user_error_text.dart';
 import '../../shared/media/media_url.dart';
 import '../../shared/text/pretty_title_case.dart';

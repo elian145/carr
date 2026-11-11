@@ -6,6 +6,7 @@
 // `AppResponsive.wrapApp` does in the shipped app), so the tests see the same
 // text scaler the phone does, including the 1.0..2.0 clamp.
 import 'package:car_listing_app/l10n/app_localizations.dart';
+import 'package:car_listing_app/shared/i18n/ku_delegates.dart';
 import 'package:car_listing_app/shared/ui/system_display_lock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -38,26 +39,42 @@ void f10SetWindow(
 
 /// Wraps [home] in a localized [MaterialApp] whose MediaQuery carries the
 /// production-locked text scaler for [textScale].
+///
+/// [boldText] mimics iOS "Bold Text" / Android 12+ "Bold text"
+/// (`MediaQueryData.boldText`), which makes every `Text` force
+/// `FontWeight.bold`. [platform] lets a test run the same layout as iOS or
+/// Android. Kurdish (`ku`) uses the production Sorani delegates.
 Widget f10App({
   required Widget home,
   required double textScale,
   Locale locale = const Locale('en'),
   ThemeData? theme,
+  bool boldText = false,
+  TargetPlatform? platform,
 }) {
   return MaterialApp(
     debugShowCheckedModeBanner: false,
-    theme: theme ?? ThemeData(useMaterial3: false, fontFamily: 'Roboto'),
+    theme: theme ??
+        ThemeData(
+          useMaterial3: false,
+          fontFamily: 'Roboto',
+          platform: platform,
+        ),
     locale: locale,
-    supportedLocales: const [Locale('en'), Locale('ar')],
+    supportedLocales: const [Locale('en'), Locale('ar'), Locale('ku')],
     localizationsDelegates: const [
       AppLocalizations.delegate,
       GlobalMaterialLocalizations.delegate,
       GlobalWidgetsLocalizations.delegate,
       GlobalCupertinoLocalizations.delegate,
+      KuMaterialLocalizationsDelegate(),
+      KuWidgetsLocalizationsDelegate(),
+      KuCupertinoLocalizationsDelegate(),
     ],
     builder: (context, child) {
       final raw = MediaQuery.of(context).copyWith(
         textScaler: TextScaler.linear(textScale),
+        boldText: boldText,
       );
       return MediaQuery(
         data: SystemDisplayLock.lock(raw),

@@ -47,6 +47,14 @@ _ListingPriceBadgeStyle _listingPriceBadgeStyle({
   );
 }
 
+/// Height of one chip row (engine/trim or year/mileage) at [textScale]: the
+/// chip font (which scales with the system text size) plus its fixed vertical
+/// padding. Matches the year/mileage chip height.
+double _listingCardChipSlotHeight({
+  required bool compact,
+  required double textScale,
+}) => (compact ? 11.0 : 13.0) * textScale + (compact ? 10.0 : 12.0);
+
 /// Title / price / mileage block shared by grid and horizontal list listing cards.
 Widget _buildGlobalCarCardInnerText(
   BuildContext context,
@@ -126,6 +134,16 @@ Widget _buildGridCarCardInnerText(
   final double reservedTitleHeight = titleLineBoxHeight * titleMaxLines + 2;
   final double sectionGap = compact ? 3.0 : 4.0;
   final double blockGap = compact ? 5.0 : 6.0;
+  // Both chip rows (engine/trim and year/mileage) live in a slot of exactly
+  // this height. The chips inside may be scaled down to fit the card width,
+  // but the slot does not shrink with them, so the text block height is a
+  // pure function of the text scale (see
+  // ListingLayoutPrefs.gridCardTextBlockGrowthPerScale) instead of depending
+  // on how long this particular listing's trim happens to be.
+  final double chipSlotHeight = _listingCardChipSlotHeight(
+    compact: compact,
+    textScale: ts,
+  );
   final bool hasPrice = tryParseCurrencyValue(car['price']) != null;
   final String priceText = hasPrice
       ? formatCurrency(context, car['price'])
@@ -187,12 +205,10 @@ Widget _buildGridCarCardInnerText(
     final double iconSize = (fontSize * 0.92).clamp(10.0, 14.0);
     final double iconGap = compact ? 3.0 : 3.5;
     final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
-    final double chipFont = compact ? 11.0 : 13.0;
-    final double chipHeight = chipFont * ts + (compact ? 10.0 : 12.0);
     const TextDirection chipDir = TextDirection.ltr;
 
     return Container(
-      height: chipHeight,
+      height: chipSlotHeight,
       padding: EdgeInsets.symmetric(horizontal: hPad),
       alignment: Alignment.center,
       decoration: BoxDecoration(
@@ -462,39 +478,49 @@ Widget _buildGridCarCardInnerText(
       isRtl ? Alignment.centerRight : Alignment.centerLeft;
   // Intrinsic chips first; scale the whole row only when it overflows so a long
   // trim can use leftover width instead of shrinking inside a wide empty pill.
+  // The row sits in a fixed-height slot ([chipSlotHeight]) and is centred in
+  // it, so scaling the chips down never pulls the rows below it upwards.
   final Widget trimBlock = Padding(
     padding: EdgeInsets.only(top: blockGap),
-    child: Transform.translate(
-      offset: Offset(leadingShift, 0),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final chips = Row(
-            textDirection: textDirection,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (engineLine.isNotEmpty)
-                infoChip(engineLine, color: metaTextColor),
-              if (engineLine.isNotEmpty && trimLine.isNotEmpty)
-                SizedBox(width: compact ? 4 : 6),
-              if (trimLine.isNotEmpty)
-                infoChip(trimLine, color: metaTextColor),
-            ],
-          );
-          return Align(
-            alignment: trimAlign,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: trimAlign,
-                child: chips,
+    child: SizedBox(
+      height: chipSlotHeight,
+      child: Transform.translate(
+        offset: Offset(leadingShift, 0),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final chips = Row(
+              textDirection: textDirection,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (engineLine.isNotEmpty)
+                  infoChip(engineLine, color: metaTextColor),
+                if (engineLine.isNotEmpty && trimLine.isNotEmpty)
+                  SizedBox(width: compact ? 4 : 6),
+                if (trimLine.isNotEmpty)
+                  infoChip(trimLine, color: metaTextColor),
+              ],
+            );
+            return Align(
+              alignment: trimAlign,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: trimAlign,
+                  child: chips,
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     ),
   );
+  // Listings without engine/trim keep the same (empty) slot, so the
+  // year/mileage row and everything below sit at the same y as on the
+  // neighbouring cards of the grid row and the spare height is not dumped
+  // between the year/mileage chips and the price.
+  final Widget emptyTrimSlot = SizedBox(height: blockGap + chipSlotHeight);
 
   final bool hasSpecs = yearDisplay.isNotEmpty || mileageDisplay.isNotEmpty;
   final Widget yearPriceBlock = Column(
@@ -503,9 +529,12 @@ Widget _buildGridCarCardInnerText(
     children: [
       SizedBox(height: sectionGap),
       // Same leadingShift as title/trim so year lines up with those chips.
-      Transform.translate(
-        offset: Offset(leadingShift, 0),
-        child: matchedYearMileageRow(),
+      SizedBox(
+        height: chipSlotHeight,
+        child: Transform.translate(
+          offset: Offset(leadingShift, 0),
+          child: matchedYearMileageRow(),
+        ),
       ),
     ],
   );
@@ -630,7 +659,7 @@ Widget _buildGridCarCardInnerText(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       titleBlock,
-      if (hasDetail) trimBlock,
+      if (hasDetail) trimBlock else if (hasSpecs) emptyTrimSlot,
       if (hasSpecs) yearPriceBlock,
       const Spacer(),
       SizedBox(height: sectionGap),
@@ -1110,7 +1139,7 @@ Widget _buildListCarCardInnerText(
           },
         ),
       ),
-      if (hasDetailRow) ...[
+      if (hasDetailRow)
         Expanded(
           flex: 3,
           child: LayoutBuilder(
@@ -1128,8 +1157,13 @@ Widget _buildListCarCardInnerText(
               );
             },
           ),
-        ),
-      ],
+        )
+      else
+        // No engine/trim chips: keep the (empty) row slot so year/mileage and
+        // price sit exactly where they do on listings that have chips, instead
+        // of the spare height being split into a taller gap below the title
+        // and above the price.
+        const Expanded(flex: 3, child: SizedBox.shrink()),
       Expanded(
         flex: 3,
         child: LayoutBuilder(

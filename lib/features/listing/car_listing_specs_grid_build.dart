@@ -301,6 +301,18 @@ Widget buildCarListingSpecsGrid(
         availableWidth: constraints.maxWidth,
         textScale: appTextScaleOf(context),
       );
+      // One value size and one label size for all six tiles, so short values
+      // ("4", "2.0L") never look larger than long ones ("123,456 km").
+      final tileWidth =
+          (constraints.maxWidth - metrics.gap * (metrics.crossCount - 1)) /
+          metrics.crossCount;
+      final fonts = _specsSharedFontSizes(
+        context,
+        primary,
+        tileWidth: tileWidth,
+        tileHeight: metrics.rowH,
+        scale: metrics.scale,
+      );
       return SizedBox(
         width: constraints.maxWidth,
         height: metrics.gridHeight(primary.length),
@@ -316,7 +328,12 @@ Widget buildCarListingSpecsGrid(
           ),
           itemCount: primary.length,
           itemBuilder: (context, index) =>
-              carListingSpecsCard(primary[index], scale: metrics.scale),
+              carListingSpecsCard(
+                primary[index],
+                scale: metrics.scale,
+                labelFontSize: fonts.label,
+                valueFontSize: fonts.value,
+              ),
         ),
       );
     },
