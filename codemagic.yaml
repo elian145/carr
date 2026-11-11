@@ -227,7 +227,24 @@ workflows:
           /usr/libexec/PlistBuddy -c 'Print :provisioningProfiles' "$EXPORT_PLIST" 2>/dev/null || true
           # Apple requires CFBundleVersion to increase on every upload and be ≤18 chars.
           # CM_BUILD_ID is unique per build but can exceed Apple's 18-character limit.
-          if [ "${USE_MONOTONIC_BUILD_NUMBER:-}" = "1" ]; then
+          BUILD_NUM_FROM="CM_BUILD_ID=${CM_BUILD_ID:-}"
+          if [ -n "${IOS_BUILD_NUMBER_OVERRIDE:-}" ]; then
+            # Explicit owner override (Codemagic variable). Used verbatim, but only
+            # if it is a plain positive integer: digits only, no leading zero, at
+            # most 18 digits. A typo must fail here, never at App Store Connect.
+            case "$IOS_BUILD_NUMBER_OVERRIDE" in
+              *[!0-9]*|0*)
+                echo "ERROR: IOS_BUILD_NUMBER_OVERRIDE must be digits only with no leading zero."
+                exit 1
+                ;;
+            esac
+            if [ "${#IOS_BUILD_NUMBER_OVERRIDE}" -gt 18 ]; then
+              echo "ERROR: IOS_BUILD_NUMBER_OVERRIDE exceeds 18 digits (${#IOS_BUILD_NUMBER_OVERRIDE})."
+              exit 1
+            fi
+            BUILD_NUM="$IOS_BUILD_NUMBER_OVERRIDE"
+            BUILD_NUM_FROM="IOS_BUILD_NUMBER_OVERRIDE"
+          elif [ "${USE_MONOTONIC_BUILD_NUMBER:-}" = "1" ]; then
             # Preferred: BUILD_NUMBER_OFFSET + sequential CI counter (never below
             # the pubspec build number). Owner must set BUILD_NUMBER_OFFSET above
             # the highest build already in App Store Connect (docs/OWNER_ACTIONS.md).
@@ -244,7 +261,7 @@ workflows:
             echo "ERROR: CFBundleVersion exceeds 18 chars: $BUILD_NUM"
             exit 1
           fi
-          echo "iOS build number (CFBundleVersion): $BUILD_NUM (from CM_BUILD_ID=$CM_BUILD_ID)"
+          echo "iOS build number (CFBundleVersion): $BUILD_NUM (from $BUILD_NUM_FROM)"
           # No --build-name: Flutter takes CFBundleShortVersionString from the
           # pubspec.yaml `version:` (same source as Android), so an iOS
           # min_app_version floor can actually be met by a newer release.
