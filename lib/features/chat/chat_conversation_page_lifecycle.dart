@@ -43,6 +43,7 @@ mixin _ChatConversationPageLifecycle on _ChatConversationMessageUi, WidgetsBindi
     _loadHistory();
     _joinChat();
     _startPolling();
+    _registerPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollComposerToTop();
     });
@@ -51,6 +52,7 @@ mixin _ChatConversationPageLifecycle on _ChatConversationMessageUi, WidgetsBindi
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _presenceRoute = ModalRoute.of(context);
     // Localized listing title for a caller that supplied only a listing
     // preview (the chat list does). Runs right after initState() and again
     // whenever `Localizations` changes, so the title follows a locale switch.
@@ -79,6 +81,7 @@ mixin _ChatConversationPageLifecycle on _ChatConversationMessageUi, WidgetsBindi
 
   @override
   void dispose() {
+    _unregisterPresence();
     WidgetsBinding.instance.removeObserver(this);
     _pollTimer?.cancel();
     _socketConnectionSub?.cancel();

@@ -77,6 +77,62 @@ abstract class _ChatConversationFields extends State<ChatConversationPage> {
         peerId: _livePeerId,
       );
 
+  // ---- Foreground-notification presence ------------------------------------
+  // Registered in initState, released in dispose (see
+  // `ChatConversationPresence`): lets the push handler skip the banner for the
+  // conversation the user is actually looking at, and ONLY then.
+  ChatConversationPresenceHandle? _presenceHandle;
+  ModalRoute<dynamic>? _presenceRoute;
+
+  void _registerPresence() {
+    _presenceHandle?.unregister();
+    _presenceHandle = ChatConversationPresence.instance.register(
+      carId: () => widget.carId,
+      peerId: () => _trackedPeerId,
+      ownerId: () => _ownerUserId,
+      isVisible: () => _isConversationVisible,
+      isRealtimeLive: () => WebSocketService.isConnected,
+    );
+  }
+
+  void _unregisterPresence() {
+    _presenceHandle?.unregister();
+    _presenceHandle = null;
+    _presenceRoute = null;
+  }
+
+  /// This screen is mounted AND is the top, active route -- not covered by
+  /// another page, dialog or sheet. (App lifecycle is checked by the push
+  /// handler itself.)
+  bool get _isConversationVisible {
+    if (!mounted) return false;
+    final route = _presenceRoute;
+    if (route == null) return false;
+    return route.isActive && route.isCurrent;
+  }
+
+  /// Counterpart for notification matching: the live peer this screen was
+  /// opened with, else (a buyer who opened a listing without naming the
+  /// seller) the single counterpart seen in the loaded messages. `null` when
+  /// unknown or ambiguous -- the push handler then never suppresses.
+  String? get _trackedPeerId {
+    final live = _livePeerId;
+    if (live != null) return live;
+    final me = (_ownerUserId ?? '').trim();
+    if (me.isEmpty) return null;
+    final peers = <String>{};
+    for (final m in _messages) {
+      final sender = m.senderId.trim();
+      final receiver = m.receiverId.trim();
+      if (sender == me) {
+        if (receiver.isNotEmpty && receiver != me) peers.add(receiver);
+      } else if (sender.isNotEmpty) {
+        peers.add(sender);
+      }
+    }
+    return peers.length == 1 ? peers.first : null;
+  }
+
   /// Immediately-before-send ownership check. Returns false (and tells the
   /// user) when the signed-in account is no longer the one this screen was
   /// opened for; the composer content is left untouched.

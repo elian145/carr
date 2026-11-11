@@ -43,6 +43,7 @@ import '../../services/websocket_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
 import '../../services/outgoing_chat_send_service.dart';
+import '../../services/foreground_notification_policy.dart';
 import '../../services/feature_flags.dart';
 import '../../shared/errors/user_error_text.dart';
 import '../../shared/prefs/chat_pending_send_prefs.dart';

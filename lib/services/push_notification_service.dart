@@ -16,6 +16,7 @@ import '../l10n/app_localizations.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/debug/app_log.dart';
 import '../state/locale_controller.dart';
+import 'foreground_notification_policy.dart';
 
 // F-22: the channel names/descriptions are user-visible in the Android system
 // notification settings, so they follow the app language. No BuildContext is
@@ -89,6 +90,29 @@ abstract class PushMessagingPlatform {
 }
 
 class _FirebasePushPlatform implements PushMessagingPlatform {
+  _FirebasePushPlatform({
+    this.debugIsIOS,
+    this.debugSetForegroundPresentation,
+    this.debugWaitForApns,
+    this.debugOnMessage,
+  });
+
+  // Test seams (all null in production): let the iOS-specific preparation and
+  // the foreground listener be exercised without native plugins.
+  final bool? debugIsIOS;
+  final Future<void> Function({
+    required bool alert,
+    required bool badge,
+    required bool sound,
+  })?
+  debugSetForegroundPresentation;
+  final Future<void> Function()? debugWaitForApns;
+  final Stream<RemoteMessage>? debugOnMessage;
+
+  /// At most one foreground listener per platform instance, even if
+  /// [attachForegroundDisplay] were ever called again.
+  StreamSubscription<RemoteMessage>? _foregroundSub;
+
   static PushPermissionStatus _map(AuthorizationStatus s) {
     switch (s) {
       case AuthorizationStatus.authorized:
@@ -143,14 +167,30 @@ class _FirebasePushPlatform implements PushMessagingPlatform {
 
   @override
   Future<void> prepareForToken() async {
-    if (!Platform.isIOS) return;
-    final messaging = FirebaseMessaging.instance;
-    await messaging.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
+    if (!(debugIsIOS ?? Platform.isIOS)) return;
+    // The OS must NOT also present a foreground push: Dart shows exactly one
+    // local notification for it (or none while that conversation is open).
+    // The setting is persisted natively by firebase_messaging, so this also
+    // overrides the `alert: true` an older build stored on the device.
+    const native = kIosNativeForegroundPresentation;
+    final setPresentation =
+        debugSetForegroundPresentation ??
+        FirebaseMessaging
+            .instance
+            .setForegroundNotificationPresentationOptions;
+    await setPresentation(
+      alert: native.alert,
+      badge: native.badge,
+      sound: native.sound,
     );
-    await PushNotificationService._waitForApnsToken(messaging);
+    final waitForApns = debugWaitForApns;
+    if (waitForApns != null) {
+      await waitForApns();
+    } else {
+      await PushNotificationService._waitForApnsToken(
+        FirebaseMessaging.instance,
+      );
+    }
   }
 
   @override
@@ -169,8 +209,15 @@ class _FirebasePushPlatform implements PushMessagingPlatform {
 
   @override
   void attachForegroundDisplay() {
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-      await PushNotificationService._showLocalNotification(message);
+    unawaited(_foregroundSub?.cancel());
+    _foregroundSub = (debugOnMessage ?? FirebaseMessaging.onMessage).listen((
+      RemoteMessage message,
+    ) async {
+      try {
+        await PushNotificationService.handleForegroundMessage(message);
+      } catch (e, st) {
+        logNonFatal(e, st, 'PushNotificationService.foregroundMessage');
+      }
       if (kDebugMode) {
         // ignore: avoid_print
         print(
@@ -224,9 +271,66 @@ class PushNotificationService {
     _platform = platform ?? _FirebasePushPlatform();
   }
 
+  /// Test seam: replaces the call that actually posts the local notification.
+  static Future<void> Function(RemoteMessage message)? _debugPresenter;
+
+  @visibleForTesting
+  static set debugLocalNotificationPresenter(
+    Future<void> Function(RemoteMessage message)? presenter,
+  ) {
+    _debugPresenter = presenter;
+  }
+
+  /// A [PushMessagingPlatform] backed by the real Firebase implementation but
+  /// with the native calls injected, so the iOS foreground-presentation setup
+  /// and the foreground listener can be tested without plugins.
+  @visibleForTesting
+  static PushMessagingPlatform debugFirebasePlatform({
+    required bool isIOS,
+    required Future<void> Function({
+      required bool alert,
+      required bool badge,
+      required bool sound,
+    })
+    setForegroundPresentation,
+    required Stream<RemoteMessage> onMessage,
+    Future<void> Function()? waitForApns,
+  }) => _FirebasePushPlatform(
+    debugIsIOS: isIOS,
+    debugSetForegroundPresentation: setForegroundPresentation,
+    debugOnMessage: onMessage,
+    debugWaitForApns: waitForApns ?? () async {},
+  );
+
+  /// Handles ONE push received while the app is in the foreground: shows a
+  /// single local notification, unless the user is actively looking at that
+  /// very conversation (see [decideForegroundNotification]). Returns the
+  /// decision. Notification taps / deep links are unaffected.
+  @visibleForTesting
+  static Future<ForegroundNotificationDecision> handleForegroundMessage(
+    RemoteMessage message,
+  ) async {
+    final decision = decideForegroundNotification(
+      data: message.data,
+      lifecycle: WidgetsBinding.instance.lifecycleState,
+      currentAccountId: ApiService.currentAccountId,
+      conversations: ChatConversationPresence.instance.snapshots(),
+    );
+    if (decision.suppress) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('PushNotificationService: foreground banner suppressed');
+      }
+      return decision;
+    }
+    await (_debugPresenter ?? _showLocalNotification)(message);
+    return decision;
+  }
+
   /// Test hook: forget all per-process lifecycle state.
   @visibleForTesting
   static void debugResetForTests() {
+    _debugPresenter = null;
     _messagingReady = false;
     _refreshListenerAttached = false;
     _foregroundListenerAttached = false;
