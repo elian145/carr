@@ -550,12 +550,14 @@ void main() {
             // Below the cap the user's size is honoured.
             expect(title, closeTo(s, 0.001));
           }
-          // The price badge never follows the system size.
-          expect(
-            tester.getSize(_priceBadge()).height,
-            closeTo(26, 0.5),
-            reason: 'price badge grew',
-          );
+          // The price badge keeps its 26 dp height and only grows as far as
+          // its price needs (27.5 dp at the 1.5x cap), inside the unchanged
+          // 28 dp footer row.
+          final pill = tester.getSize(_priceBadge()).height;
+          expect(pill, greaterThanOrEqualTo(26 - 0.5), reason: 'price badge shrank');
+          expect(pill, lessThanOrEqualTo(27.5 + 0.5), reason: 'price badge grew');
+          // (How far the price text itself scales is asserted in
+          // listing_price_badge_cap_test.dart.)
         });
       }
     }

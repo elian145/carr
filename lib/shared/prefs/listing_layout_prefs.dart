@@ -94,14 +94,17 @@ class ListingLayoutPrefs {
       ? gridCardCompactTextBlockGrowthPerScale
       : gridCardTextBlockGrowthPerScale;
 
-  /// The orange price badge (and the footer row it sits in) keeps its NORMAL
-  /// 1.0x size - 26 dp pill, 15 sp price - whatever the system text size is
-  /// (CarNet TestFlight: even a 1.3x cap was too large). It is a solid pill
-  /// around bold text, read as a label next to the city; title, chips and city
-  /// keep following the system text size (see [rectCardTextScale]).
-  static const double priceBadgeMaxTextScale = 1.0;
+  /// Largest text scale of the price inside the orange badge. The price
+  /// follows the other card text up to here (on the fixed-height rectangular
+  /// card the card text itself is capped by its width, see
+  /// [rectCardTextScale]); the pill keeps its 1.0x height and only grows as far
+  /// as the text needs (price px + 5 dp: 27.5 dp at 1.5x, never more than the
+  /// footer row). 1.5x is where that need reaches the 28 dp footer row:
+  /// (28 - 5) / 15 sp ~ 1.53, and (26 - 5) / 14 sp = 1.5 for narrow grid tiles.
+  static const double priceBadgeMaxTextScale = 1.5;
 
-  /// Text scale the price badge / footer is laid out with.
+  /// Text scale the price badge may use at system scale [textScale]
+  /// (before the per-card width / city checks).
   static double priceBadgeTextScale(double textScale) {
     if (!(textScale > 1.0)) return 1.0;
     return textScale < priceBadgeMaxTextScale
@@ -109,19 +112,24 @@ class ListingLayoutPrefs {
         : priceBadgeMaxTextScale;
   }
 
+  /// The price FOOTER ROW (28 dp, 26 dp on narrow grid tiles) keeps its 1.0x
+  /// height at every text size - only the pill inside it changes - so the grid
+  /// cell reserves no extra room for it.
+  static const double priceFooterMaxTextScale = 1.0;
+
   /// Height of the price footer row per 1.0 of (uncapped) text scale:
   /// `(26 + 2) * scale` in `_listingPriceBadgeStyle`.
   static const double priceFooterHeightPerScale = 28;
 
   /// How much taller the grid card's text block is at [ts] (already clamped
   /// to 1.0..2.0) than at 1.0: [_textBlockGrowth] per scale step, minus the
-  /// part of the footer that does not grow above [priceBadgeMaxTextScale].
+  /// part of the footer that does not grow above [priceFooterMaxTextScale].
   /// The grid card's own layout is untouched; its cell just no longer reserves
-  /// height for a price footer that stays 26 dp (keeping that height would
+  /// height for a price footer that stays 28 dp (keeping that height would
   /// reopen the gap between year/mileage and city/price).
   static double _contentGrowth(double ts, {required bool compact}) {
-    final footerNotGrown = ts > priceBadgeMaxTextScale
-        ? priceFooterHeightPerScale * (ts - priceBadgeMaxTextScale)
+    final footerNotGrown = ts > priceFooterMaxTextScale
+        ? priceFooterHeightPerScale * (ts - priceFooterMaxTextScale)
         : 0.0;
     return _textBlockGrowth(compact: compact) * (ts - 1.0) - footerNotGrown;
   }

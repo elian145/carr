@@ -12,6 +12,7 @@ class _ListingPriceBadgeStyle {
     required this.badgeHeight,
     required this.radius,
     required this.footerHeight,
+    required this.textScale,
   });
 
   final double fontSize;
@@ -19,12 +20,17 @@ class _ListingPriceBadgeStyle {
   final double badgeHeight;
   final double radius;
   final double footerHeight;
+
+  /// Text scale of the price inside the pill (1.0 = normal design).
+  final double textScale;
 }
 
+/// [badgeScale] is the text scale of the price inside the pill
+/// (see [_listingBadgeScale]); 1.0 is the normal design.
 _ListingPriceBadgeStyle _listingPriceBadgeStyle({
   required double rowWidth,
   required bool hasPrice,
-  double textScale = 1.0,
+  double badgeScale = 1.0,
 }) {
   // Only shrink on very narrow tiles; otherwise keep the fuller pill size.
   final double tight = rowWidth < 130 ? 0.0 : 1.0;
@@ -32,15 +38,18 @@ _ListingPriceBadgeStyle _listingPriceBadgeStyle({
   final double fontSize = hasPrice ? 14.0 + 1.0 * tight : 11.0 + 1.0 * tight;
   final double horizontalPadding =
       hasPrice ? 7.0 + 1.0 * tight : 5.5 + 1.0 * tight;
-  // The pill height is fixed so Roboto vs SF Pro metrics cannot change it,
-  // but it grows with the system text scale so scaled prices are not clipped
-  // - up to ListingLayoutPrefs.priceBadgeMaxTextScale (1.3x). Above that the
-  // pill (and the price text inside it, see [_listingBadgeTextScaler]) stays
-  // compact instead of doubling in height.
-  final double badgeScale = ListingLayoutPrefs.priceBadgeTextScale(textScale);
-  final double badgeHeight = (24.0 + 2.0 * tight) * badgeScale;
+  // The pill height is fixed so Roboto vs SF Pro metrics cannot change it. It
+  // only grows when the scaled price needs it (price px + 5 dp of padding),
+  // which is at most 27.5 dp at the 1.5x cap, and never beyond the footer row:
+  // the footer row (and with it every row above it and the card height) keeps
+  // its 1.0x height at every text size.
+  final double baseBadgeHeight = 24.0 + 2.0 * tight;
+  final double footerHeight = 26.0 + 2.0 * tight;
+  final double neededHeight = fontSize * badgeScale + _kBadgeMinVerticalPadding;
+  final double badgeHeight = neededHeight > baseBadgeHeight
+      ? (neededHeight < footerHeight ? neededHeight : footerHeight)
+      : baseBadgeHeight;
   final double radius = 7.0 + 0.5 * tight;
-  final double footerHeight = (26.0 + 2.0 * tight) * badgeScale;
 
   return _ListingPriceBadgeStyle(
     fontSize: fontSize,
@@ -48,6 +57,7 @@ _ListingPriceBadgeStyle _listingPriceBadgeStyle({
     badgeHeight: badgeHeight,
     radius: radius,
     footerHeight: footerHeight,
+    textScale: badgeScale,
   );
 }
 
@@ -59,12 +69,101 @@ const int _kListNoChipsTopFlex = 5;
 const int _kListNoChipsTitleGapFlex = 2;
 const int _kListNoChipsPriceGapFlex = 5;
 
-/// Text scaler of the price inside the orange badge: follows the system text
-/// size up to [ListingLayoutPrefs.priceBadgeMaxTextScale], then stays put.
-/// (Not `TextScaler.noScaling`: the price still honours the user's size up to
-/// 1.3x, and the F-10 source guard only flags a fixed 1.0.)
-TextScaler _listingBadgeTextScaler(double textScale) =>
-    TextScaler.linear(ListingLayoutPrefs.priceBadgeTextScale(textScale));
+/// Vertical room kept around the price line (strut height 1 = font px) inside
+/// the pill: 2.5 dp above and below (5.5 dp at the 1.0x design).
+const double _kBadgeMinVerticalPadding = 5.0;
+
+/// A city label may lose at most this fraction of the painted size it has next
+/// to the normal 1.0x badge, so enlarging the price never squeezes the city.
+const double _kBadgeMaxCityShrink = 0.10;
+
+/// ... and is never pushed below this fraction of its laid-out size.
+const double _kBadgeMinCityKept = 0.75;
+
+/// Text scaler of the price inside the orange badge.
+/// (Not `TextScaler.noScaling`: the price follows the other card text, see
+/// [_listingBadgeScale].)
+TextScaler _listingBadgeTextScaler(double badgeScale) =>
+    TextScaler.linear(badgeScale);
+
+/// Text scale of the price inside the orange badge: it follows the other card
+/// text ([textScale], already capped by the fixed height on the rectangular
+/// card) up to [ListingLayoutPrefs.priceBadgeMaxTextScale], in 0.05 steps,
+/// but only as far as
+///  - the pill still hugs the price inside the footer's price share
+///    ([maxPriceWidth]), and
+///  - the city label next to it keeps at least
+///    `1 - _kBadgeMaxCityShrink` of the size it has beside the 1.0x pill.
+/// An absent city only has the first limit. Returns 1.0 at normal text size.
+double _listingBadgeScale({
+  required BuildContext context,
+  required double textScale,
+  required double rowWidth,
+  required bool hasPrice,
+  required String priceText,
+  required String cityText,
+  required double cityGap,
+}) {
+  final double cap = ListingLayoutPrefs.priceBadgeTextScale(textScale);
+  if (!(cap > 1.0) || priceText.isEmpty) return 1.0;
+
+  final _ListingPriceBadgeStyle base = _listingPriceBadgeStyle(
+    rowWidth: rowWidth,
+    hasPrice: hasPrice,
+  );
+  // Glyph advances scale linearly with the font size: measure once at the cap.
+  final double pricePerScale =
+      _measureBadgeText(
+        context,
+        priceText,
+        TextStyle(
+          fontWeight: FontWeight.w800,
+          fontSize: base.fontSize,
+          height: 1,
+        ),
+        _listingBadgeTextScaler(cap),
+      ) /
+      cap;
+  double pillWidth(double s) => pricePerScale * s + base.horizontalPadding * 2;
+
+  final double maxPriceWidth = rowWidth * (hasPrice ? 0.72 : 0.52);
+
+  // City label at its laid-out size: pin icon (16) + gap (2) + text.
+  double cityWidth = 0;
+  if (cityText.isNotEmpty) {
+    cityWidth =
+        18 +
+        _measureBadgeText(
+          context,
+          cityText,
+          const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          MediaQuery.textScalerOf(context),
+        );
+  }
+  double cityKept(double s) {
+    if (cityWidth <= 0) return 1.0;
+    final double room = rowWidth - cityGap - pillWidth(s);
+    final double kept = room / cityWidth;
+    return kept < 1.0 ? (kept < 0 ? 0 : kept) : 1.0;
+  }
+
+  // The city may lose at most 10% beside the larger pill and is never pushed
+  // below 75% of its size; a city that is already that squeezed beside the 1.0x
+  // pill (long name, narrow tile) keeps the 1.0x pill.
+  final double cityAtBase = cityKept(1.0);
+  final double tenPercentLess = cityAtBase * (1.0 - _kBadgeMaxCityShrink);
+  final double cityFloor = tenPercentLess > _kBadgeMinCityKept
+      ? tenPercentLess
+      : _kBadgeMinCityKept;
+
+  for (int step = (cap * 20).floor(); step > 20; step--) {
+    final double s = step / 20;
+    if (pillWidth(s) <= maxPriceWidth && cityKept(s) >= cityFloor - 1e-9) {
+      return s;
+    }
+  }
+  return 1.0;
+}
 
 /// Measures [text] exactly as the `Text` widget will paint it: the inherited
 /// `DefaultTextStyle` (app font family) merged with [style]. A bare
@@ -585,10 +684,19 @@ Widget _buildGridCarCardInnerText(
 
   final Widget mileageCityRow = LayoutBuilder(
     builder: (context, constraints) {
+      final double badgeScale = _listingBadgeScale(
+        context: context,
+        textScale: ts,
+        rowWidth: constraints.maxWidth,
+        hasPrice: hasPrice,
+        priceText: priceText,
+        cityText: cityLine,
+        cityGap: compact ? 4 : 6,
+      );
       final priceStyle = _listingPriceBadgeStyle(
         rowWidth: constraints.maxWidth,
         hasPrice: hasPrice,
-        textScale: ts,
+        badgeScale: badgeScale,
       );
       // Long prices need most of the footer; city can scale down.
       final double maxPriceWidth =
@@ -604,7 +712,7 @@ Widget _buildGridCarCardInnerText(
         height: 1,
         forceStrutHeight: true,
       );
-      final badgeScaler = _listingBadgeTextScaler(ts);
+      final badgeScaler = _listingBadgeTextScaler(badgeScale);
       final priceTextW = _measureBadgeText(
         context,
         priceText,
@@ -819,7 +927,7 @@ Widget _buildListCarCardInnerText(
       height: 1,
       forceStrutHeight: true,
     );
-    final badgeScaler = _listingBadgeTextScaler(ts);
+    final badgeScaler = _listingBadgeTextScaler(style.textScale);
     final priceTextW = _measureBadgeText(
       context,
       priceText,
@@ -1093,7 +1201,15 @@ Widget _buildListCarCardInnerText(
       final priceStyle = _listingPriceBadgeStyle(
         rowWidth: constraints.maxWidth,
         hasPrice: hasPrice,
-        textScale: ts,
+        badgeScale: _listingBadgeScale(
+          context: context,
+          textScale: ts,
+          rowWidth: constraints.maxWidth,
+          hasPrice: hasPrice,
+          priceText: priceText,
+          cityText: cityText,
+          cityGap: 6,
+        ),
       );
       final double maxPriceWidth =
           constraints.maxWidth * (hasPrice ? 0.72 : 0.52);
@@ -1168,7 +1284,6 @@ Widget _buildListCarCardInnerText(
       _listingPriceBadgeStyle(
         rowWidth: c.maxWidth,
         hasPrice: hasPrice,
-        textScale: ts,
       ).footerHeight,
     ],
   );
