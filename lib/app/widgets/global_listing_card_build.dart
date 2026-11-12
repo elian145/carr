@@ -155,9 +155,9 @@ Widget _buildGlobalCarCard(
     );
   }
 
-  Widget buildCardText({required bool horizontal}) {
+  Widget buildCardText({required bool horizontal, BuildContext? withContext}) {
     return _buildGlobalCarCardInnerText(
-      context,
+      withContext ?? context,
       car,
       brandId: brandId,
       trimLine: trimLine,
@@ -259,7 +259,18 @@ Widget _buildGlobalCarCard(
                                 child: SizedBox(
                                   width: contentW,
                                   height: contentH,
-                                  child: buildCardText(horizontal: true),
+                                  // The card height is fixed, so its text only
+                                  // follows the system size as far as that
+                                  // height can hold (see
+                                  // ListingLayoutPrefs.rectCardTextScale).
+                                  child: _rectCardTextScope(
+                                    context,
+                                    cardHeight: textConstraints.maxHeight,
+                                    builder: (scoped) => buildCardText(
+                                      horizontal: true,
+                                      withContext: scoped,
+                                    ),
+                                  ),
                                 ),
                               ),
                             );
@@ -409,11 +420,50 @@ Widget _buildGlobalCarCard(
     cardShell = wrapListingFeaturedGlow(child: cardShell, radius: shellRadius);
   }
 
+  // The rectangular card keeps a fixed height, so a long title can end in an
+  // ellipsis at larger text sizes: a long press shows it in full. The tooltip
+  // only listens for a long press (taps, scrolling and the favourite button
+  // are untouched) and is hidden from accessibility, whose description of the
+  // card already carries the whole title, engine, year, mileage, city and
+  // price. The details page shows everything in full.
+  final Widget semanticChild = listLayout && titleForA11y.isNotEmpty
+      ? Tooltip(
+          message: titleForA11y,
+          triggerMode: TooltipTriggerMode.longPress,
+          excludeFromSemantics: true,
+          child: cardShell,
+        )
+      : cardShell;
+
   return RepaintBoundary(
     child: Semantics(
       button: true,
       label: titleForA11y.isEmpty ? locCard.navHome : titleForA11y,
-      child: cardShell,
+      child: semanticChild,
     ),
+  );
+}
+
+/// Lays out the rectangular card's text column at the text scale its FIXED
+/// height can hold: the system size up to
+/// [ListingLayoutPrefs.rectCardTextScale] (~1.5x Pro Max, ~1.3x 393 dp,
+/// ~1.15-1.2x 360 dp and below). One scaler for the whole column keeps the
+/// title, chips, year/mileage and city consistent. [builder] receives a
+/// context under that scaler, so `appTextScaleOf` and every `Text` agree.
+Widget _rectCardTextScope(
+  BuildContext context, {
+  required double cardHeight,
+  required Widget Function(BuildContext scoped) builder,
+}) {
+  final ts = appTextScaleOf(context);
+  final capped = ListingLayoutPrefs.rectCardTextScale(
+    cardHeight: cardHeight,
+    compact: AppResponsive.isCompactPhone(context),
+    textScale: ts,
+  );
+  if (!(ts > 1.0) || capped >= ts) return Builder(builder: builder);
+  return MediaQuery(
+    data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(capped)),
+    child: Builder(builder: builder),
   );
 }

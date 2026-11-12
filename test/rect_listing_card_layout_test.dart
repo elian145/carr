@@ -60,15 +60,12 @@ const double _maxTitleGapNoChips = 28;
 const double _maxSpecsPriceGapChips = 24;
 const double _maxSpecsPriceGapNoChips = 38;
 
-/// The card content grows ~93 dp per +1.0 of text scale (title 2 x 15 x 1.28 =
-/// 38.4, two chip rows 2 x 13, footer 28 = 92.4). Allow a little headroom.
-const double _maxCardGrowthPerScale = 100;
-
 class _Variant {
-  const _Variant(this.name, this.model, this.probe);
+  const _Variant(this.name, this.model, this.probe, {this.brand = 'Toyota'});
   final String name;
   final String model;
   final String probe; // text used to find the rendered title
+  final String brand;
 }
 
 const _Variant _oneLine = _Variant('one-line', 'Belta', 'Belta');
@@ -78,6 +75,17 @@ const _Variant _twoLine = _Variant(
   'Camry',
 );
 
+/// A title that is ONE line in every width, including for the title-line probe
+/// inside the card (which measures with the default test font, 1 em per glyph:
+/// "Toyota Belta" measured as two lines in tests but one line on a real
+/// iPhone, which is why the one-line gap was not reproduced by the tests).
+const _Variant _shortOneLine = _Variant(
+  'short one-line',
+  'Rio',
+  'Rio',
+  brand: 'Kia',
+);
+
 Map<String, dynamic> _car(
   _Variant v, {
   required bool chips,
@@ -85,7 +93,7 @@ Map<String, dynamic> _car(
 }) => <String, dynamic>{
   'id': 'rect_1',
   'public_id': 'rect_1',
-  'brand': 'Toyota',
+  'brand': v.brand,
   'model': v.model,
   if (chips) 'trim': 'XLE',
   if (chips) 'engine_size': '3.5',
@@ -241,9 +249,11 @@ void main() {
           '$reason: title -> next row gap '
           '${m.titleToNext.toStringAsFixed(1)} dp (card ${m.cardH.toStringAsFixed(1)} dp)',
     );
+    // At the text-scale cap the fixed card is full: the rows then keep ~2 dp
+    // between them (never touching).
     expect(
       m.titleToNext,
-      greaterThanOrEqualTo(2),
+      greaterThanOrEqualTo(1.5),
       reason: '$reason: title touches the next row',
     );
     expect(
@@ -287,6 +297,13 @@ void main() {
     // ignore: avoid_print
     print(
       'METRIC rect | $tag | $label | cardH=${m.cardH.toStringAsFixed(1)} '
+      'y[title ${(m.title.top - m.card.top).toStringAsFixed(1)}-'
+      '${(m.title.bottom - m.card.top).toStringAsFixed(1)} '
+      'next ${(m.next - m.card.top).toStringAsFixed(1)} '
+      'year ${(m.year.top - m.card.top).toStringAsFixed(1)}-'
+      '${(m.year.bottom - m.card.top).toStringAsFixed(1)} '
+      'badge ${(m.badge.top - m.card.top).toStringAsFixed(1)}-'
+      '${(m.badge.bottom - m.card.top).toStringAsFixed(1)}] '
       'titleTop=${m.titleTop.toStringAsFixed(1)} '
       'title->next=${m.titleToNext.toStringAsFixed(1)} '
       'specs->price=${m.specsToPrice.toStringAsFixed(1)} '
@@ -355,46 +372,307 @@ void main() {
     }
   });
 
-  group('card height follows the content, not textScale x height', () {
+  group('card height is FIXED: identical at every text scale', () {
     for (final d in _devices.entries) {
-      for (final s in const [1.3, 1.5, 2.0]) {
-        testWidgets('${d.key} @${s}x', (tester) async {
-          final base = await measure(
-            tester,
-            size: d.value,
-            scale: 1.0,
-            variant: _oneLine,
-            chips: true,
+      for (final chips in const [true, false]) {
+        for (final v in const [_oneLine, _twoLine, _shortOneLine]) {
+          testWidgets(
+            '${d.key} ${v.name} ${chips ? 'chips' : 'plain'}',
+            (tester) async {
+              final base = await measure(
+                tester,
+                size: d.value,
+                scale: 1.0,
+                variant: v,
+                chips: chips,
+              );
+              // 1.0x design: the height a card always had at this width.
+              final w = d.value.width;
+              expect(
+                base.cardH,
+                closeTo(
+                  (w - 8) /
+                      ListingLayoutPrefs.gridChildAspectRatioForWidth(1, w),
+                  0.01,
+                ),
+              );
+              for (final s in const [1.15, 1.3, 1.5, 2.0]) {
+                final scaled = await measure(
+                  tester,
+                  size: d.value,
+                  scale: s,
+                  variant: v,
+                  chips: chips,
+                );
+                expect(
+                  scaled.cardH,
+                  closeTo(base.cardH, 0.01),
+                  reason:
+                      '${d.key} @${s}x ${v.name}: card height '
+                      '${scaled.cardH.toStringAsFixed(1)} dp vs '
+                      '${base.cardH.toStringAsFixed(1)} dp at 1.0x',
+                );
+              }
+            },
           );
-          final scaled = await measure(
+        }
+      }
+    }
+  });
+
+  group('card height is identical for every title and every scale', () {
+    for (final d in _devices.entries) {
+      for (final s in _scales) {
+        testWidgets('${d.key} @${s}x', (tester) async {
+          final heights = <double>[];
+          for (final v in const [_oneLine, _twoLine, _shortOneLine]) {
+            for (final chips in const [true, false]) {
+              heights.add(
+                (await measure(
+                  tester,
+                  size: d.value,
+                  scale: s,
+                  variant: v,
+                  chips: chips,
+                )).cardH,
+              );
+            }
+          }
+          for (final h in heights) {
+            expect(h, closeTo(heights.first, 0.01), reason: '${d.key} @${s}x');
+          }
+        });
+      }
+    }
+  });
+
+  group('one-line title is centred in the two-line title area', () {
+    for (final d in _devices.entries) {
+      for (final s in _scales) {
+        for (final chips in const [true, false]) {
+          testWidgets(
+            '${d.key} @${s}x ${chips ? 'with engine+trim' : 'no engine/trim'}',
+            (tester) async {
+              final one = await measure(
+                tester,
+                size: d.value,
+                scale: s,
+                variant: _shortOneLine,
+                chips: chips,
+              );
+              final two = await measure(
+                tester,
+                size: d.value,
+                scale: s,
+                variant: _twoLine,
+                chips: chips,
+              );
+              // Same centre line: the one-line title sits in the middle of the
+              // area a two-line title uses, instead of hugging the top and
+              // leaving a hole above the chips.
+              expect(
+                one.title.center.dy,
+                closeTo(two.title.center.dy, 1.0),
+                reason:
+                    '${d.key} @${s}x: one-line title centre '
+                    '${(one.title.center.dy - one.card.top).toStringAsFixed(1)}'
+                    ' dp vs two-line '
+                    '${(two.title.center.dy - two.card.top).toStringAsFixed(1)}'
+                    ' dp',
+              );
+              // The rows below do not move between the two cards.
+              expect(one.next, closeTo(two.next, 0.5), reason: 'next row');
+              expect(one.year.top, closeTo(two.year.top, 0.5));
+              expect(one.badge.top, closeTo(two.badge.top, 0.5));
+              expect(one.city.top, closeTo(two.city.top, 0.5));
+              // Exactly centred: the gap under the one-line title is the
+              // two-line gap plus half the missing line - no extra hole.
+              expect(
+                one.titleToNext - two.titleToNext,
+                closeTo((two.title.height - one.title.height) / 2, 1.0),
+                reason: '${d.key} @${s}x: hole under the one-line title',
+              );
+            },
+          );
+        }
+      }
+    }
+  });
+
+  // The card text follows the system size only up to what the FIXED card
+  // height can hold (ListingLayoutPrefs.rectCardTextScale): ~1.5x on a Pro Max,
+  // ~1.3x at 393 dp, ~1.15-1.2x at 360 dp and below.
+  const Map<int, ({double min, double max})> capByWidth = {
+    440: (min: 1.45, max: 1.5),
+    393: (min: 1.25, max: 1.3),
+    360: (min: 1.1, max: 1.2),
+    320: (min: 1.1, max: 1.2),
+  };
+
+  double appliedScale(WidgetTester tester, Finder f) =>
+      MediaQuery.textScalerOf(tester.element(f.first)).scale(14) / 14;
+
+  group('painted text scale is capped by the fixed card height', () {
+    for (final d in _devices.entries) {
+      final cap = capByWidth[d.value.width.toInt()]!;
+      for (final s in _scales) {
+        testWidgets('${d.key} @${s}x', (tester) async {
+          await measure(
             tester,
             size: d.value,
             scale: s,
-            variant: _oneLine,
+            variant: _twoLine,
             chips: true,
           );
-          final growth = scaled.cardH - base.cardH;
-          expect(
-            growth,
-            lessThanOrEqualTo(_maxCardGrowthPerScale * (s - 1.0) + 2),
-            reason:
-                '${d.key} @${s}x: card grew ${growth.toStringAsFixed(1)} dp '
-                '(${base.cardH.toStringAsFixed(1)} -> '
-                '${scaled.cardH.toStringAsFixed(1)}); content only needs '
-                '~93 dp per +1.0 of scale',
+          final title = appliedScale(
+            tester,
+            find.textContaining('Camry', findRichText: true),
           );
-          // 1.0x design is untouched: same height the card always had.
-          final w = d.value.width;
+          final year = appliedScale(tester, find.text('2021'));
+          final engine = appliedScale(tester, find.text('XLE'));
+          final city = appliedScale(tester, find.text('Erbil'));
+          for (final a in [title, year, engine, city]) {
+            expect(a, closeTo(title, 0.001), reason: 'rows use different sizes');
+          }
+          expect(title, greaterThanOrEqualTo(1.0 - 1e-9));
           expect(
-            base.cardH,
-            closeTo(
-              (w - 8) / ListingLayoutPrefs.gridChildAspectRatioForWidth(1, w),
-              0.01,
-            ),
+            title,
+            lessThanOrEqualTo(math.min(s, cap.max) + 1e-9),
+            reason: '${d.key} @${s}x: text scale $title exceeds the cap',
+          );
+          if (s >= cap.max) {
+            expect(
+              title,
+              greaterThanOrEqualTo(cap.min),
+              reason: '${d.key} @${s}x: text capped too low ($title)',
+            );
+          } else {
+            // Below the cap the user's size is honoured.
+            expect(title, closeTo(s, 0.001));
+          }
+          // The price badge never follows the system size.
+          expect(
+            tester.getSize(_priceBadge()).height,
+            closeTo(26, 0.5),
+            reason: 'price badge grew',
           );
         });
       }
     }
+  });
+
+  group('full text stays reachable', () {
+    testWidgets('accessible description carries every detail', (tester) async {
+      final handle = tester.ensureSemantics();
+      await measure(
+        tester,
+        size: const Size(440, 956),
+        scale: 2.0,
+        variant: _twoLine,
+        chips: true,
+      );
+      final label = tester.getSemantics(find.byType(InkWell).first).label;
+      for (final part in [
+        'Toyota Camry Hybrid Premium Edition',
+        '3.5',
+        'XLE',
+        '2021',
+        '123,456',
+        'Erbil',
+        '48,500',
+      ]) {
+        expect(label, contains(part), reason: 'missing "$part" in "$label"');
+      }
+      handle.dispose();
+    });
+
+    Future<void> pumpNavigable(WidgetTester tester) async {
+      await f10LoadFonts(tester);
+      f10SetWindow(tester, width: 440, height: 956);
+      await f10Pump(
+        tester,
+        f10App(
+          textScale: 2.0,
+          home: Navigator(
+            onGenerateRoute: (settings) => MaterialPageRoute<void>(
+              settings: settings,
+              builder: (_) => settings.name == '/car_detail'
+                  ? const Scaffold(body: Text('DETAIL PAGE'))
+                  : _feed(_car(_twoLine, chips: true)),
+            ),
+          ),
+        ),
+      );
+    }
+
+    const fullTitle = 'Toyota Camry Hybrid Premium Edition';
+
+    testWidgets('a normal tap still opens the details page, no tooltip', (
+      tester,
+    ) async {
+      await pumpNavigable(tester);
+      final before = find.text(fullTitle, findRichText: true).evaluate().length;
+      await tester.tapAt(tester.getRect(find.byType(InkWell).first).center);
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('DETAIL PAGE'), findsOneWidget);
+      expect(
+        find.text(fullTitle, findRichText: true).evaluate().length,
+        lessThanOrEqualTo(before),
+      );
+    });
+
+    testWidgets('a long press shows the full title and does not navigate', (
+      tester,
+    ) async {
+      await pumpNavigable(tester);
+      final before = find.text(fullTitle, findRichText: true).evaluate().length;
+      await tester.longPress(find.byType(InkWell).first);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('DETAIL PAGE'), findsNothing);
+      expect(
+        find.text(fullTitle, findRichText: true).evaluate().length,
+        greaterThan(before),
+        reason: 'long press did not show the full-title tooltip',
+      );
+      await tester.pump(const Duration(seconds: 3)); // tooltip auto-dismiss
+    });
+
+    testWidgets('scrolling the list is not blocked by the tooltip', (
+      tester,
+    ) async {
+      await f10LoadFonts(tester);
+      f10SetWindow(tester, width: 440, height: 600);
+      await f10Pump(
+        tester,
+        f10App(
+          textScale: 1.0,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ListView.builder(
+                itemCount: 8,
+                itemBuilder: (context, i) => SizedBox(
+                  height: 169,
+                  child: buildGlobalCarCard(
+                    context,
+                    _car(_twoLine, chips: true),
+                    listLayout: true,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final first = tester.getTopLeft(find.byType(InkWell).first).dy;
+      await tester.drag(find.byType(ListView), const Offset(0, -300));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(
+        tester.getTopLeft(find.byType(InkWell).first).dy,
+        lessThan(first - 100),
+        reason: 'ListView did not scroll over the cards',
+      );
+    });
   });
 
   group('price and city sit at the same place on every variant', () {
@@ -439,12 +717,9 @@ void main() {
 
   group('Arabic and Kurdish keep the same spacing', () {
     for (final locale in const [Locale('ar'), Locale('ku')]) {
-      for (final d in const {
-        'iPhone 16 Pro Max 440x956': Size(440, 956),
-        'Android 360x800': Size(360, 800),
-      }.entries) {
+      for (final d in _devices.entries) {
         for (final s in _scales) {
-          for (final v in const [_oneLine, _twoLine]) {
+          for (final v in const [_oneLine, _twoLine, _shortOneLine]) {
             for (final chips in const [true, false]) {
               final label =
                   '${locale.languageCode} ${d.key} @${s}x ${v.name} '
@@ -469,12 +744,9 @@ void main() {
   });
 
   group('iOS Bold Text keeps the spacing', () {
-    for (final d in const {
-      'iPhone 16 Pro Max 440x956': Size(440, 956),
-      'Android 360x800': Size(360, 800),
-    }.entries) {
-      for (final s in const [1.3, 2.0]) {
-        for (final v in const [_oneLine, _twoLine]) {
+    for (final d in _devices.entries) {
+      for (final s in _scales) {
+        for (final v in const [_oneLine, _twoLine, _shortOneLine]) {
           for (final chips in const [true, false]) {
             final label =
                 'bold ${d.key} @${s}x ${v.name} '

@@ -339,7 +339,7 @@ Widget buildCarListingSpecsGrid(
     },
   );
 
-  // The six boxes stop following the system text size at 1.3x (see
+  // The six boxes keep their 1.0x size at every system text size (see
   // _specsMaxTextScale); metrics, shared font sizes and the tiles below all
   // read the capped scaler.
   final primGrid = _specsCappedTextScale(context, child: primGridInner);

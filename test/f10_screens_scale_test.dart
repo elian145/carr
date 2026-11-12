@@ -97,8 +97,9 @@ void main() {
       });
     }
 
-    testWidgets('value text really scales (tile value taller at 2.0x)',
-        (tester) async {
+    testWidgets(
+        'six-tile values stay at 1.0x size (product decision) while the '
+        'detail rows still scale', (tester) async {
       await pump(tester, scale: 1.0);
       final h1 = tester.getSize(find.text('Automatic')).height;
       final detail1 = tester.getSize(find.text('Trim')).height;
@@ -106,7 +107,10 @@ void main() {
       expect(tester.takeException(), isNull);
       final h2 = tester.getSize(find.text('Automatic')).height;
       final detail2 = tester.getSize(find.text('Trim')).height;
-      expect(h2, greaterThan(h1 * 1.2), reason: 'tile value $h1 -> $h2');
+      // The six summary tiles are deliberately held at their 1.0x size
+      // (see listing_specs_scale_cap_test.dart); the detail rows below
+      // keep honouring the user's text size.
+      expect(h2, closeTo(h1, 0.3), reason: 'tile value $h1 -> $h2');
       expect(detail2, greaterThan(detail1 * 1.6),
           reason: 'detail row label $detail1 -> $detail2');
     });

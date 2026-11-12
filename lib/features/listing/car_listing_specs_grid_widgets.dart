@@ -103,18 +103,20 @@ final class _SpecsFontSizes {
   final double value;
 }
 
-/// The six specification boxes stop following the system text size at this
-/// scale. They are fixed-size tiles in a 3x2 grid whose type was already
-/// limited by the tile width (~19 px on a Pro Max), so above 1.3x the tiles
-/// only got taller (150 dp vs 113 dp at 2.0x) without the text getting
-/// bigger. Everything else on the page (title, description, seller block,
-/// contact bar...) keeps following the system text size.
-const double _specsMaxTextScale = 1.3;
+/// The six specification boxes keep their NORMAL 1.0x size - values, labels
+/// and tile height - whatever the system text size is (CarNet TestFlight: a
+/// 1.3x cap still made the values too large, and above 1.5x the tiles only
+/// got taller, 150 dp vs 113 dp at 2.0x, without the text getting bigger).
+/// They are fixed-size tiles in a 3x2 grid; everything else on the page
+/// (title, description, the detail rows, seller block, contact bar...) keeps
+/// following the system text size, and the same specs are read in full by
+/// screen readers.
+const double _specsMaxTextScale = 1.0;
 
 /// Caps the text scale seen by the six specification boxes at
-/// [_specsMaxTextScale]. Below the cap the inherited scaler is left untouched.
-/// (Not `TextScaler.noScaling`: the boxes still honour the user's size up to
-/// 1.3x.)
+/// [_specsMaxTextScale]. At or below the cap the inherited scaler is left
+/// untouched. (Not `TextScaler.noScaling`: the cap is a named constant that
+/// can be raised, and the F-10 guard documents the intent.)
 Widget _specsCappedTextScale(BuildContext context, {required Widget child}) {
   final mq = MediaQuery.of(context);
   if (appTextScaleOf(context) <= _specsMaxTextScale) return child;

@@ -1145,6 +1145,34 @@ Widget _buildListCarCardInnerText(
     },
   );
 
+  // The card has a FIXED height (the 1.0x height of the screen width), and
+  // `ts` here is already the text scale that height can hold
+  // (ListingLayoutPrefs.rectCardTextScale, applied by the card builder). The
+  // four rows of a card with engine/trim - title (two-line reserve), engine/
+  // trim, year/mileage, price footer - share it in the ratio 4:3:3:3, but
+  // never get less than their content needs at `ts`.
+  // Two title lines + 2 dp of cushion above and below.
+  final double titleLinesHeight = 15.0 * 1.28 * ts * 2 + 4;
+  final double titleSlotHeight = titleLinesHeight > 32 ? titleLinesHeight : 32;
+  final double chipRowHeight = _listingCardChipSlotHeight(
+    compact: compact,
+    textScale: ts,
+  );
+  List<double> rectSlots(BoxConstraints c) => ListingLayoutPrefs.rectCardSlotHeights(
+    total: c.maxHeight,
+    weights: const [4, 3, 3, 3],
+    mins: [
+      titleSlotHeight,
+      chipRowHeight,
+      chipRowHeight,
+      _listingPriceBadgeStyle(
+        rowWidth: c.maxWidth,
+        hasPrice: hasPrice,
+        textScale: ts,
+      ).footerHeight,
+    ],
+  );
+
   if (!hasDetailRow) {
     // No engine/trim chips: three rows (title, year/mileage, price) share the
     // height of a four-row card. The title keeps its two-line reserve (so the
@@ -1153,19 +1181,12 @@ Widget _buildListCarCardInnerText(
     // the title, a SHORT gap between title and specs, and a gap above the
     // price - instead of the flex slots of the chip layout, which left the
     // whole missing chip row (~25 dp) between title and specs.
-    final double titleLinesHeight = 15.0 * 1.28 * ts * 2 + 2;
-    final double titleSlotHeight = titleLinesHeight > 32
-        ? titleLinesHeight
-        : 32;
-    final double specsSlotHeight = _listingCardChipSlotHeight(
-      compact: compact,
-      textScale: ts,
-    );
+    final double specsSlotHeight = chipRowHeight;
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Same footer slot (3 of 13 units) as the chip layout, so price and
-        // city sit at exactly the same place on every card.
-        final double footerSlotHeight = constraints.maxHeight * 3 / 13;
+        // Same footer slot as the chip layout, so price and city sit at
+        // exactly the same place on every card.
+        final double footerSlotHeight = rectSlots(constraints)[3];
         final Alignment startCenter = isRtl
             ? Alignment.centerRight
             : Alignment.centerLeft;
@@ -1194,80 +1215,44 @@ Widget _buildListCarCardInnerText(
     );
   }
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    mainAxisSize: MainAxisSize.max,
-    children: [
-      Expanded(
-        flex: 4,
-        child: LayoutBuilder(
-          builder: (context, titleConstraints) {
-            final reservedWidth = (showLogo ? 32.0 : 0.0) + 36.0;
-            final availableTitleWidth =
-                (titleConstraints.maxWidth - reservedWidth).clamp(
-                  0.0,
-                  double.infinity,
-                );
-            final titleProbe = TextPainter(
-              text: TextSpan(
-                text: titleText,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 15,
-                  height: 1.28,
-                ),
-              ),
-              maxLines: 1,
-              textDirection: textDirection,
-              textScaler: TextScaler.linear(ts),
-            )..layout(maxWidth: availableTitleWidth);
-            final singleLine = !titleProbe.didExceedMaxLines;
-
-            return Align(
-              alignment: singleLine
-                  ? (isRtl ? Alignment.topRight : Alignment.topLeft)
-                  : (isRtl ? Alignment.centerRight : Alignment.centerLeft),
-              child: titleRow,
-            );
-          },
-        ),
-      ),
-      Expanded(
-        flex: 3,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Align(
-              alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
-              child: SizedBox(
-                width: constraints.maxWidth,
-                child: Transform.translate(
-                  offset: const Offset(0, -2),
-                  child: engineTrimRow,
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-      Expanded(
-        flex: 3,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Align(
-              alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
-              child: SizedBox(
-                width: constraints.maxWidth,
-                child: Transform.translate(
-                  offset: const Offset(0, -2),
-                  child: specsRow,
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-      Expanded(flex: 3, child: priceRow),
-    ],
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final slots = rectSlots(constraints);
+      final Alignment startCenter = isRtl
+          ? Alignment.centerRight
+          : Alignment.centerLeft;
+      Widget chipSlot(double height, Widget row) {
+        // The row is nudged up 2 dp towards the row above it, but never more
+        // than half of the spare height of its slot: when the text is at the
+        // cap the slot is exactly as tall as the chips and nothing moves.
+        final double spare = height - chipRowHeight;
+        final double lift = (spare > 0 ? (spare / 2 < 2 ? spare / 2 : 2) : 0);
+        return SizedBox(
+          height: height,
+          child: Align(
+            alignment: startCenter,
+            child: SizedBox(
+              width: constraints.maxWidth,
+              child: Transform.translate(offset: Offset(0, -lift), child: row),
+            ),
+          ),
+        );
+      }
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          // The title row fills its (two-line sized) slot and centres its
+          // content vertically, so a ONE-line title sits in the middle of the
+          // area a two-line title uses - never hugging the top and leaving a
+          // hole above the chips - and a two-line title is laid out as ever.
+          SizedBox(height: slots[0], child: titleRow),
+          chipSlot(slots[1], engineTrimRow),
+          chipSlot(slots[2], specsRow),
+          SizedBox(height: slots[3], child: priceRow),
+        ],
+      );
+    },
   );
 }
 

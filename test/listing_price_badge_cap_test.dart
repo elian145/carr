@@ -4,10 +4,10 @@
 // Before the fix the pill was `26 x textScale` tall (52 dp at 2.0x, double the
 // 1.0x design) and, because its width was measured with a TextPainter that did
 // not inherit the app text style, it was frequently stretched to the maximum
-// width with the text shrunk inside (empty orange padding). The badge now
-// stops growing at 1.3x (price text is already large/bold, it is read as a
-// label next to the city) while everything else keeps following the system
-// text size.
+// width with the text shrunk inside (empty orange padding). A 1.3x cap was
+// still too large on device, so the badge now keeps its NORMAL 1.0x size
+// (26 dp pill, 15 sp price) whatever the system text size is, in both the
+// list and the grid card.
 //
 // Renders the REAL `buildGlobalCarCard` in the REAL list (1 column) and grid
 // (2 columns) cells and MEASURES the pill and the price text.
@@ -35,7 +35,7 @@ const Map<String, Size> _devices = <String, Size>{
 const List<double> _scales = <double>[1.0, 1.3, 1.5, 2.0];
 
 /// Badge scale cap and the 1.0x design (list card: (24 + 2) dp tall, 15 sp).
-const double _cap = 1.3;
+const double _cap = 1.0;
 const double _designHeight = 26;
 const double _designFont = 15;
 
@@ -230,63 +230,54 @@ void main() {
       }
     });
 
-    group('badge is identical above the cap: $layout', () {
+    group('badge keeps its 1.0x size at every text scale: $layout', () {
       for (final d in _devices.entries) {
-        testWidgets(d.key, (tester) async {
-          final at13 = await measure(
-            tester,
-            size: d.value,
-            scale: 1.3,
-            list: list,
-          );
-          for (final s in const [1.5, 2.0]) {
-            final b = await measure(
+        for (final bold in const [false, true]) {
+          testWidgets('${d.key} bold=$bold', (tester) async {
+            final at10 = await measure(
               tester,
               size: d.value,
-              scale: s,
+              scale: 1.0,
               list: list,
+              bold: bold,
             );
+            // The 1.0x design itself: 26 dp pill, 15 sp price (24 dp / 14 sp
+            // in grid tiles narrower than 130 dp).
             expect(
-              b.pill.height,
-              closeTo(at13.pill.height, 0.5),
-              reason: '${d.key} @${s}x: pill kept growing past 1.3x',
+              at10.pill.height,
+              anyOf(closeTo(_designHeight, 0.5), closeTo(_designHeight - 2, 0.5)),
             );
-            expect(
-              b.text.height,
-              closeTo(at13.text.height, 0.5),
-              reason: '${d.key} @${s}x: price text kept growing past 1.3x',
-            );
-          }
-        });
-      }
-    });
-
-    group('badge grows normally up to the cap: $layout', () {
-      for (final d in _devices.entries) {
-        testWidgets(d.key, (tester) async {
-          final at10 = await measure(
-            tester,
-            size: d.value,
-            scale: 1.0,
-            list: list,
-          );
-          final at13 = await measure(
-            tester,
-            size: d.value,
-            scale: 1.3,
-            list: list,
-          );
-          expect(
-            at13.pill.height,
-            closeTo(at10.pill.height * 1.3, 0.8),
-            reason: 'pill must still honour text size up to 1.3x',
-          );
-          expect(
-            at13.text.height,
-            greaterThan(at10.text.height * 1.2),
-            reason: 'price text must still honour text size up to 1.3x',
-          );
-        });
+            for (final s in const [1.15, 1.3, 1.5, 2.0]) {
+              final b = await measure(
+                tester,
+                size: d.value,
+                scale: s,
+                list: list,
+                bold: bold,
+              );
+              expect(
+                b.pill.height,
+                closeTo(at10.pill.height, 0.05),
+                reason: '${d.key} @${s}x: pill height changed',
+              );
+              expect(
+                b.pill.width,
+                closeTo(at10.pill.width, 0.05),
+                reason: '${d.key} @${s}x: pill width changed',
+              );
+              expect(
+                b.text.height,
+                closeTo(at10.text.height, 0.05),
+                reason: '${d.key} @${s}x: price text size changed',
+              );
+              expect(
+                b.text.width,
+                closeTo(at10.text.width, 0.05),
+                reason: '${d.key} @${s}x: price text width changed',
+              );
+            }
+          });
+        }
       }
     });
 

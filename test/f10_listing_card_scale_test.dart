@@ -146,8 +146,11 @@ void main() {
       expect(tester.takeException(), isNull);
       final h2 = titleHeight(tester);
 
-      expect(h2, greaterThan(h1 * 1.3),
-          reason: 'title rendered at 2.0x must be clearly taller ($h1 -> $h2)');
+      // The grid card follows the system size fully. The rectangular card has
+      // a FIXED height, so its text grows only as far as that height can hold
+      // (ListingLayoutPrefs.rectCardTextScale: 1.15x at this 360 dp width).
+      expect(h2, greaterThan(h1 * (list ? 1.1 : 1.3)),
+          reason: 'title rendered at 2.0x must be taller ($h1 -> $h2)');
     });
 
     testWidgets('$layoutName: 2.0x on a 320 dp phone has no overflow',
@@ -178,8 +181,8 @@ void main() {
     });
   }
 
-  testWidgets('aspect ratio is unchanged at 1.0x and shrinks (taller cell) when '
-      'text grows', (tester) async {
+  testWidgets('aspect ratio is unchanged at 1.0x; the grid cell gets taller when '
+      'text grows, the list cell never does', (tester) async {
     for (final cols in const [1, 2, 3]) {
       for (final w in const [320.0, 360.0, 411.0, 800.0]) {
         final base = ListingLayoutPrefs.gridChildAspectRatioForWidth(cols, w);
@@ -201,8 +204,14 @@ void main() {
           w,
           textScale: 2.0,
         );
-        expect(a15, lessThan(base), reason: 'cols=$cols w=$w');
-        expect(a20, lessThan(a15), reason: 'cols=$cols w=$w');
+        if (cols == 1) {
+          // Rectangular card: FIXED height, whatever the text size.
+          expect(a15, base, reason: 'cols=$cols w=$w');
+          expect(a20, base, reason: 'cols=$cols w=$w');
+        } else {
+          expect(a15, lessThan(base), reason: 'cols=$cols w=$w');
+          expect(a20, lessThan(a15), reason: 'cols=$cols w=$w');
+        }
         // Clamped like the lock: nothing beyond 2.0 changes the cell.
         expect(
           ListingLayoutPrefs.gridChildAspectRatioForWidth(

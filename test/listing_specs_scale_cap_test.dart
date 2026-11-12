@@ -1,5 +1,7 @@
-// Six specification boxes on the listing-details page: text growth is capped
-// at ~1.3x and the boxes must not keep growing taller.
+// Six specification boxes on the listing-details page: the values and labels
+// keep their NORMAL 1.0x size (and the boxes their 1.0x height) whatever the
+// system text size is - CarNet TestFlight: "the values are still too large"
+// with the earlier 1.3x cap.
 //
 // Before the fix the tile height was `design x textScale / 1.5` above 1.5x:
 // on the iPhone 16 Pro Max the boxes went from 112.8 dp (1.0x-1.5x) to 150.4 dp
@@ -27,7 +29,7 @@ const Map<String, Size> _devices = <String, Size>{
 };
 
 const List<double> _scales = <double>[1.0, 1.3, 1.5, 2.0];
-const double _cap = 1.3;
+const double _cap = 1.0;
 
 const Map<String, dynamic> _typicalCar = <String, dynamic>{
   'mileage': 123456,
@@ -174,7 +176,8 @@ void main() {
           '$label: tile ${at.tileH.toStringAsFixed(1)} dp tall vs '
           '${base.tileH.toStringAsFixed(1)} dp at 1.0x',
     );
-    // Value text never exceeds 1.3x of its 1.0x size ...
+    // The RENDERED value / label size (font size x applied text scale x
+    // FittedBox scale) equals the 1.0x size - not larger, not smaller.
     expect(
       at.valueMax,
       lessThanOrEqualTo(base.valueMax * _cap + 0.3),
@@ -183,16 +186,21 @@ void main() {
           '${base.valueMax.toStringAsFixed(1)} px at 1.0x (cap ${_cap}x)',
     );
     expect(
+      at.valueMin,
+      greaterThanOrEqualTo(base.valueMin - 0.3),
+      reason:
+          '$label: value text shrank to ${at.valueMin.toStringAsFixed(1)} px',
+    );
+    expect(
       at.labelMax,
       lessThanOrEqualTo(base.labelMax * _cap + 0.3),
       reason: '$label: label text ${at.labelMax.toStringAsFixed(1)} px',
     );
-    // ... and never shrinks below readable.
     expect(
-      at.valueMin,
-      greaterThanOrEqualTo(base.valueMin * 0.85),
+      at.labelMin,
+      greaterThanOrEqualTo(base.labelMin - 0.3),
       reason:
-          '$label: value text shrank to ${at.valueMin.toStringAsFixed(1)} px',
+          '$label: label text shrank to ${at.labelMin.toStringAsFixed(1)} px',
     );
   }
 
@@ -236,7 +244,7 @@ void main() {
     expect(tops.length, 2, reason: '$label: expected 2 rows');
   }
 
-  group('boxes and type are capped at 1.3x (English, Bold Text on/off)', () {
+  group('boxes and type keep their 1.0x size (English, Bold Text on/off)', () {
     for (final d in _devices.entries) {
       for (final bold in const [false, true]) {
         for (final s in const [1.3, 1.5, 2.0]) {
@@ -273,24 +281,47 @@ void main() {
     }
   });
 
-  group('identical above the cap', () {
+  group('identical to 1.0x at every text scale', () {
     for (final d in _devices.entries) {
-      testWidgets(d.key, (tester) async {
-        final at13 = await pumpGrid(tester, size: d.value, scale: 1.3);
-        for (final s in const [1.5, 2.0]) {
-          final at = await pumpGrid(tester, size: d.value, scale: s);
-          expect(
-            at.tileH,
-            closeTo(at13.tileH, 0.5),
-            reason: '${d.key} @${s}x tile height differs from 1.3x',
+      for (final bold in const [false, true]) {
+        testWidgets('${d.key} bold=$bold', (tester) async {
+          final base = await pumpGrid(
+            tester,
+            size: d.value,
+            scale: 1.0,
+            bold: bold,
           );
-          expect(
-            at.valueMax,
-            closeTo(at13.valueMax, 0.3),
-            reason: '${d.key} @${s}x value size differs from 1.3x',
-          );
-        }
-      });
+          for (final s in const [1.15, 1.3, 1.5, 2.0]) {
+            final at = await pumpGrid(
+              tester,
+              size: d.value,
+              scale: s,
+              bold: bold,
+            );
+            expect(
+              at.tileH,
+              closeTo(base.tileH, 0.01),
+              reason: '${d.key} @${s}x tile height differs from 1.0x',
+            );
+            for (var i = 0; i < 6; i++) {
+              expect(
+                at.valuePx[i],
+                closeTo(base.valuePx[i], 0.05),
+                reason: '${d.key} @${s}x value #$i size differs from 1.0x',
+              );
+              expect(
+                at.labelPx[i],
+                closeTo(base.labelPx[i], 0.05),
+                reason: '${d.key} @${s}x label #$i size differs from 1.0x',
+              );
+              expect(
+                at.tiles[i].size.width,
+                closeTo(base.tiles[i].size.width, 0.01),
+              );
+            }
+          }
+        });
+      }
     }
   });
 

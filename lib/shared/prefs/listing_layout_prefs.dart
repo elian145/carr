@@ -94,16 +94,12 @@ class ListingLayoutPrefs {
       ? gridCardCompactTextBlockGrowthPerScale
       : gridCardTextBlockGrowthPerScale;
 
-  /// The orange price badge (and the footer row it sits in) stops following
-  /// the system text size at this scale: the price is already bold 15 sp text
-  /// in a solid pill, and an unbounded pill doubled in height (52 dp at 2.0x)
-  /// while the text inside could not grow with it. Title, chips and city keep
-  /// following the system text size.
-  static const double priceBadgeMaxTextScale = 1.3;
-
-  /// Height of the price footer row per 1.0 of (uncapped) text scale:
-  /// `(26 + 2) * scale` in `_listingPriceBadgeStyle`.
-  static const double priceFooterHeightPerScale = 28;
+  /// The orange price badge (and the footer row it sits in) keeps its NORMAL
+  /// 1.0x size - 26 dp pill, 15 sp price - whatever the system text size is
+  /// (CarNet TestFlight: even a 1.3x cap was too large). It is a solid pill
+  /// around bold text, read as a label next to the city; title, chips and city
+  /// keep following the system text size (see [rectCardTextScale]).
+  static const double priceBadgeMaxTextScale = 1.0;
 
   /// Text scale the price badge / footer is laid out with.
   static double priceBadgeTextScale(double textScale) {
@@ -113,14 +109,115 @@ class ListingLayoutPrefs {
         : priceBadgeMaxTextScale;
   }
 
-  /// How much taller the card's text block is at [ts] (already clamped to
-  /// 1.0..2.0) than at 1.0: [_textBlockGrowth] per scale step, minus the part
-  /// of the footer that no longer grows above [priceBadgeMaxTextScale].
+  /// Height of the price footer row per 1.0 of (uncapped) text scale:
+  /// `(26 + 2) * scale` in `_listingPriceBadgeStyle`.
+  static const double priceFooterHeightPerScale = 28;
+
+  /// How much taller the grid card's text block is at [ts] (already clamped
+  /// to 1.0..2.0) than at 1.0: [_textBlockGrowth] per scale step, minus the
+  /// part of the footer that does not grow above [priceBadgeMaxTextScale].
+  /// The grid card's own layout is untouched; its cell just no longer reserves
+  /// height for a price footer that stays 26 dp (keeping that height would
+  /// reopen the gap between year/mileage and city/price).
   static double _contentGrowth(double ts, {required bool compact}) {
     final footerNotGrown = ts > priceBadgeMaxTextScale
         ? priceFooterHeightPerScale * (ts - priceBadgeMaxTextScale)
         : 0.0;
     return _textBlockGrowth(compact: compact) * (ts - 1.0) - footerNotGrown;
+  }
+
+  // ---- Rectangular (one-per-row) card: FIXED height -----------------------
+
+  /// Top inset of the text column in the list card
+  /// (`global_listing_card_build.dart`: `EdgeInsets.fromLTRB(10, 7, 8, 0)`).
+  static const double _rectCardTopPad = 7;
+
+  /// Height of the price footer row (`(26 + 2 * tight)` dp, tight = 1 on every
+  /// list card) - the largest the footer can be.
+  static const double _rectCardFooterHeight = 28;
+
+  /// Breathing room kept between the rows when the text is at its cap.
+  static const double _rectCardSlack = 6;
+
+  /// Largest system text scale the list card text ever uses, however tall the
+  /// card is.
+  static const double rectCardMaxTextScale = 1.5;
+
+  /// Text scale the rectangular card's text column (title, engine/trim chips,
+  /// year/mileage, city) is laid out with.
+  ///
+  /// The card has the SAME height at every system text size
+  /// ([gridChildAspectRatioForWidth]), so the text may only grow as far as the
+  /// fixed text column can hold: a two-line title, two chip rows and the price
+  /// footer, plus [_rectCardSlack]. That is about 1.5x on a Pro Max, 1.3x at
+  /// 393 dp and 1.15-1.2x at 360 dp and below. The result is rounded down to
+  /// 0.05, never below 1.0 and never above [textScale].
+  ///
+  /// [cardHeight] is the height of the whole card.
+  static double rectCardTextScale({
+    required double cardHeight,
+    required bool compact,
+    required double textScale,
+  }) {
+    if (!(textScale > 1.0)) return 1.0;
+    final chipFont = compact ? 11.0 : 13.0;
+    final chipPad = compact ? 10.0 : 12.0;
+    final contentH = cardHeight - _rectCardTopPad;
+    // title (two lines of 15 x 1.28 sp + 4 dp cushion) + two chip rows +
+    // footer + slack
+    final fixed = 4.0 + 2 * chipPad + _rectCardFooterHeight + _rectCardSlack;
+    final perScale = 15.0 * 1.28 * 2 + 2 * chipFont;
+    final fit = (contentH - fixed) / perScale;
+    final stepped = (fit * 20).floor() / 20;
+    final cap = stepped.clamp(1.0, rectCardMaxTextScale).toDouble();
+    return textScale < cap ? textScale : cap;
+  }
+
+  /// Splits [total] among slots in the ratio of [weights] (like `Expanded`
+  /// flex) but never gives a slot less than its entry in [mins]; the space
+  /// taken by the raised slots comes out of the others. If even the minimums
+  /// do not fit they are scaled down together. Always sums to [total].
+  static List<double> rectCardSlotHeights({
+    required double total,
+    required List<double> weights,
+    required List<double> mins,
+  }) {
+    assert(weights.length == mins.length);
+    final n = weights.length;
+    final out = List<double>.filled(n, 0);
+    final fixed = List<bool>.filled(n, false);
+    var remaining = total;
+    for (var pass = 0; pass <= n; pass++) {
+      var weightSum = 0.0;
+      for (var i = 0; i < n; i++) {
+        if (!fixed[i]) weightSum += weights[i];
+      }
+      if (weightSum <= 0) break;
+      var raised = false;
+      for (var i = 0; i < n; i++) {
+        if (fixed[i]) continue;
+        if (remaining * weights[i] / weightSum < mins[i]) {
+          fixed[i] = true;
+          out[i] = mins[i];
+          remaining -= mins[i];
+          raised = true;
+        }
+      }
+      if (!raised) {
+        for (var i = 0; i < n; i++) {
+          if (!fixed[i]) out[i] = remaining * weights[i] / weightSum;
+        }
+        break;
+      }
+    }
+    final sum = out.fold<double>(0, (a, b) => a + b);
+    if (sum > 0 && (sum - total).abs() > 1e-9) {
+      final k = total / sum;
+      for (var i = 0; i < n; i++) {
+        out[i] *= k;
+      }
+    }
+    return out;
   }
 
   static double _clampScale(double textScale) =>
@@ -145,11 +242,10 @@ class ListingLayoutPrefs {
   /// (1.0..2.0, see `SystemDisplayLock`). At 1.0 this is exactly
   /// [_baseGridChildAspectRatioForWidth]. Above 1.0 the cell gets taller so
   /// the scaled title / chips / price fit instead of overflowing:
-  /// - list (1 column): the card is text rows next to the photo; it grows by
-  ///   the content's real growth (title, two chip rows, footer), NOT by
-  ///   `height * textScale`. The old `base / textScale` made the card grow
-  ///   ~169 dp per scale step on a Pro Max while the content needs ~93 dp, and
-  ///   the surplus became a large gap under the title (CarNet TestFlight);
+  /// - list (1 column): the cell keeps its 1.0x height at EVERY text scale
+  ///   (CarNet TestFlight: cards must not grow with iOS Larger Text). The card
+  ///   text instead follows the system size up to what that height can hold,
+  ///   see [rectCardTextScale];
   /// - grid: only the text block under the photo grows.
   static double gridChildAspectRatioForWidth(
     int listingColumns,
@@ -158,14 +254,10 @@ class ListingLayoutPrefs {
   }) {
     final base = _baseGridChildAspectRatioForWidth(listingColumns, width);
     if (!(textScale > 1.0)) return base;
+    // Fixed-height rectangular card: same ratio at every text scale.
+    if (listingColumns == 1) return base;
     final ts = _clampScale(textScale);
     final compact = width < _compactPhoneWidth;
-    if (listingColumns == 1) {
-      // List pages inset the cell by 4 dp on each side.
-      final cellW = (width - 8.0).clamp(120.0, 900.0);
-      final baseH = cellW / base;
-      return cellW / (baseH + _contentGrowth(ts, compact: compact));
-    }
     final cols = listingColumns < 2 ? 2 : listingColumns;
     final cellW = ((width - 8.0 * (cols + 1)) / cols).clamp(120.0, 600.0);
     final baseH = cellW / base;
