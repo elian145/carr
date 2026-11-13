@@ -1001,11 +1001,13 @@ class ApiService {
     int perPage = 50,
     String? before,
     String? peerId,
+    bool markRead = true,
   }) => _ApiServiceChat.getChatMessagesByConversation(
     conversationId,
     perPage: perPage,
     before: before,
     peerId: peerId,
+    markRead: markRead,
   );
 
   static Future<Map<String, dynamic>> sendChatImage({

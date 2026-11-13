@@ -93,6 +93,22 @@ mixin _ChatConversationTransportPaging on _ChatConversationTransportMedia {
     )) {
       return;
     }
+    await _fetchLatestMessages();
+  }
+
+  /// Implemented by the realtime mixin (live read receipts).
+  void _scheduleMarkRead();
+
+  /// Fetch the newest page and merge it into the list. Returns whether the
+  /// fetch succeeded. Used by the REST fallback poll and by the catch-up after
+  /// a socket reconnect.
+  ///
+  /// The server marks a fetched conversation read, so the request says whether
+  /// the user can actually see it: a covered / backgrounded conversation is
+  /// fetched with `mark_read=0` and its unseen inbound messages are left unread
+  /// and remembered as pending, to be reported once the user is back.
+  Future<bool> _fetchLatestMessages() async {
+    final markRead = _canMarkRead;
     try {
       // No `before` cursor: REST fallback polling always wants the latest
       // page (new messages arrive at the end, not on some offset page).
@@ -100,8 +116,9 @@ mixin _ChatConversationTransportPaging on _ChatConversationTransportMedia {
         widget.carId,
         perPage: _ChatConversationFields._perPage,
         peerId: _historyPeerRef,
+        markRead: markRead,
       );
-      if (!mounted || !_pageOwnerIsCurrent) return;
+      if (!mounted || !_pageOwnerIsCurrent) return false;
       final rows = (result['messages'] as List<Map<String, dynamic>>?) ?? [];
       final loaded = rows.map(ChatMessage.fromJson).toList();
       loaded.sort((a, b) => a.createdAt.compareTo(b.createdAt));
@@ -125,6 +142,21 @@ mixin _ChatConversationTransportPaging on _ChatConversationTransportMedia {
       if (_messages.length > hadMessages) {
         _scrollToBottom();
       }
-    } catch (e, st) { logNonFatal(e, st); }
+      if (!markRead) {
+        final me = (_ownerUserId ?? '').trim();
+        final unseen = me.isNotEmpty &&
+            loaded.any(
+              (m) => !m.isRead && !m.isPending && m.senderId.trim() != me,
+            );
+        if (unseen) {
+          _readPending = true;
+          _scheduleMarkRead();
+        }
+      }
+      return true;
+    } catch (e, st) {
+      logNonFatal(e, st);
+      return false;
+    }
   }
 }

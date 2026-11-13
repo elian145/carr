@@ -68,7 +68,11 @@ mixin _ChatConversationPageLifecycle on _ChatConversationMessageUi, WidgetsBindi
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _appLifecycle = state;
     if (state == AppLifecycleState.resumed && mounted) {
+      // Messages that arrived while the app was in the background are reported
+      // as read now that the user is looking at the conversation again.
+      _scheduleMarkRead();
       // One-shot HTTP sync only when the socket is down; otherwise realtime owns updates.
       if (shouldHttpPollChatMessages(
         socketConnected: WebSocketService.isConnected,
@@ -82,6 +86,7 @@ mixin _ChatConversationPageLifecycle on _ChatConversationMessageUi, WidgetsBindi
   @override
   void dispose() {
     _unregisterPresence();
+    _stopReadWatchers();
     WidgetsBinding.instance.removeObserver(this);
     _pollTimer?.cancel();
     _socketConnectionSub?.cancel();

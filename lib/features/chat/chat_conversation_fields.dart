@@ -77,6 +77,28 @@ abstract class _ChatConversationFields extends State<ChatConversationPage> {
         peerId: _livePeerId,
       );
 
+  // ---- Live read receipts ---------------------------------------------------
+  // A message from the counterpart arrived and has not been reported as read
+  // yet. It is reported (`mark_read`) only while this conversation is really on
+  // screen -- see `_canMarkRead` -- and stays pending otherwise (covered page,
+  // backgrounded app, socket down) until the next chance.
+  bool _readPending = false;
+  Timer? _markReadDebounce;
+  StreamSubscription<bool>? _readConnectionSub;
+  AppLifecycleState _appLifecycle =
+      WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
+  Timer? _readRetryTimer;
+  // The socket dropped at some point, so messages sent meanwhile never reached
+  // this page. On reconnect they are fetched (without reporting them read while
+  // the conversation is covered / backgrounded) and `_catchUpNeeded` stays set
+  // until a fetch succeeded -- and, when it is still covered, until the user is
+  // looking again.
+  bool _socketWasDown = false;
+  bool _catchUpNeeded = false;
+  bool _catchUpInFlight = false;
+  int _catchUpFailures = 0;
+  Timer? _catchUpRetryTimer;
+
   // ---- Foreground-notification presence ------------------------------------
   // Registered in initState, released in dispose (see
   // `ChatConversationPresence`): lets the push handler skip the banner for the
@@ -110,6 +132,22 @@ abstract class _ChatConversationFields extends State<ChatConversationPage> {
     if (route == null) return false;
     return route.isActive && route.isCurrent;
   }
+
+  /// This screen is the conversation the user is actually looking at: mounted
+  /// for the signed-in account, top route (not covered by a page, dialog or
+  /// sheet) and the app resumed. The same rule the foreground-notification
+  /// suppression relies on, so "banner suppressed" always implies "reported
+  /// read". A live socket on its own proves nothing. Also what a reconnect
+  /// `join_chat` reports as `visible`, and what lets a background sync decide
+  /// whether it may report what it fetched as read.
+  bool get _canMarkRead =>
+      mounted &&
+      _pageOwnerIsCurrent &&
+      _isConversationVisible &&
+      _appLifecycle == AppLifecycleState.resumed;
+
+  /// Probe handed to [WebSocketService] for reconnect re-joins.
+  bool _conversationOnScreen() => _canMarkRead;
 
   /// Counterpart for notification matching: the live peer this screen was
   /// opened with, else (a buyer who opened a listing without naming the

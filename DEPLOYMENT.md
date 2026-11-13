@@ -108,9 +108,19 @@ requests at most (1 engaged socket), REST keeps 2 threads, everything else gets
 
 Socket events are rate limited too: `send_message` 20 per 10 s per socket and
 120 per 10 min per user (same budget as `POST /api/chat/<id>/send`),
-`join_chat` 30/min, `typing_*` 20 per 10 s, `leave_chat` 60/min; over-limit
+`join_chat` 30/min, `typing_*` 20 per 10 s, `mark_read` 30 per 10 s,
+`leave_chat` 60/min; over-limit
 `send_message`/`join_chat` get an `error` event with `code: rate_limited` and
 `retry_after`.
+
+**Live read receipts.** The app reports a conversation read with the
+`mark_read` socket event only while it is really on screen. A reconnect
+`join_chat` carries `visible: false` when the conversation is covered or the
+app is backgrounded: the room is joined but nothing is marked read
+(`joined_chat` then has `read_skipped: true`). `GET /api/chat/<id>/messages`
+accepts `mark_read=0` for the app's background sync. Both are optional and
+additive: older apps send neither and keep the old behaviour. Deploy the backend
+before shipping the app build.
 
 **Capacity is spent on conversations, not on logged-in users.** The app opens
 one socket per signed-in session, but a socket only matters while its user is

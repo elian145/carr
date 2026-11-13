@@ -91,6 +91,11 @@ class WebSocketService {
   static _ChatConversationRef? _conversation;
   static String? _serverRoom;
 
+  /// Asked on a RECONNECT re-join: is the conversation really on screen right
+  /// now (top route, app resumed)? Registered by the open chat page. Without a
+  /// probe the re-join stays exactly as older builds sent it.
+  static bool Function()? _conversationVisible;
+
   // F-35: the socket is authenticated as ONE account (the bearer token it was
   // created with) and delivers that account's private chat/notification
   // events. It is therefore bound to the session it was created in and torn
@@ -377,10 +382,13 @@ class WebSocketService {
         final joinQueued =
             _pendingEmits.any((e) => e['event'] == 'join_chat');
         _flushPendingEmits();
-        // Re-join the conversation we were in (car AND counterpart).
+        // Re-join the conversation we were in (car AND counterpart). A join
+        // marks the conversation read server-side, so say whether the user can
+        // actually see it: a covered / backgrounded one is joined for live
+        // delivery only and reports its read state itself on return.
         final conversation = _conversation;
         if (conversation != null && !joinQueued) {
-          sendMessage('join_chat', conversation.toPayload());
+          sendMessage('join_chat', _rejoinPayload(conversation));
         }
       });
 
@@ -615,6 +623,35 @@ class WebSocketService {
 
   static void _stopSocketKeepingState() => _teardownSocket();
 
+  /// `join_chat` payload for a reconnect: the conversation plus its actual
+  /// visibility. `visible` is only added when a page registered a probe; a probe
+  /// that throws counts as "not visible" (never mark read on doubt).
+  static Map<String, dynamic> _rejoinPayload(_ChatConversationRef conversation) {
+    final payload = conversation.toPayload();
+    final probe = _conversationVisible;
+    if (probe != null) {
+      var visible = false;
+      try {
+        visible = probe();
+      } catch (e, st) {
+        logNonFatal(e, st);
+      }
+      payload['visible'] = visible;
+    }
+    return payload;
+  }
+
+  /// The open chat page registers how to tell whether its conversation is on
+  /// screen. [unregisterConversationVisibility] only clears the probe it was
+  /// given, so an old page disposing never removes a newer page's probe.
+  static void registerConversationVisibility(bool Function() probe) {
+    _conversationVisible = probe;
+  }
+
+  static void unregisterConversationVisibility(bool Function() probe) {
+    if (_conversationVisible == probe) _conversationVisible = null;
+  }
+
   // Disconnect
   static void disconnect() {
     _capacityRetryTimer?.cancel();
@@ -623,6 +660,7 @@ class WebSocketService {
     _currentRoom = null;
     _serverRoom = null;
     _conversation = null;
+    _conversationVisible = null;
     _pendingEmits.clear();
     _authRecoveries = 0;
   }
@@ -707,6 +745,26 @@ class WebSocketService {
 
   static void sendTypingStop(String carId, {String? peerId}) {
     sendMessage('typing_stop', _typingPayload(carId, peerId));
+  }
+
+  /// Tell the server the user is actively looking at the conversation about
+  /// [carId] with [peerId] so it marks that peer's inbound messages read (and
+  /// the sender sees the double check live).
+  ///
+  /// Emitted ONLY on a live connection and returns whether it was sent. It is
+  /// deliberately never queued in [_pendingEmits]: a queued read would be
+  /// delivered on reconnect whatever the screen shows by then. The caller keeps
+  /// the read pending and decides again when the socket is back.
+  static bool markRead(String carId, {String? peerId}) {
+    final socket = _socket;
+    if (socket == null || !_isConnected) return false;
+    try {
+      socket.emit('mark_read', _typingPayload(carId, peerId));
+      return true;
+    } catch (e, st) {
+      logNonFatal(e, st);
+      return false;
+    }
   }
 
   static Map<String, dynamic> _typingPayload(String carId, String? peerId) {

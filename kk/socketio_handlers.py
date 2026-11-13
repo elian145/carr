@@ -118,11 +118,26 @@ _LIMIT_SEND_USER = (120, 600.0)
 _LIMIT_JOIN = (30, 60.0)
 _LIMIT_LEAVE = (60, 60.0)
 _LIMIT_TYPING = (20, 10.0)
+# mark_read is DB-backed (one UPDATE + one emit per call). The app debounces
+# bursts of incoming messages, so a few calls per second is already generous;
+# a dropped call is harmless because the next one marks everything unread.
+_LIMIT_MARK_READ = (30, 10.0)
 
 
 def _payload_dict(payload) -> dict:
     """Event payloads are client controlled: only a JSON object is meaningful."""
     return payload if isinstance(payload, dict) else {}
+
+
+def _explicit_not_visible(value) -> bool:
+    """True only when the client EXPLICITLY says the conversation is not on screen.
+
+    Absent, ``True`` or unrecognised values are "unknown / visible": that is what
+    every app version without the field sends, and it must keep marking read.
+    """
+    if value is False:
+        return True
+    return isinstance(value, str) and value.strip().lower() in ("false", "0", "no")
 
 
 
@@ -565,15 +580,24 @@ def register_socketio_handlers(socketio) -> None:
         room = room_for_conversation(car.public_id, me.public_id, peer.public_id)
         join_room(room)
         _REGISTRY.note_room(request.sid, room, True)
-        emit(
-            "joined_chat",
-            {
-                "ok": True,
-                "car_id": car.public_id,
-                "room": room,
-                "peer_id": peer.public_id,
-            },
-        )
+        # A client that re-joins after a reconnect while the conversation is
+        # covered or the app is backgrounded says so with ``visible: false``:
+        # the room is joined (live delivery keeps working) but nothing is marked
+        # read -- the client reports it with ``mark_read`` once the user is
+        # looking again. Anything else (field absent, true, junk -- every older
+        # app version) keeps the original "opening marks read" behaviour.
+        skip_read = _explicit_not_visible(data.get("visible"))
+        ack = {
+            "ok": True,
+            "car_id": car.public_id,
+            "room": room,
+            "peer_id": peer.public_id,
+        }
+        if skip_read:
+            ack["read_skipped"] = True
+        emit("joined_chat", ack)
+        if skip_read:
+            return
         # Opening the conversation marks THIS peer's inbound messages read.
         try:
             mark_messages_read_for_viewer(car, me, peer=peer)
@@ -592,6 +616,59 @@ def register_socketio_handlers(socketio) -> None:
             leave_room(room)
             _REGISTRY.note_room(getattr(request, "sid", None) or "", room, False)
         emit("left_chat", {"room": room})
+
+    @socketio.on("mark_read")
+    def _mark_read(payload):  # type: ignore[no-redef]
+        """The client is actively looking at ONE conversation and a new message
+        arrived: mark that peer's inbound messages read and tell the sender.
+
+        Same access rules as ``join_chat`` (listing must be active, the user must
+        be a participant, the counterpart must be unambiguous and allowed), but
+        it never joins a room and never touches any other conversation. The
+        client decides WHEN the conversation is really being viewed; the server
+        cannot tell a visible page from a covered or backgrounded one.
+        """
+        if _throttled("mark_read", _LIMIT_MARK_READ, silent=True):
+            return
+        _REGISTRY.touch(request.sid)
+        me = _socket_current_user(optional=False)
+        if not me:
+            return
+
+        data = validate_input_sanitization(_payload_dict(payload))
+        car_id_raw = str(data.get("car_id") or "").strip()
+        peer_public = str(data.get("peer_id") or data.get("receiver_id") or "").strip()
+
+        def _ack(ok: bool, code: str | None = None, **extra) -> None:
+            body = {"ok": ok, "car_id": car_id_raw}
+            if code:
+                body["code"] = code
+            body.update(extra)
+            emit("read_marked", body)
+
+        if not car_id_raw:
+            _ack(False, "car_id_required")
+            return
+        car = resolve_car_for_chat(car_id_raw)
+        if not car or not car.is_active:
+            _ack(False, "listing_not_found")
+            return
+        if not user_can_access_chat_room(me, car):
+            _ack(False, "chat_access_denied")
+            return
+        peer, peer_code = resolve_conversation_peer(me, car, peer_public)
+        if peer is None:
+            _ack(False, peer_code or "peer_not_allowed")
+            return
+
+        try:
+            result = mark_messages_read_for_viewer(car, me, peer=peer)
+        except Exception:
+            db.session.rollback()
+            logger.exception("mark_read failed for car %s", car.public_id)
+            _ack(False, "mark_read_failed")
+            return
+        _ack(True, peer_id=peer.public_id, marked=int(result.get("marked") or 0))
 
     def _emit_typing(payload, typing: bool) -> None:
         """F-25: a typing indicator goes ONLY to the other participant of the

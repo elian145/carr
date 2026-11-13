@@ -138,6 +138,15 @@ class FakeApiServer {
   /// (empty string when absent), in call order. Reset by [stop].
   static final List<String> chatMessagesRequestedPeers = [];
 
+  /// Every `mark_read` query value seen on `GET /api/chat/<id>/messages`
+  /// (empty string when absent = the server's default "mark read"), in call
+  /// order. Reset by [stop].
+  static final List<String> chatMessagesRequestedMarkRead = [];
+
+  /// The next N `GET /api/chat/<id>/messages` calls answer HTTP 500.
+  /// Reset by [stop].
+  static int chatMessagesFailNext = 0;
+
   /// Records every `page` value requested via
   /// `GET /api/user/favorites?page=N`, in call order. Reset by [stop].
   static final List<int> favoritesRequestedPages = [];
@@ -310,6 +319,8 @@ class FakeApiServer {
     chatsOverride = null;
     chatMessagesByPeer = null;
     chatMessagesRequestedPeers.clear();
+    chatMessagesRequestedMarkRead.clear();
+    chatMessagesFailNext = 0;
     phoneVerifyOverride = null;
     carsQueryGates = null;
     carsRequestedQueries.clear();
@@ -630,6 +641,13 @@ class FakeApiServer {
       if (path.endsWith('/messages') && method == 'GET') {
         final peerRaw = request.url.queryParameters['peer_id'] ?? '';
         chatMessagesRequestedPeers.add(peerRaw);
+        chatMessagesRequestedMarkRead.add(
+          request.url.queryParameters['mark_read'] ?? '',
+        );
+        if (chatMessagesFailNext > 0) {
+          chatMessagesFailNext--;
+          return _json(500, {'message': 'Failed to load messages'});
+        }
         final byPeer = chatMessagesByPeer;
         if (byPeer != null) {
           final rows = byPeer[peerRaw] ?? const <Map<String, dynamic>>[];

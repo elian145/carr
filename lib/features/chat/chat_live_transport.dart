@@ -21,6 +21,21 @@ bool shouldHttpPollChatMessages({required bool socketConnected}) =>
 /// Interval for the HTTP fallback poll (socket down only).
 const Duration kChatHttpFallbackPollInterval = Duration(seconds: 12);
 
+/// A burst of incoming messages in a conversation that is on screen produces
+/// ONE `mark_read` per window (the server marks everything unread each time).
+/// Kept well above the server's `mark_read` rate limit (30 per 10 s).
+const Duration kChatMarkReadDebounce = Duration(milliseconds: 400);
+
+/// While a read is pending but cannot be sent (conversation covered, app not
+/// resumed, socket down) the page re-checks at this interval.
+const Duration kChatMarkReadRetryInterval = Duration(milliseconds: 500);
+
+/// After a socket reconnect the page fetches the messages it missed. A failed
+/// fetch is retried this many times, this far apart; after that it waits for
+/// the next time the user is looking at the conversation.
+const Duration kChatCatchUpRetryDelay = Duration(seconds: 3);
+const int kChatCatchUpMaxRetries = 3;
+
 /// CHAT-2 policy lock: text send must not use Socket.IO emit, even when the
 /// socket reports connected. Media/audio already used REST; text joins them.
 bool chatTextSendUsesWebSocket({required bool socketConnected}) => false;

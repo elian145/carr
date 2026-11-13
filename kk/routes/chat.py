@@ -686,21 +686,33 @@ def get_messages(conversation_id: str):
 
         # Mark messages to me as read and notify senders (read receipts).
         # Only THIS conversation's counterpart is touched (F-05).
+        # A background sync (the app polling while its socket is down, or
+        # catching up after a reconnect) passes ``mark_read=0`` while the
+        # conversation is covered / the app backgrounded: it fetches the
+        # messages without reporting them read. The default is unchanged.
+        skip_read = (request.args.get("mark_read") or "").strip().lower() in (
+            "0",
+            "false",
+            "no",
+        )
         try:
-            read_peer = (
-                User.query.filter_by(public_id=peer_ref).first() if peer_ref else None
-            )
-            if peer_ref and read_peer is None:
-                # Deleted-counterpart thread: nobody to notify, but its
-                # messages must still stop counting as unread.
-                Message.query.filter(
-                    conversation,
-                    Message.receiver_id == me.id,
-                    Message.is_read.is_(False),
-                ).update({"is_read": True}, synchronize_session=False)
-                db.session.commit()
-            else:
-                mark_messages_read_for_viewer(car, me, peer=read_peer)
+            if not skip_read:
+                read_peer = (
+                    User.query.filter_by(public_id=peer_ref).first()
+                    if peer_ref
+                    else None
+                )
+                if peer_ref and read_peer is None:
+                    # Deleted-counterpart thread: nobody to notify, but its
+                    # messages must still stop counting as unread.
+                    Message.query.filter(
+                        conversation,
+                        Message.receiver_id == me.id,
+                        Message.is_read.is_(False),
+                    ).update({"is_read": True}, synchronize_session=False)
+                    db.session.commit()
+                else:
+                    mark_messages_read_for_viewer(car, me, peer=read_peer)
         except Exception:
             db.session.rollback()
 

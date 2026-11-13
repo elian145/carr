@@ -64,8 +64,13 @@ abstract final class _ApiServiceChat {
       int perPage = 50,
       String? before,
       String? peerId,
+      bool markRead = true,
     }) async {
       final query = <String, String>{'per_page': '$perPage'};
+      // The server marks the fetched conversation read (the default). A
+      // background sync while the conversation is covered or the app is
+      // backgrounded passes false so unseen messages stay unread.
+      if (!markRead) query['mark_read'] = '0';
       final beforeCursor = before?.trim();
       if (beforeCursor != null && beforeCursor.isNotEmpty) {
         query['before'] = beforeCursor;

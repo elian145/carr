@@ -184,6 +184,93 @@ void main() {
     });
   });
 
+  group('reconnect re-join reports the real visibility', () {
+    /// Join, connect, then drop and reconnect the SAME socket; returns the
+    /// `join_chat` payloads sent (first join, then the reconnect re-join).
+    Future<List<Map<String, dynamic>>> joinThenReconnect({
+      bool Function()? probe,
+    }) async {
+      await login('seller');
+      if (probe != null) {
+        WebSocketService.registerConversationVisibility(probe);
+      }
+      WebSocketService.joinChat('car_1', peerId: 'buyer_1');
+      await until(() => sockets.isNotEmpty, what: 'socket');
+      final s = sockets.single;
+      accept(s, 'seller'); // first connect: the queued join is flushed
+      s.fire('disconnect');
+      accept(s, 'seller'); // reconnect: the conversation is re-joined
+      return s.emits('join_chat');
+    }
+
+    test('no page registered => the re-join is exactly what older builds send',
+        () async {
+      final joins = await joinThenReconnect();
+      expect(joins, [
+        {'car_id': 'car_1', 'peer_id': 'buyer_1'},
+        {'car_id': 'car_1', 'peer_id': 'buyer_1'},
+      ]);
+    });
+
+    test('visible => visible:true; covered/backgrounded => visible:false; the '
+        'FIRST join (opening the chat) never carries the flag', () async {
+      var visible = true;
+      final joins = await joinThenReconnect(probe: () => visible);
+      expect(joins.first, {'car_id': 'car_1', 'peer_id': 'buyer_1'});
+      expect(joins.last,
+          {'car_id': 'car_1', 'peer_id': 'buyer_1', 'visible': true});
+
+      // Covered now: the next reconnect says so.
+      visible = false;
+      final s = sockets.single;
+      s.fire('disconnect');
+      accept(s, 'seller');
+      expect(s.emits('join_chat').last,
+          {'car_id': 'car_1', 'peer_id': 'buyer_1', 'visible': false});
+    });
+
+    test('the probe is asked at reconnect time, not when the chat was opened',
+        () async {
+      var asked = 0;
+      var visible = true;
+      final joins = await joinThenReconnect(probe: () {
+        asked++;
+        return visible;
+      });
+      expect(asked, 1, reason: 'asked once, for the reconnect');
+      expect(joins.last['visible'], isTrue);
+    });
+
+    test('a probe that throws is treated as NOT visible (never read on doubt)',
+        () async {
+      final joins =
+          await joinThenReconnect(probe: () => throw StateError('disposed'));
+      expect(joins.last['visible'], isFalse);
+    });
+
+    test('unregister only clears the probe it was given', () async {
+      bool oldPage() => true;
+      bool newPage() => false;
+      await login('seller');
+      WebSocketService.registerConversationVisibility(oldPage);
+      WebSocketService.registerConversationVisibility(newPage);
+      WebSocketService.unregisterConversationVisibility(oldPage); // old page disposes
+      WebSocketService.joinChat('car_1', peerId: 'buyer_1');
+      await until(() => sockets.isNotEmpty);
+      final s = sockets.single;
+      accept(s, 'seller');
+      s.fire('disconnect');
+      accept(s, 'seller');
+      expect(s.emits('join_chat').last['visible'], isFalse,
+          reason: "the newer page's probe survived");
+
+      WebSocketService.unregisterConversationVisibility(newPage);
+      s.fire('disconnect');
+      accept(s, 'seller');
+      expect(s.emits('join_chat').last.containsKey('visible'), isFalse);
+    });
+  });
+
   group('token lifetime (F-36)', () {
     test('an already expired token is refreshed BEFORE the socket opens',
         () async {
